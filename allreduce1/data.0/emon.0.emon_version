@@ -1,0 +1,166 @@
+EMON Version .............. V11.10  
+Copyright(C) 1993-2019 Intel Corporation. All rights reserved.
+Application Build Date: Aug 19 2019 at 20:15:40
+SEP driver version: 5.10 
+PAX Driver Version: 1.0
+total_number_of_processors  ...... 48
+number_of_online_processors ...... 48
+cpu_family ................ Intel(R) Xeon(R) E5/E7 v3 Processor code named Haswell
+cpu_model ................. 63 (0x3f)
+cpu_stepping .............. 2 (0x2)
+L1 Data Cache ............. 32KB, 8-way, 64-byte line size
+                            2 HW threads share this cache, No SW Init Required
+L1 Code Cache ............. 32KB, 8-way, 64-byte line size
+                            2 HW threads share this cache, No SW Init Required
+L2 Unified Cache .......... 256KB, 8-way, 64-byte line size
+                            2 HW threads share this cache, No SW Init Required
+L3 Unified Cache .......... 30MB, 20-way, 64-byte line size
+                            No SW Init Required
+Data TLB .................. 4-way, 4K Pages, 64 entries
+64-byte Prefetching
+
+Device Type ............... Intel(R) Xeon(R) E5/E7 v3 Processor code named Haswell
+EMON Database ............. haswell_server
+number_of_selectors ....... 4
+number_of_var_counters .... 4
+number_of_fixed_ctrs....... 3
+Fixed Counter Events:
+counter 0 ................. INST_RETIRED.ANY
+counter 1 ................. CPU_CLK_UNHALTED.THREAD
+counter 2 ................. CPU_CLK_UNHALTED.REF_TSC
+number of devices ......... 1
+number_of_events .......... 543
+
+Processor Features:
+    (Thermal Throttling) (Enabled)
+    (Hyper-Threading) (Enabled)
+    (MLC Streamer Prefetching) (Enabled)
+    (MLC Spatial Prefetching) (Enabled)
+    (DCU Streamer Prefetching) (Enabled)
+    (DCU IP Prefetching) (Enabled)
+    (Number of Packages:    2)
+    (Cores Per Package:    12)
+    (Threads Per Package:  24)
+    (Threads Per Core:      2)
+
+RAM Features:
+    (Package/Memory Controller/Channel)
+	(0/0/0) (Total Number of Ranks on this Channel: 3)
+		 (Dimm0 Info: Capacity = 16 GB, Data Width = 64, Form Factor = DIMM, Memory Type = Synchronous, Speed = 2133MHz, # of devices = 32, Device Config = 4Gb(1024Mbx4))
+		 (Dimm1 Info: Capacity = 16 GB, Data Width = 64, Form Factor = DIMM, Memory Type = Synchronous, Speed = 2133MHz, # of devices = 32, Device Config = 4Gb(1024Mbx4))
+		 (Dimm2 Info: Empty)
+	(0/0/1) (Total Number of Ranks on this Channel: 3)
+		 (Dimm0 Info: Capacity = 16 GB, Data Width = 64, Form Factor = DIMM, Memory Type = Synchronous, Speed = 2133MHz, # of devices = 32, Device Config = 4Gb(1024Mbx4))
+		 (Dimm1 Info: Capacity = 16 GB, Data Width = 64, Form Factor = DIMM, Memory Type = Synchronous, Speed = 2133MHz, # of devices = 32, Device Config = 4Gb(1024Mbx4))
+		 (Dimm2 Info: Empty)
+	(0/1/0) (Total Number of Ranks on this Channel: 3)
+		 (Dimm0 Info: Capacity = 16 GB, Data Width = 64, Form Factor = DIMM, Memory Type = Synchronous, Speed = 2133MHz, # of devices = 32, Device Config = 4Gb(1024Mbx4))
+		 (Dimm1 Info: Capacity = 16 GB, Data Width = 64, Form Factor = DIMM, Memory Type = Synchronous, Speed = 2133MHz, # of devices = 32, Device Config = 4Gb(1024Mbx4))
+		 (Dimm2 Info: Empty)
+	(0/1/1) (Total Number of Ranks on this Channel: 3)
+		 (Dimm0 Info: Capacity = 16 GB, Data Width = 64, Form Factor = DIMM, Memory Type = Synchronous, Speed = 2133MHz, # of devices = 32, Device Config = 4Gb(1024Mbx4))
+		 (Dimm1 Info: Capacity = 16 GB, Data Width = 64, Form Factor = DIMM, Memory Type = Synchronous, Speed = 2133MHz, # of devices = 32, Device Config = 4Gb(1024Mbx4))
+		 (Dimm2 Info: Empty)
+	(1/0/0) (Total Number of Ranks on this Channel: 3)
+		 (Dimm0 Info: Capacity = 16 GB, Data Width = 64, Form Factor = DIMM, Memory Type = Synchronous, Speed = 2133MHz, # of devices = 32, Device Config = 4Gb(1024Mbx4))
+		 (Dimm1 Info: Capacity = 16 GB, Data Width = 64, Form Factor = DIMM, Memory Type = Synchronous, Speed = 2133MHz, # of devices = 32, Device Config = 4Gb(1024Mbx4))
+		 (Dimm2 Info: Empty)
+	(1/0/1) (Total Number of Ranks on this Channel: 3)
+		 (Dimm0 Info: Capacity = 16 GB, Data Width = 64, Form Factor = DIMM, Memory Type = Synchronous, Speed = 2133MHz, # of devices = 32, Device Config = 4Gb(1024Mbx4))
+		 (Dimm1 Info: Capacity = 16 GB, Data Width = 64, Form Factor = DIMM, Memory Type = Synchronous, Speed = 2133MHz, # of devices = 32, Device Config = 4Gb(1024Mbx4))
+		 (Dimm2 Info: Empty)
+	(1/1/0) (Total Number of Ranks on this Channel: 3)
+		 (Dimm0 Info: Capacity = 16 GB, Data Width = 64, Form Factor = DIMM, Memory Type = Synchronous, Speed = 2133MHz, # of devices = 32, Device Config = 4Gb(1024Mbx4))
+		 (Dimm1 Info: Capacity = 16 GB, Data Width = 64, Form Factor = DIMM, Memory Type = Synchronous, Speed = 2133MHz, # of devices = 32, Device Config = 4Gb(1024Mbx4))
+		 (Dimm2 Info: Empty)
+	(1/1/1) (Total Number of Ranks on this Channel: 3)
+		 (Dimm0 Info: Capacity = 16 GB, Data Width = 64, Form Factor = DIMM, Memory Type = Synchronous, Speed = 2133MHz, # of devices = 32, Device Config = 4Gb(1024Mbx4))
+		 (Dimm1 Info: Capacity = 16 GB, Data Width = 64, Form Factor = DIMM, Memory Type = Synchronous, Speed = 2133MHz, # of devices = 32, Device Config = 4Gb(1024Mbx4))
+		 (Dimm2 Info: Empty)
+
+QPI Link Features:
+	Package 0 :
+		QPI Link 0 connects to Package 1, Link 1
+		QPI Link 1 connects to Package 1, Link 0
+	Package 1 :
+		QPI Link 0 connects to Package 0, Link 1
+		QPI Link 1 connects to Package 0, Link 0
+
+TSC Freq .................. 2500.00 MHz
+
+CPU Freq (detected) ....... 2494.00 MHz
+
+UFS Freq (limit) .......... 3000.00 MHz
+
+MAX TURBO RATIO (limit)
+1C .......... 3300.00 MHz
+2C .......... 3300.00 MHz
+3C .......... 3100.00 MHz
+4C .......... 3000.00 MHz
+5C .......... 2900.00 MHz
+6C .......... 2900.00 MHz
+7C .......... 2900.00 MHz
+8C .......... 2900.00 MHz
+9C .......... 2900.00 MHz
+10C ......... 2900.00 MHz
+11C ......... 2900.00 MHz
+12C ......... 2900.00 MHz
+13C ......... 2900.00 MHz
+14C ......... 2900.00 MHz
+15C ......... 2900.00 MHz
+16C ......... 2900.00 MHz
+17C ......... 2900.00 MHz
+18C ......... 2900.00 MHz
+
+		   OS Processor <-> Physical/Logical Mapping
+		   -----------------------------------------
+	  OS Processor	  Phys. Package	      Core	Logical Processor
+		0		0		0		0
+		1		0		1		0
+		2		0		2		0
+		3		0		3		0
+		4		0		4		0
+		5		0		5		0
+		6		0		8		0
+		7		0		9		0
+		8		0		10		0
+		9		0		11		0
+		10		0		12		0
+		11		0		13		0
+		12		1		0		0
+		13		1		1		0
+		14		1		2		0
+		15		1		3		0
+		16		1		4		0
+		17		1		5		0
+		18		1		8		0
+		19		1		9		0
+		20		1		10		0
+		21		1		11		0
+		22		1		12		0
+		23		1		13		0
+		24		0		0		1
+		25		0		1		1
+		26		0		2		1
+		27		0		3		1
+		28		0		4		1
+		29		0		5		1
+		30		0		8		1
+		31		0		9		1
+		32		0		10		1
+		33		0		11		1
+		34		0		12		1
+		35		0		13		1
+		36		1		0		1
+		37		1		1		1
+		38		1		2		1
+		39		1		3		1
+		40		1		4		1
+		41		1		5		1
+		42		1		8		1
+		43		1		9		1
+		44		1		10		1
+		45		1		11		1
+		46		1		12		1
+		47		1		13		1
+		   -----------------------------------------
