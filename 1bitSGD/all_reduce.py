@@ -9,6 +9,7 @@ def quantize(tensor):
     Q = torch.zeros(N, dtype=bool)
     Q = tensor > 0
     return Q
+    
 def unquantize(tensor):
     tensor = tensor.type(torch.FloatTensor)
     tensor[tensor == 0] = -1

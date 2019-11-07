@@ -5,9 +5,9 @@ import torch
 import torch.distributed as dist
 from torch.multiprocessing import Process
 import cProfile
-size = 20
+size = 16
 
-tensor = (torch.rand(4) - 0.5) * 1000
+tensor = (torch.rand(4) - 0.5) 
 
 """ All-Reduce example."""
 def run(rank, size):
@@ -17,7 +17,7 @@ def run(rank, size):
         print(tensor * size)
     all_reduce_1bit(tensor)
     #dist.all_reduce(tensor, op=dist.ReduceOp.SUM, group=group)
-    print('Rank ', rank, ' has data ', tensor * size)
+    print('Rank ', rank, ' has data ', tensor)
 
 #pkill -f run.py
 
@@ -69,11 +69,11 @@ def all_reduce_1bit(tensor):
     recv[:] = accum[:]
     #tensor = recv???
 
-def all_reduce(tensor): 
+def all_reduce_RING(tensor): 
     allreduce(tensor.clone(), tensor)
 
 """ Implementation of a ring-reduce with addition. """
-def allreduce(send, recv):
+def allreduce_RING(send, recv):
     rank = dist.get_rank()
     size = dist.get_world_size()
     send_buff = torch.zeros(send.size())
@@ -118,6 +118,7 @@ def dumb_test():
     print(unquantize(quantize(test)))
     error = (unquantize(quantize(test)) - test).abs()
     print(error)
+
 
 if __name__ == "__main__":
     
