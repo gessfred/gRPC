@@ -117,22 +117,31 @@ def ms_allreduce(tensor):
     """for i in range(dist.get_world_size()):
         if i != dist.get_rank():
             req = dist.isend(tensor=tensor[0], dst=i)"""
+    reqs = []
     #"Naive all-reduce"
-    for i in range(dist.get_world_size()):
+    for i in range(dist.get_world_size()): # K steps
         if i != r:
-            req = dist.isend(tensor=tensor[i], dst=i)
+            reqs += [dist.isend(tensor=tensor[i], dst=i)] # K concurrent transfers
+    for i in range(dist.get_world_size()): # K steps
+        if i != r:
             recv = torch.zeros(4)
-            dist.recv(tensor=recv[r],src=i)
+            dist.recv(tensor=recv[r],src=i) # K / ??? values...
             acc += recv
-            req.wait()
+    for req in reqs:
+        req.wait()
+    reqs = []
     #"Naive all-gather"
     for i in range(dist.get_world_size()):
         if i != r:
-            req = dist.isend(tensor=acc[r],dst=i)
+            reqs += [dist.isend(tensor=acc[r],dst=i)]
+    #"Naive all-gather"
+    for i in range(dist.get_world_size()):
+        if i != r:
             recv = torch.zeros(4)
             dist.recv(tensor=recv[i], src=i)
             acc += recv
-            req.wait()
+    for req in reqs:
+        req.wait()
     tensor[:] = acc[:] #print('rank', r, 'has', acc)
     """
     xchg
