@@ -15,7 +15,80 @@ x = torch.from_numpy(x).float()
 y = x * 3 + 5 + 2 * torch.rand(numberOfSamples)
 
 #targets = torch.from_numpy(targets)
+def quantize(tensor):
+    N = list(tensor.size())[0]
+    Q = torch.zeros(N, dtype=bool)
+    Q = tensor > 0
+    return Q
+def unquantize(tensor):
+    tensor = tensor.type(torch.FloatTensor)
+    tensor[tensor == 0] = -1
+    return tensor # * data_scale
 
+"""
+GPU i is responsible for chunk i
+"""
+def ms_allreduce(tensor, chunksize=1):
+    r = dist.get_rank()
+    arraySize=tensor.size()
+    acc = torch.zeros(arraySize)
+    acc[r*chunksize:(r+1)*chunksize] = tensor[r*chunksize:(r+1)*chunksize]
+    reqs = []
+    #"Naive all-reduce"
+    for i in range(dist.get_world_size()): # K steps
+        if i != r:
+            reqs += [dist.isend(tensor=quantize(tensor[i*chunksize:(i+1)*chunksize]), dst=i)] # K concurrent transfers
+    for i in range(dist.get_world_size()): # K steps
+        if i != r:
+            recv = torch.zeros(arraySize, dtype=bool)
+            dist.recv(tensor=recv[r*chunksize:(r+1)*chunksize],src=i) # K / ??? values...
+            acc += unquantize(recv)
+    for req in reqs:
+        req.wait()
+    reqs = []
+    print(rank, 'has', acc)
+    #"Naive all-gather"
+    for i in range(dist.get_world_size()):
+        if i != r:
+            reqs += [dist.isend(tensor=quantize(acc[r*chunksize:(r+1)*chunksize]),dst=i)]
+    #"Naive all-gather"
+    for i in range(dist.get_world_size()):
+        if i != r:
+            recv = torch.zeros(arraySize, dtype=bool)
+            dist.recv(tensor=recv[i*chunksize:(i+1)*chunksize], src=i)
+            acc[i*chunksize:(i+1)*chunksize] = unquantize(recv[i*chunksize:(i+1)*chunksize])
+    for req in reqs:
+        req.wait()
+    tensor[:] = acc[:]
+def all_reduce(tensor): 
+    allreduce(tensor.clone(), tensor)
+
+""" Implementation of a ring-reduce with addition. """
+def allreduce(send, recv):
+    rank = dist.get_rank()
+    size = dist.get_world_size()
+    send_buff = torch.zeros(send.size())
+    recv_buff = torch.zeros(send.size())
+    accum = torch.zeros(send.size())
+    accum[:] = send[:]
+
+    left = ((rank - 1) + size) % size
+    right = (rank + 1) % size
+    send_buff[:] = send[:]
+    for i in range(size - 1):
+        if i % 2 == 0:
+            # Send send_buff
+            send_req = dist.isend(tensor=send_buff, dst=right)
+            dist.recv(tensor=recv_buff, src=left)
+            accum[:] += recv_buff[:]
+        else:
+            # Send recv_buff
+            send_req = dist.isend(tensor=recv_buff, dst=right)
+            dist.recv(tensor=send_buff, src=left)
+            accum[:] += send_buff[:]
+        send_req.wait()
+    recv[:] = accum[:]
+    
 # Define the model
 def model(x, w, b):
     return x @ w.t() + b
@@ -49,8 +122,8 @@ def sgdFor(rank, size, group):
             print('epoch', i, " loss=", loss)
             loss.backward()
             with torch.no_grad():
-                dist.all_reduce(w.grad, op=dist.ReduceOp.SUM, group=group)
-                dist.all_reduce(b.grad, op=dist.ReduceOp.SUM, group=group)
+                all_reduce(w.grad)
+                all_reduce(b.grad)
                 w -= w.grad * λ
                 b -= b.grad * λ
                 w.grad.zero_()
@@ -58,27 +131,6 @@ def sgdFor(rank, size, group):
             i += 1
         return w, b
     return sgd
-
-
-"""def train(inputs, targets, λ=1e-5):
-    [l, h] = inputs.shape
-    print(inputs.shape)
-    # Weights and biases
-    w = torch.randn(2, h, requires_grad=True)
-    b = torch.randn(2, requires_grad=True)
-    # Train for 100 epochs
-    for i in range(100):
-        preds = model(inputs, w, b)
-        loss = mse(preds, targets)
-        print('epoch', i, ' loss=', loss, 'accuracy=', np.sum((preds == targets).astype(int)))
-        loss.backward()
-        with torch.no_grad():
-            w -= w.grad * λ
-            b -= b.grad * λ
-            w.grad.zero_()
-            b.grad.zero_()
-    return w, b"""
-
 
 def run(rank, size):
     group = dist.new_group(list(range(size)))
