@@ -23,9 +23,9 @@ def run(rank, size):
 
 def quantize(tensor):
     N = list(tensor.size())[0]
-    Q = torch.zeros(N, dtype=bool)
     Q = tensor > 0
     return Q
+
 def unquantize(tensor):
     tensor = tensor.type(torch.FloatTensor)
     tensor[tensor == 0] = -1
