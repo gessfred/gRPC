@@ -6,17 +6,15 @@ from torch.multiprocessing import Process
 import cProfile
 from functools import reduce
 import numpy as np
-numberOfSamples = 1000
+
+numberOfSamples = 32*1000
 numberOfFeatures = 1
 
-x = (np.random.random(numberOfSamples)*2 -1).reshape(-1, 1)
-#y = (np.random.random(numberOfSamples) > 0.5).astype(int)
-x = torch.from_numpy(x).float()
+x = torch.rand(numberOfSamples) * 2 - 1
 y = x * 3 + 5 + 2 * torch.rand(numberOfSamples) # 3x + 6 + noise (-1, 1)
 
 #targets = torch.from_numpy(targets)
 def quantize(tensor):
-    N = list(tensor.size())[0]
     Q = tensor > 0
     return Q
 
@@ -93,6 +91,7 @@ def allreduce(send, recv):
     
 # Define the model
 def model(x, w, b):
+    x = x.reshape(-1,1)
     return x @ w.t() + b
 
 # MSE loss
@@ -118,19 +117,19 @@ def sgdFor(rank, size, group):
         b = torch.randn(numberOfFeatures, requires_grad=True)
         acc_loss = 0
         i = 0
-        for ybatch, xbatch in batch_iter(targets, inputs, batch_size, max_iter):
-            preds = model(xbatch, w, b)
-            loss = mse(preds, ybatch)
-            print('epoch', i, " loss=", loss)
-            loss.backward()
-            with torch.no_grad():
-                all_reduce(w.grad)
-                all_reduce(b.grad)
-                w -= w.grad * λ
-                b -= b.grad * λ
-                w.grad.zero_()
-                b.grad.zero_()
-            i += 1
+        for i in range(max_iter):
+            for ybatch, xbatch in batch_iter(targets, inputs, batch_size, 1):
+                preds = model(xbatch, w, b)
+                loss = mse(preds, ybatch)
+                print('epoch', i, " loss=", loss)
+                loss.backward()
+                with torch.no_grad():
+                    all_reduce(w.grad)
+                    all_reduce(b.grad)
+                    w -= w.grad * λ
+                    b -= b.grad * λ
+                    w.grad.zero_()
+                    b.grad.zero_()
         return w, b
     return sgd
 
@@ -140,7 +139,7 @@ def run(rank, size):
     assert numberOfSamples % size == 0
     C = int(numberOfSamples / size)
     f, t = rank*C, (rank+1)*C
-    sgd(y[f:t], x[f:t], 5, 100)
+    sgd(y[f:t], x[f:t], 16, 100)
 
 def init_processes(rank, size, fn, backend='gloo'):
     """ Initialize the distributed environment. """
