@@ -8,12 +8,12 @@ from functools import reduce
 import numpy as np
 numberOfSamples = 1000
 numberOfFeatures = 1
-
-x = np.random.random(numberOfSamples).reshape(-1, 1)
+dataSz = 64
+x = (np.random.random(numberOfSamples).reshape(-1, 1) - 0.5) * 2 # we want samples between 1 and -1
 #y = (np.random.random(numberOfSamples) > 0.5).astype(int)
 x = torch.from_numpy(x).float()
 y = x * 3 + 5 + 2 * torch.rand(numberOfSamples)
-
+#y /= y.max()
 #targets = torch.from_numpy(targets)
 def quantize(tensor):
     N = list(tensor.size())[0]
@@ -25,10 +25,43 @@ def unquantize(tensor):
     tensor[tensor == 0] = -1
     return tensor # * data_scale
 
+def quantize_shrink(tensor):
+    N = list(tensor.size())[0]
+    print(N)
+    assert N % dataSz == 0
+    N2 = N // dataSz
+    res = torch.zeros(N2, dtype=int)    
+    for i in range(N2):
+        x = 0
+        for j in range(dataSz):
+            x = x << 1
+            z = tensor[dataSz*i + j]
+            if z >= 0:
+                z = 1
+            else:
+                z = 0
+            x = x | z
+        res[i] = x
+    return res
+
+def unquantize_shrink(tensor):
+    N2 = list(tensor.size())[0]
+    N = N2 * dataSz
+    res = torch.zeros(N, dtype=float)
+    for i in range(N2):
+        x = tensor[i]
+        for j in range(dataSz):
+            z = (x >> (dataSz - 1 - j)) & 1
+            if z == 1:
+                res[dataSz*i + j] = 1
+            else:
+                res[dataSz*i + j] = -1
+    return res
 """
 GPU i is responsible for chunk i
 """
 def ms_allreduce(tensor, chunksize=1):
+    q, q_1, = quantize_shrink, unquantize_shrink
     r = dist.get_rank()
     arraySize=tensor.size()
     acc = torch.zeros(arraySize)
@@ -37,26 +70,25 @@ def ms_allreduce(tensor, chunksize=1):
     #"Naive all-reduce"
     for i in range(dist.get_world_size()): # K steps
         if i != r:
-            reqs += [dist.isend(tensor=quantize(tensor[i*chunksize:(i+1)*chunksize]), dst=i)] # K concurrent transfers
+            reqs += [dist.isend(tensor=q(tensor[i*chunksize:(i+1)*chunksize]), dst=i)] # K concurrent transfers
     for i in range(dist.get_world_size()): # K steps
         if i != r:
             recv = torch.zeros(arraySize, dtype=bool)
             dist.recv(tensor=recv[r*chunksize:(r+1)*chunksize],src=i) # K / ??? values...
-            acc += unquantize(recv)
+            acc += q_1(recv)
     for req in reqs:
         req.wait()
     reqs = []
-    print(rank, 'has', acc)
     #"Naive all-gather"
     for i in range(dist.get_world_size()):
         if i != r:
-            reqs += [dist.isend(tensor=quantize(acc[r*chunksize:(r+1)*chunksize]),dst=i)]
+            reqs += [dist.isend(tensor=q(acc[r*chunksize:(r+1)*chunksize]),dst=i)]
     #"Naive all-gather"
     for i in range(dist.get_world_size()):
         if i != r:
             recv = torch.zeros(arraySize, dtype=bool)
             dist.recv(tensor=recv[i*chunksize:(i+1)*chunksize], src=i)
-            acc[i*chunksize:(i+1)*chunksize] = unquantize(recv[i*chunksize:(i+1)*chunksize])
+            acc[i*chunksize:(i+1)*chunksize] += q_1(recv[i*chunksize:(i+1)*chunksize])
     for req in reqs:
         req.wait()
     tensor[:] = acc[:]
@@ -119,13 +151,21 @@ def sgdFor(rank, size, group):
         for ybatch, xbatch in batch_iter(targets, inputs, batch_size, max_iter):
             preds = model(xbatch, w, b)
             loss = mse(preds, ybatch)
-            print('epoch', i, " loss=", loss)
+            print('epoch(rank[', rank,'])', i, " loss=", loss)
             loss.backward()
+            error_G = torch.zeros(w.size())
+            error_b = torch.zeros(b.size())
             with torch.no_grad():
-                all_reduce(w.grad)
-                all_reduce(b.grad)
-                w -= w.grad * λ
-                b -= b.grad * λ
+                G = w.grad.clone() + error_G
+                ms_allreduce(w.grad)
+                error_G = G - w.grad / size
+                B = b.grad.clone() + error_b
+                ms_allreduce(b.grad)
+                error_b = B - b.grad / size 
+                #print(rank, ': ', error, ' = ', G)
+                #print('rank[', rank, '] has ', w.grad)
+                w -= G * λ
+                b -= B * λ
                 w.grad.zero_()
                 b.grad.zero_()
             i += 1
@@ -138,7 +178,8 @@ def run(rank, size):
     assert numberOfSamples % size == 0
     C = int(numberOfSamples / size)
     f, t = rank*C, (rank+1)*C
-    sgd(y[f:t], x[f:t], 5, 100)
+    w, b = sgd(y[f:t], x[f:t], 5, 100)
+    print('Solution rank', rank,{'w': w, 'b': b})
 
 def init_processes(rank, size, fn, backend='gloo'):
     """ Initialize the distributed environment. """

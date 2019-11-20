@@ -7,8 +7,6 @@ import cProfile
 from functools import reduce
 import numpy as np
 import sys
-numberOfSamples = 1000
-numberOfFeatures = 1
 dataSz = 32
 tensor = torch.zeros(2**10)
 #targets = torch.from_numpy(targets)
@@ -85,6 +83,7 @@ def ms_allreduce(tensor, quantize=quantize, unquantize=unquantize):
             recv = torch.zeros(arraySize, dtype=bool)
             dist.recv(tensor=recv[r*chunksize:(r+1)*chunksize],src=i) # K / ??? values...
             acc += unquantize(recv)
+            dist.irecv(tensor=recv)
     for req in reqs:
         req.wait()
     reqs = []
