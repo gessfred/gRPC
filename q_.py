@@ -7,8 +7,9 @@ import cProfile
 from functools import reduce
 import numpy as np
 import sys
+
 dataSz = 32
-tensor = torch.zeros(2**10)
+tensor = torch.zeros(2**16)
 #targets = torch.from_numpy(targets)
 def quantize(tensor):
     N = list(tensor.size())[0]
@@ -99,35 +100,8 @@ def ms_allreduce(tensor, quantize=quantize, unquantize=unquantize):
     for req in reqs:
         req.wait()
     tensor[:] = acc[:]
-def all_reduce(tensor): 
-    allreduce(tensor.clone(), tensor)
 
-""" Implementation of a ring-reduce with addition. """
-def allreduce(send, recv):
-    rank = dist.get_rank()
-    size = dist.get_world_size()
-    send_buff = torch.zeros(send.size())
-    recv_buff = torch.zeros(send.size())
-    accum = torch.zeros(send.size())
-    accum[:] = send[:]
-
-    left = ((rank - 1) + size) % size
-    right = (rank + 1) % size
-    send_buff[:] = send[:]
-    for i in range(size - 1):
-        if i % 2 == 0:
-            # Send send_buff
-            send_req = dist.isend(tensor=send_buff, dst=right)
-            dist.recv(tensor=recv_buff, src=left)
-            accum[:] += recv_buff[:]
-        else:
-            # Send recv_buff
-            send_req = dist.isend(tensor=recv_buff, dst=right)
-            dist.recv(tensor=send_buff, src=left)
-            accum[:] += send_buff[:]
-        send_req.wait()
-    recv[:] = accum[:]
-    
+   
 # Define the model
 def model(x, w, b):
     return x @ w.t() + b
@@ -175,7 +149,7 @@ if __name__ == "__main__":
     print('Original: ', sys.getsizeof(t.storage()))
     print('Vector: ',sys.getsizeof(q1.storage()))
     print('Int: ',sys.getsizeof(q2.storage()))"""
-    size = 8
+    size = 2
     processes = []
     for rank in range(size):
         p = Process(target=init_processes, args=(rank, size, run))
