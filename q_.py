@@ -9,7 +9,7 @@ import numpy as np
 import sys
 
 dataSz = 32
-tensor = torch.zeros(2**16)
+tensor = torch.ones(2**19)
 #targets = torch.from_numpy(targets)
 def quantize(tensor):
     N = list(tensor.size())[0]
@@ -68,38 +68,40 @@ def unquantize_shrink(tensor):
 GPU i is responsible for chunk i
 """
 def ms_allreduce(tensor, quantize=quantize, unquantize=unquantize):
-    r = dist.get_rank()
-    arraySize=list(tensor.size())[0]
-    acc = torch.zeros(arraySize)
-    chunksize = arraySize // dist.get_world_size()
-    assert chunksize % dataSz == 0
-    acc[r*chunksize:(r+1)*chunksize] = tensor[r*chunksize:(r+1)*chunksize]
-    reqs = []
-    #"Naive all-reduce"
-    for i in range(dist.get_world_size()): # K steps
-        if i != r:
-            reqs += [dist.isend(tensor=quantize(tensor[i*chunksize:(i+1)*chunksize]), dst=i)] # K concurrent transfers
-    for i in range(dist.get_world_size()): # K steps
-        if i != r:
-            recv = torch.zeros(arraySize, dtype=bool)
-            dist.recv(tensor=recv[r*chunksize:(r+1)*chunksize],src=i) # K / ??? values...
-            acc += unquantize(recv)
-    for req in reqs:
-        req.wait()
-    reqs = []
-    #"Naive all-gather"
-    for i in range(dist.get_world_size()):
-        if i != r:
-            reqs += [dist.isend(tensor=quantize(acc[r*chunksize:(r+1)*chunksize]),dst=i)]
-    #"Naive all-gather"
-    for i in range(dist.get_world_size()):
-        if i != r:
-            recv = torch.zeros(arraySize, dtype=bool)
-            dist.recv(tensor=recv[i*chunksize:(i+1)*chunksize], src=i)
-            acc[i*chunksize:(i+1)*chunksize] += unquantize(recv[i*chunksize:(i+1)*chunksize])
-    for req in reqs:
-        req.wait()
-    tensor[:] = acc[:]
+    with torch.autograd.profiler.profile() as prof:
+        r = dist.get_rank()
+        arraySize=list(tensor.size())[0]
+        acc = torch.zeros(arraySize)
+        chunksize = arraySize // dist.get_world_size()
+        assert chunksize % dataSz == 0
+        acc[r*chunksize:(r+1)*chunksize] = tensor[r*chunksize:(r+1)*chunksize]
+        reqs = []
+        #"Naive all-reduce"
+        for i in range(dist.get_world_size()): # K steps
+            if i != r:
+                reqs += [dist.isend(tensor=quantize(tensor[i*chunksize:(i+1)*chunksize]), dst=i)] # K concurrent transfers
+        for i in range(dist.get_world_size()): # K steps
+            if i != r:
+                recv = torch.zeros(arraySize, dtype=bool)
+                dist.recv(tensor=recv[r*chunksize:(r+1)*chunksize],src=i) # K / ??? values...
+                acc += unquantize(recv)
+        for req in reqs:
+            req.wait()
+        reqs = []
+        #"Naive all-gather"
+        for i in range(dist.get_world_size()):
+            if i != r:
+                reqs += [dist.isend(tensor=quantize(acc[r*chunksize:(r+1)*chunksize]),dst=i)]
+        #"Naive all-gather"
+        for i in range(dist.get_world_size()):
+            if i != r:
+                recv = torch.zeros(arraySize, dtype=bool)
+                dist.recv(tensor=recv[i*chunksize:(i+1)*chunksize], src=i)
+                acc[i*chunksize:(i+1)*chunksize] += unquantize(recv[i*chunksize:(i+1)*chunksize])
+        for req in reqs:
+            req.wait()
+        tensor[:] = acc[:]
+    print(prof.key_averages().table(sort_by="self_cpu_time_total"))
 
    
 # Define the model
@@ -122,9 +124,58 @@ def batch_iter(y, tx, batch_size, num_batches=1):
         if start_index != end_index:
             yield shuffled_y[start_index:end_index], shuffled_tx[start_index:end_index]
 
+def all_reduce(tensor):
+    with torch.autograd.profiler.profile() as prof:
+        pass
+    N = tensor.size()
+    size = dist.get_world_size()
+    rank = dist.get_rank()
+    requests = []
+    res = torch.zeros(N)
+    for i in set(range(size)):
+        if i != rank:
+            send_req = dist.send(tensor=tensor, dst=i)
+    for i in range(size):
+        recv_buff = torch.zeros(N)
+        if i != rank:
+            dist.recv(tensor=recv_buff, src=i)
+            res += recv_buff
+    tensor[:] = recv_buff[:]
+    print(prof.key_averages().table(sort_by="self_cpu_time_total"))
+
+""" Implementation of a ring-reduce with addition. """
+def allreduce(tensor):
+    with torch.autograd.profiler.profile() as prof:
+        send = tensor.clone()
+        recv = tensor
+        rank = dist.get_rank()
+        size = dist.get_world_size()
+        send_buff = torch.zeros(send.size())
+        recv_buff = torch.zeros(send.size())
+        accum = torch.zeros(send.size())
+        accum[:] = send[:]
+
+        left = ((rank - 1) + size) % size
+        right = (rank + 1) % size
+        send_buff[:] = send[:]
+        for i in range(size - 1):
+            if i % 2 == 0:
+                # Send send_buff
+                send_req = dist.isend(tensor=send_buff, dst=right)
+                dist.recv(tensor=recv_buff, src=left)
+                accum[:] += recv_buff[:]
+            else:
+                # Send recv_buff
+                send_req = dist.isend(tensor=recv_buff, dst=right)
+                dist.recv(tensor=send_buff, src=left)
+                accum[:] += send_buff[:]
+            send_req.wait()
+        recv[:] = accum[:]
+    print(prof.key_averages().table(sort_by="self_cpu_time_total"))
+
 def run(rank, size):
     group = dist.new_group(list(range(size)))
-    ms_allreduce(tensor)
+    allreduce(tensor)
     print('rank', tensor)
 
 
