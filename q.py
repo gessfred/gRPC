@@ -83,7 +83,6 @@ def ms_allreduce(tensor, quantize=quantize, unquantize=unquantize):
             recv = torch.zeros(arraySize, dtype=bool)
             dist.recv(tensor=recv[r*chunksize:(r+1)*chunksize],src=i) # K / ??? values...
             acc += unquantize(recv)
-            dist.irecv(tensor=recv)
     for req in reqs:
         req.wait()
     reqs = []

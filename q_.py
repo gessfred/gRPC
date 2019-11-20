@@ -68,9 +68,6 @@ def unquantize_shrink(tensor):
 GPU i is responsible for chunk i
 """
 def ms_allreduce(tensor, quantize=quantize, unquantize=unquantize):
-    #profiler.enable()
-    profiler = cProfile.Profile()
-    profiler.enable()
     r = dist.get_rank()
     arraySize=list(tensor.size())[0]
     acc = torch.zeros(arraySize)
@@ -103,9 +100,6 @@ def ms_allreduce(tensor, quantize=quantize, unquantize=unquantize):
     for req in reqs:
         req.wait()
     tensor[:] = acc[:]
-    profiler.disable()
-    if r == 0:
-        profiler.print_stats()
 
    
 # Define the model
@@ -155,7 +149,7 @@ if __name__ == "__main__":
     print('Original: ', sys.getsizeof(t.storage()))
     print('Vector: ',sys.getsizeof(q1.storage()))
     print('Int: ',sys.getsizeof(q2.storage()))"""
-    size = 8
+    size = 2
     processes = []
     for rank in range(size):
         p = Process(target=init_processes, args=(rank, size, run))
