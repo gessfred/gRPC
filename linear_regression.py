@@ -8,18 +8,18 @@ from functools import reduce
 import numpy as np
 numberOfSamples = 1000
 numberOfFeatures = 1
-dataSz = 64
-x = (np.random.random(numberOfSamples).reshape(-1, 1) - 0.5) * 2 # we want samples between 1 and -1
+
+x = (np.random.random(numberOfSamples)*2 -1).reshape(-1, 1)
 #y = (np.random.random(numberOfSamples) > 0.5).astype(int)
 x = torch.from_numpy(x).float()
-y = x * 3 + 5 + 2 * torch.rand(numberOfSamples)
-#y /= y.max()
+y = x * 3 + 5 + 2 * torch.rand(numberOfSamples) # 3x + 6 + noise (-1, 1)
+
 #targets = torch.from_numpy(targets)
 def quantize(tensor):
     N = list(tensor.size())[0]
-    Q = torch.zeros(N, dtype=bool)
     Q = tensor > 0
     return Q
+
 def unquantize(tensor):
     tensor = tensor.type(torch.FloatTensor)
     tensor[tensor == 0] = -1
@@ -92,8 +92,10 @@ def ms_allreduce(tensor, chunksize=1):
     for req in reqs:
         req.wait()
     tensor[:] = acc[:]
-def all_reduce(tensor): 
-    allreduce(tensor.clone(), tensor)
+
+def all_reduce(tensor):
+    #allreduce(tensor.clone(), tensor)
+    ms_allreduce(tensor)
 
 """ Implementation of a ring-reduce with addition. """
 def allreduce(send, recv):
