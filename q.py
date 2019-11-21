@@ -72,6 +72,7 @@ def ms_allreduce(tensor, quantize=quantize, unquantize=unquantize):
     r = dist.get_rank()
     arraySize=list(tensor.size())[0]
     acc = torch.zeros(arraySize)
+    sliceSize = arraySize // (dist.get_world_size() * dataSz)
     chunksize = arraySize // dist.get_world_size()
     assert chunksize % dataSz == 0
     acc[r*chunksize:(r+1)*chunksize] = tensor[r*chunksize:(r+1)*chunksize]
@@ -80,9 +81,9 @@ def ms_allreduce(tensor, quantize=quantize, unquantize=unquantize):
     for i in range(dist.get_world_size()): # K steps
         if i != r:
             reqs += [dist.isend(tensor=quantize(tensor[i*chunksize:(i+1)*chunksize]), dst=i)] # K concurrent transfers
+    recv = torch.zeros(arraySize, dtype=bool)
     for i in range(dist.get_world_size()): # K steps
         if i != r:
-            recv = torch.zeros(arraySize, dtype=bool)
             dist.recv(tensor=recv[r*chunksize:(r+1)*chunksize],src=i) # K / ??? values...
             acc += unquantize(recv)
     for req in reqs:
@@ -95,7 +96,6 @@ def ms_allreduce(tensor, quantize=quantize, unquantize=unquantize):
     #"Naive all-gather"
     for i in range(dist.get_world_size()):
         if i != r:
-            recv = torch.zeros(arraySize, dtype=bool)
             dist.recv(tensor=recv[i*chunksize:(i+1)*chunksize], src=i)
             acc[i*chunksize:(i+1)*chunksize] += unquantize(recv[i*chunksize:(i+1)*chunksize])
     for req in reqs:
