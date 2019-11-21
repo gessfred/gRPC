@@ -68,7 +68,10 @@ def unquantize_shrink(tensor):
 """
 GPU i is responsible for chunk i
 """
-def ms_allreduce(tensor, quantize=quantize, unquantize=unquantize):
+def ms_allreduceWith(quantize, unquantize):
+    return lambda tensor: ms_allreduce_q(tensor, quantize, unquantize)
+
+def ms_allreduce_q(tensor, quantize=quantize, unquantize=unquantize):
     r = dist.get_rank()
     arraySize=list(tensor.size())[0]
     acc = torch.zeros(arraySize)
@@ -101,11 +104,45 @@ def ms_allreduce(tensor, quantize=quantize, unquantize=unquantize):
     for req in reqs:
         req.wait()
     tensor[:] = acc[:]
-def all_reduce(tensor): 
-    allreduce(tensor.clone(), tensor)
+def ms_allreduce(tensor):
+    r = dist.get_rank()
+    arraySize=list(tensor.size())[0]
+    acc = torch.zeros(arraySize)
+    chunksize = arraySize // dist.get_world_size()
+    assert chunksize % dataSz == 0
+    acc[r*chunksize:(r+1)*chunksize] = tensor[r*chunksize:(r+1)*chunksize]
+    reqs = []
+    #"Naive all-reduce"
+    for i in range(dist.get_world_size()): # K steps
+        if i != r:
+            reqs += [dist.isend(tensor=(tensor[i*chunksize:(i+1)*chunksize]), dst=i)] # K concurrent transfers
+    for i in range(dist.get_world_size()): # K steps
+        if i != r:
+            recv = torch.zeros(arraySize, dtype=bool)
+            dist.recv(tensor=recv[r*chunksize:(r+1)*chunksize],src=i) # K / ??? values...
+            acc += (recv)
+    for req in reqs:
+        req.wait()
+    reqs = []
+    #"Naive all-gather"
+    for i in range(dist.get_world_size()):
+        if i != r:
+            reqs += [dist.isend(tensor=(acc[r*chunksize:(r+1)*chunksize]),dst=i)]
+    #"Naive all-gather"
+    for i in range(dist.get_world_size()):
+        if i != r:
+            recv = torch.zeros(arraySize, dtype=bool)
+            dist.recv(tensor=recv[i*chunksize:(i+1)*chunksize], src=i)
+            acc[i*chunksize:(i+1)*chunksize] += (recv[i*chunksize:(i+1)*chunksize])
+    for req in reqs:
+        req.wait()
+    tensor[:] = acc[:]
+
 
 """ Implementation of a ring-reduce with addition. """
-def allreduce(send, recv):
+def allreduce(tensor):
+    send = tensor.clone()
+    recv = tensor
     rank = dist.get_rank()
     size = dist.get_world_size()
     send_buff = torch.zeros(send.size())
@@ -129,31 +166,17 @@ def allreduce(send, recv):
             accum[:] += send_buff[:]
         send_req.wait()
     recv[:] = accum[:]
-    
-# Define the model
-def model(x, w, b):
-    return x @ w.t() + b
-
-# MSE loss
-def mse(t1, t2):
-    diff = t1 - t2
-    return torch.sum(diff * diff) / diff.numel()
-
-def batch_iter(y, tx, batch_size, num_batches=1):
-    data_size = len(y)
-    shuffle_indices = np.random.permutation(np.arange(data_size))
-    shuffled_y = y[shuffle_indices]
-    shuffled_tx = tx[shuffle_indices]
-    for batch_num in range(num_batches):
-        start_index = batch_num * batch_size
-        end_index = min((batch_num + 1) * batch_size, data_size)
-        if start_index != end_index:
-            yield shuffled_y[start_index:end_index], shuffled_tx[start_index:end_index]
 
 def run(rank, size):
+    fn = {
+        "Ring": allreduce,
+        "SaturatedRing": ms_allreduce,
+        "QuantizedRingNp": ms_allreduceWith(quantize_vector, unquantize_vector),
+        "QuantizedRingNat": ms_allreduceWith(quantize_shrink, unquantize_shrink) 
+    }[sys.argv[2]]
     group = dist.new_group(list(range(size)))
     for i in range(epochs):
-        ms_allreduce(tensor)
+        fn(tensor)
 
 def init_processes(rank, size, fn, backend='gloo'):
     """ Initialize the distributed environment. """
