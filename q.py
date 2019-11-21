@@ -182,5 +182,4 @@ if __name__ == "__main__":
     p = Process(target=init_processes, args=(int(sys.argv[1]), 2, run))
     p.start()
     print(p.pid)
-    processes.append(p)
     p.join()
