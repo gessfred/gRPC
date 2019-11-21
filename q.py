@@ -157,9 +157,10 @@ def run(rank, size):
 
 def init_processes(rank, size, fn, backend='gloo'):
     """ Initialize the distributed environment. """
-    os.environ['MASTER_ADDR'] = '10.90.38.6'#192.168.64.1
+    ip = '10.90.38.6'
+    os.environ['MASTER_ADDR'] = ip#192.168.64.1
     os.environ['MASTER_PORT'] = '29500'
-    dist.init_process_group(backend, rank=rank, world_size=size)
+    dist.init_process_group(backend, rank=rank, world_size=size, init_method='tcp://{}:23456'.format(ip))
     fn(rank, size)
 
 #https://stackoverflow.com/questions/54361763/pytorch-why-is-the-memory-occupied-by-the-tensor-variable-so-small
@@ -176,13 +177,9 @@ if __name__ == "__main__":
     print('Original: ', sys.getsizeof(t.storage()))
     print('Vector: ',sys.getsizeof(q1.storage()))
     print('Int: ',sys.getsizeof(q2.storage()))"""
-    size = 2
-    processes = []
-    for rank in range(size):
-        p = Process(target=init_processes, args=(rank, size, run))
-        p.start()
-        print(p.pid)
-        processes.append(p)
-
-    for p in processes:
-        p.join()
+    init_processes(0, 2, run)
+    """p = Process(target=init_processes, args=(rank, 2, run))
+    p.start()
+    print(p.pid)
+    processes.append(p)
+    p.join()"""
