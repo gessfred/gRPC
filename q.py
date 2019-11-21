@@ -7,6 +7,7 @@ import cProfile
 from functools import reduce
 import numpy as np
 import sys
+import time
 dataSz = 32
 tensor = torch.zeros(2**10)
 #targets = torch.from_numpy(targets)
@@ -150,9 +151,9 @@ def batch_iter(y, tx, batch_size, num_batches=1):
 
 def run(rank, size):
     group = dist.new_group(list(range(size)))
-    ms_allreduce(tensor)
-    print('rank', tensor)
-
+    time.sleep(10)
+    for i in range(1000):
+        ms_allreduce(tensor)
 
 def init_processes(rank, size, fn, backend='gloo'):
     """ Initialize the distributed environment. """
@@ -175,11 +176,12 @@ if __name__ == "__main__":
     print('Original: ', sys.getsizeof(t.storage()))
     print('Vector: ',sys.getsizeof(q1.storage()))
     print('Int: ',sys.getsizeof(q2.storage()))"""
-    size = 8
+    size = 2
     processes = []
     for rank in range(size):
         p = Process(target=init_processes, args=(rank, size, run))
         p.start()
+        print(p.pid)
         processes.append(p)
 
     for p in processes:
