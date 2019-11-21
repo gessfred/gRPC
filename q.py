@@ -10,6 +10,7 @@ import sys
 import time
 dataSz = 32
 tensor = torch.zeros(2**10)
+epochs = 10000
 #targets = torch.from_numpy(targets)
 def quantize(tensor):
     N = list(tensor.size())[0]
@@ -151,11 +152,8 @@ def batch_iter(y, tx, batch_size, num_batches=1):
 
 def run(rank, size):
     group = dist.new_group(list(range(size)))
-    print('running...')
-    for i in range(1000):
+    for i in range(epochs):
         ms_allreduce(tensor)
-        print(i)
-    print('rank has ', tensor)
 
 def init_processes(rank, size, fn, backend='gloo'):
     """ Initialize the distributed environment. """
@@ -163,9 +161,8 @@ def init_processes(rank, size, fn, backend='gloo'):
     os.environ['MASTER_ADDR'] = ip#'192.168.64.1'
     os.environ['MASTER_PORT'] = '29500'
     os.environ['GLOO_SOCKET_IFNAME'] = 'ens786f0'
-    print('init process group')
+    time.sleep(10)# to hide the rendez-vous from profiling 
     dist.init_process_group(backend, rank=rank, world_size=size, init_method='tcp://{}:23456'.format(ip))
-    print('running...')
     fn(rank, size)
 
 #https://stackoverflow.com/questions/54361763/pytorch-why-is-the-memory-occupied-by-the-tensor-variable-so-small
@@ -182,9 +179,8 @@ if __name__ == "__main__":
     print('Original: ', sys.getsizeof(t.storage()))
     print('Vector: ',sys.getsizeof(q1.storage()))
     print('Int: ',sys.getsizeof(q2.storage()))"""
-    init_processes(1, 2, run)
-    """p = Process(target=init_processes, args=(rank, 2, run))
+    p = Process(target=init_processes, args=(int(sys.argv[1]), 2, run))
     p.start()
     print(p.pid)
     processes.append(p)
-    p.join()"""
+    p.join()
