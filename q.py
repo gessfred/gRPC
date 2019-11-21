@@ -151,16 +151,21 @@ def batch_iter(y, tx, batch_size, num_batches=1):
 
 def run(rank, size):
     group = dist.new_group(list(range(size)))
-    time.sleep(10)
+    print('running...')
     for i in range(1000):
         ms_allreduce(tensor)
+        print(i)
+    print('rank has ', tensor)
 
 def init_processes(rank, size, fn, backend='gloo'):
     """ Initialize the distributed environment. """
     ip = '10.90.38.6'
-    os.environ['MASTER_ADDR'] = ip#192.168.64.1
+    os.environ['MASTER_ADDR'] = ip#'192.168.64.1'
     os.environ['MASTER_PORT'] = '29500'
+    os.environ['GLOO_SOCKET_IFNAME'] = 'ens786f0'
+    print('init process group')
     dist.init_process_group(backend, rank=rank, world_size=size, init_method='tcp://{}:23456'.format(ip))
+    print('running...')
     fn(rank, size)
 
 #https://stackoverflow.com/questions/54361763/pytorch-why-is-the-memory-occupied-by-the-tensor-variable-so-small
@@ -177,7 +182,7 @@ if __name__ == "__main__":
     print('Original: ', sys.getsizeof(t.storage()))
     print('Vector: ',sys.getsizeof(q1.storage()))
     print('Int: ',sys.getsizeof(q2.storage()))"""
-    init_processes(0, 2, run)
+    init_processes(1, 2, run)
     """p = Process(target=init_processes, args=(rank, 2, run))
     p.start()
     print(p.pid)
