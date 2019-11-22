@@ -1,0 +1,820 @@
+<?xml version="1.0" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg version="1.1" width="1200" height="326" onload="init(evt)" viewBox="0 0 1200 326" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<!-- Flame graph stack visualization. See https://github.com/brendangregg/FlameGraph for latest version, and http://www.brendangregg.com/flamegraphs.html for examples. -->
+<!-- NOTES:  -->
+<defs>
+	<linearGradient id="background" y1="0" y2="1" x1="0" x2="0" >
+		<stop stop-color="#eeeeee" offset="5%" />
+		<stop stop-color="#eeeeb0" offset="95%" />
+	</linearGradient>
+</defs>
+<style type="text/css">
+	text { font-family:Verdana; font-size:12px; fill:rgb(0,0,0); }
+	#search, #ignorecase { opacity:0.1; cursor:pointer; }
+	#search:hover, #search.show, #ignorecase:hover, #ignorecase.show { opacity:1; }
+	#subtitle { text-anchor:middle; font-color:rgb(160,160,160); }
+	#title { text-anchor:middle; font-size:17px}
+	#unzoom { cursor:pointer; }
+	#frames > *:hover { stroke:black; stroke-width:0.5; cursor:pointer; }
+	.hide { display:none; }
+	.parent { opacity:0.5; }
+</style>
+<script type="text/ecmascript">
+<![CDATA[
+	"use strict";
+	var details, searchbtn, unzoombtn, matchedtxt, svg, searching, currentSearchTerm, ignorecase, ignorecaseBtn;
+	function init(evt) {
+		details = document.getElementById("details").firstChild;
+		searchbtn = document.getElementById("search");
+		ignorecaseBtn = document.getElementById("ignorecase");
+		unzoombtn = document.getElementById("unzoom");
+		matchedtxt = document.getElementById("matched");
+		svg = document.getElementsByTagName("svg")[0];
+		searching = 0;
+		currentSearchTerm = null;
+	}
+
+	window.addEventListener("click", function(e) {
+		var target = find_group(e.target);
+		if (target) {
+			if (target.nodeName == "a") {
+				if (e.ctrlKey === false) return;
+				e.preventDefault();
+			}
+			if (target.classList.contains("parent")) unzoom();
+			zoom(target);
+		}
+		else if (e.target.id == "unzoom") unzoom();
+		else if (e.target.id == "search") search_prompt();
+		else if (e.target.id == "ignorecase") toggle_ignorecase();
+	}, false)
+
+	// mouse-over for info
+	// show
+	window.addEventListener("mouseover", function(e) {
+		var target = find_group(e.target);
+		if (target) details.nodeValue = "Function: " + g_to_text(target);
+	}, false)
+
+	// clear
+	window.addEventListener("mouseout", function(e) {
+		var target = find_group(e.target);
+		if (target) details.nodeValue = ' ';
+	}, false)
+
+	// ctrl-F for search
+	window.addEventListener("keydown",function (e) {
+		if (e.keyCode === 114 || (e.ctrlKey && e.keyCode === 70)) {
+			e.preventDefault();
+			search_prompt();
+		}
+	}, false)
+
+	// ctrl-I to toggle case-sensitive search
+	window.addEventListener("keydown",function (e) {
+		if (e.ctrlKey && e.keyCode === 73) {
+			e.preventDefault();
+			toggle_ignorecase();
+		}
+	}, false)
+
+	// functions
+	function find_child(node, selector) {
+		var children = node.querySelectorAll(selector);
+		if (children.length) return children[0];
+		return;
+	}
+	function find_group(node) {
+		var parent = node.parentElement;
+		if (!parent) return;
+		if (parent.id == "frames") return node;
+		return find_group(parent);
+	}
+	function orig_save(e, attr, val) {
+		if (e.attributes["_orig_" + attr] != undefined) return;
+		if (e.attributes[attr] == undefined) return;
+		if (val == undefined) val = e.attributes[attr].value;
+		e.setAttribute("_orig_" + attr, val);
+	}
+	function orig_load(e, attr) {
+		if (e.attributes["_orig_"+attr] == undefined) return;
+		e.attributes[attr].value = e.attributes["_orig_" + attr].value;
+		e.removeAttribute("_orig_"+attr);
+	}
+	function g_to_text(e) {
+		var text = find_child(e, "title").firstChild.nodeValue;
+		return (text)
+	}
+	function g_to_func(e) {
+		var func = g_to_text(e);
+		// if there's any manipulation we want to do to the function
+		// name before it's searched, do it here before returning.
+		return (func);
+	}
+	function update_text(e) {
+		var r = find_child(e, "rect");
+		var t = find_child(e, "text");
+		var w = parseFloat(r.attributes.width.value) -3;
+		var txt = find_child(e, "title").textContent.replace(/\([^(]*\)$/,"");
+		t.attributes.x.value = parseFloat(r.attributes.x.value) + 3;
+
+		// Smaller than this size won't fit anything
+		if (w < 2 * 12 * 0.59) {
+			t.textContent = "";
+			return;
+		}
+
+		t.textContent = txt;
+		// Fit in full text width
+		if (/^ *$/.test(txt) || t.getSubStringLength(0, txt.length) < w)
+			return;
+
+		for (var x = txt.length - 2; x > 0; x--) {
+			if (t.getSubStringLength(0, x + 2) <= w) {
+				t.textContent = txt.substring(0, x) + "..";
+				return;
+			}
+		}
+		t.textContent = "";
+	}
+
+	// zoom
+	function zoom_reset(e) {
+		if (e.attributes != undefined) {
+			orig_load(e, "x");
+			orig_load(e, "width");
+		}
+		if (e.childNodes == undefined) return;
+		for (var i = 0, c = e.childNodes; i < c.length; i++) {
+			zoom_reset(c[i]);
+		}
+	}
+	function zoom_child(e, x, ratio) {
+		if (e.attributes != undefined) {
+			if (e.attributes.x != undefined) {
+				orig_save(e, "x");
+				e.attributes.x.value = (parseFloat(e.attributes.x.value) - x - 10) * ratio + 10;
+				if (e.tagName == "text")
+					e.attributes.x.value = find_child(e.parentNode, "rect[x]").attributes.x.value + 3;
+			}
+			if (e.attributes.width != undefined) {
+				orig_save(e, "width");
+				e.attributes.width.value = parseFloat(e.attributes.width.value) * ratio;
+			}
+		}
+
+		if (e.childNodes == undefined) return;
+		for (var i = 0, c = e.childNodes; i < c.length; i++) {
+			zoom_child(c[i], x - 10, ratio);
+		}
+	}
+	function zoom_parent(e) {
+		if (e.attributes) {
+			if (e.attributes.x != undefined) {
+				orig_save(e, "x");
+				e.attributes.x.value = 10;
+			}
+			if (e.attributes.width != undefined) {
+				orig_save(e, "width");
+				e.attributes.width.value = parseInt(svg.width.baseVal.value) - (10 * 2);
+			}
+		}
+		if (e.childNodes == undefined) return;
+		for (var i = 0, c = e.childNodes; i < c.length; i++) {
+			zoom_parent(c[i]);
+		}
+	}
+	function zoom(node) {
+		var attr = find_child(node, "rect").attributes;
+		var width = parseFloat(attr.width.value);
+		var xmin = parseFloat(attr.x.value);
+		var xmax = parseFloat(xmin + width);
+		var ymin = parseFloat(attr.y.value);
+		var ratio = (svg.width.baseVal.value - 2 * 10) / width;
+
+		// XXX: Workaround for JavaScript float issues (fix me)
+		var fudge = 0.0001;
+
+		unzoombtn.classList.remove("hide");
+
+		var el = document.getElementById("frames").children;
+		for (var i = 0; i < el.length; i++) {
+			var e = el[i];
+			var a = find_child(e, "rect").attributes;
+			var ex = parseFloat(a.x.value);
+			var ew = parseFloat(a.width.value);
+			var upstack;
+			// Is it an ancestor
+			if (0 == 0) {
+				upstack = parseFloat(a.y.value) > ymin;
+			} else {
+				upstack = parseFloat(a.y.value) < ymin;
+			}
+			if (upstack) {
+				// Direct ancestor
+				if (ex <= xmin && (ex+ew+fudge) >= xmax) {
+					e.classList.add("parent");
+					zoom_parent(e);
+					update_text(e);
+				}
+				// not in current path
+				else
+					e.classList.add("hide");
+			}
+			// Children maybe
+			else {
+				// no common path
+				if (ex < xmin || ex + fudge >= xmax) {
+					e.classList.add("hide");
+				}
+				else {
+					zoom_child(e, xmin, ratio);
+					update_text(e);
+				}
+			}
+		}
+		search();
+	}
+	function unzoom() {
+		unzoombtn.classList.add("hide");
+		var el = document.getElementById("frames").children;
+		for(var i = 0; i < el.length; i++) {
+			el[i].classList.remove("parent");
+			el[i].classList.remove("hide");
+			zoom_reset(el[i]);
+			update_text(el[i]);
+		}
+		search();
+	}
+
+	// search
+	function toggle_ignorecase() {
+		ignorecase = !ignorecase;
+		if (ignorecase) {
+			ignorecaseBtn.classList.add("show");
+		} else {
+			ignorecaseBtn.classList.remove("show");
+		}
+		reset_search();
+		search();
+	}
+	function reset_search() {
+		var el = document.querySelectorAll("#frames rect");
+		for (var i = 0; i < el.length; i++) {
+			orig_load(el[i], "fill")
+		}
+	}
+	function search_prompt() {
+		if (!searching) {
+			var term = prompt("Enter a search term (regexp " +
+			    "allowed, eg: ^ext4_)"
+			    + (ignorecase ? ", ignoring case" : "")
+			    + "\nPress Ctrl-i to toggle case sensitivity", "");
+			if (term != null) {
+				currentSearchTerm = term;
+				search();
+			}
+		} else {
+			reset_search();
+			searching = 0;
+			currentSearchTerm = null;
+			searchbtn.classList.remove("show");
+			searchbtn.firstChild.nodeValue = "Search"
+			matchedtxt.classList.add("hide");
+			matchedtxt.firstChild.nodeValue = ""
+		}
+	}
+	function search(term) {
+		if (currentSearchTerm === null) return;
+		var term = currentSearchTerm;
+
+		var re = new RegExp(term, ignorecase ? 'i' : '');
+		var el = document.getElementById("frames").children;
+		var matches = new Object();
+		var maxwidth = 0;
+		for (var i = 0; i < el.length; i++) {
+			var e = el[i];
+			var func = g_to_func(e);
+			var rect = find_child(e, "rect");
+			if (func == null || rect == null)
+				continue;
+
+			// Save max width. Only works as we have a root frame
+			var w = parseFloat(rect.attributes.width.value);
+			if (w > maxwidth)
+				maxwidth = w;
+
+			if (func.match(re)) {
+				// highlight
+				var x = parseFloat(rect.attributes.x.value);
+				orig_save(rect, "fill");
+				rect.attributes.fill.value = "rgb(230,0,230)";
+
+				// remember matches
+				if (matches[x] == undefined) {
+					matches[x] = w;
+				} else {
+					if (w > matches[x]) {
+						// overwrite with parent
+						matches[x] = w;
+					}
+				}
+				searching = 1;
+			}
+		}
+		if (!searching)
+			return;
+
+		searchbtn.classList.add("show");
+		searchbtn.firstChild.nodeValue = "Reset Search";
+
+		// calculate percent matched, excluding vertical overlap
+		var count = 0;
+		var lastx = -1;
+		var lastw = 0;
+		var keys = Array();
+		for (k in matches) {
+			if (matches.hasOwnProperty(k))
+				keys.push(k);
+		}
+		// sort the matched frames by their x location
+		// ascending, then width descending
+		keys.sort(function(a, b){
+			return a - b;
+		});
+		// Step through frames saving only the biggest bottom-up frames
+		// thanks to the sort order. This relies on the tree property
+		// where children are always smaller than their parents.
+		var fudge = 0.0001;	// JavaScript floating point
+		for (var k in keys) {
+			var x = parseFloat(keys[k]);
+			var w = matches[keys[k]];
+			if (x >= lastx + lastw - fudge) {
+				count += w;
+				lastx = x;
+				lastw = w;
+			}
+		}
+		// display matched percent
+		matchedtxt.classList.remove("hide");
+		var pct = 100 * count / maxwidth;
+		if (pct != 100) pct = pct.toFixed(1)
+		matchedtxt.firstChild.nodeValue = "Matched: " + pct + "%";
+	}
+]]>
+</script>
+<rect x="0.0" y="0" width="1200.0" height="326.0" fill="url(#background)"  />
+<text id="title" x="600.00" y="24" >Flame Graph</text>
+<text id="details" x="10.00" y="309" > </text>
+<text id="unzoom" x="10.00" y="24" class="hide">Reset Zoom</text>
+<text id="search" x="1090.00" y="24" >Search</text>
+<text id="ignorecase" x="1174.00" y="24" >ic</text>
+<text id="matched" x="1090.00" y="309" > </text>
+<g id="frames">
+<g >
+<title>./q.py:allreduce:165 (272 samples, 5.91%)</title><rect x="717.9" y="101" width="69.8" height="15.0" fill="rgb(233,157,5)" rx="2" ry="2" />
+<text  x="720.90" y="111.5" >./q.py:..</text>
+</g>
+<g >
+<title>/root/qsgd_env/lib/python3.5/site-packages/torch/distributed/distributed_c10d.py:init_process_group:412 (6 samples, 0.13%)</title><rect x="90.6" y="117" width="1.5" height="15.0" fill="rgb(212,58,14)" rx="2" ry="2" />
+<text  x="93.57" y="127.5" ></text>
+</g>
+<g >
+<title>/usr/lib/python3.5/urllib/parse.py:urlparse:295 (13 samples, 0.28%)</title><rect x="17.2" y="85" width="3.3" height="15.0" fill="rgb(219,171,37)" rx="2" ry="2" />
+<text  x="20.18" y="95.5" ></text>
+</g>
+<g >
+<title>./q.py:&lt;module&gt;:196 (4,599 samples, 100.00%)</title><rect x="10.0" y="261" width="1180.0" height="15.0" fill="rgb(212,120,26)" rx="2" ry="2" />
+<text  x="13.00" y="271.5" >./q.py:&lt;module&gt;:196</text>
+</g>
+<g >
+<title>/root/qsgd_env/lib/python3.5/site-packages/torch/distributed/rendezvous.py:_tcp_rendezvous_handler:83 (1 samples, 0.02%)</title><rect x="11.5" y="101" width="0.3" height="15.0" fill="rgb(215,198,20)" rx="2" ry="2" />
+<text  x="14.54" y="111.5" ></text>
+</g>
+<g >
+<title>/root/qsgd_env/lib/python3.5/site-packages/torch/distributed/distributed_c10d.py:_new_process_group_helper:479 (1 samples, 0.02%)</title><rect x="90.3" y="101" width="0.3" height="15.0" fill="rgb(206,73,25)" rx="2" ry="2" />
+<text  x="93.31" y="111.5" ></text>
+</g>
+<g >
+<title>/usr/lib/python3.5/urllib/parse.py:_hostinfo:183 (1 samples, 0.02%)</title><rect x="11.8" y="69" width="0.3" height="15.0" fill="rgb(216,223,41)" rx="2" ry="2" />
+<text  x="14.80" y="79.5" ></text>
+</g>
+<g >
+<title>/usr/lib/python3.5/urllib/parse.py:urlparse:294 (1 samples, 0.02%)</title><rect x="16.9" y="85" width="0.3" height="15.0" fill="rgb(251,57,48)" rx="2" ry="2" />
+<text  x="19.93" y="95.5" ></text>
+</g>
+<g >
+<title>./q.py:allreduce:173 (52 samples, 1.13%)</title><rect x="1067.1" y="101" width="13.3" height="15.0" fill="rgb(208,175,23)" rx="2" ry="2" />
+<text  x="1070.10" y="111.5" ></text>
+</g>
+<g >
+<title>/usr/lib/python3.5/urllib/parse.py:&lt;genexpr&gt;:322 (1 samples, 0.02%)</title><rect x="19.2" y="37" width="0.3" height="15.0" fill="rgb(247,151,8)" rx="2" ry="2" />
+<text  x="22.24" y="47.5" ></text>
+</g>
+<g >
+<title>/usr/lib/python3.5/multiprocessing/util.py:_run_finalizers:249 (1 samples, 0.02%)</title><rect x="1189.2" y="133" width="0.3" height="15.0" fill="rgb(227,210,39)" rx="2" ry="2" />
+<text  x="1192.23" y="143.5" ></text>
+</g>
+<g >
+<title>./q.py:init_processes:188 (318 samples, 6.91%)</title><rect x="10.5" y="133" width="81.6" height="15.0" fill="rgb(236,177,54)" rx="2" ry="2" />
+<text  x="13.51" y="143.5" >./q.py:in..</text>
+</g>
+<g >
+<title>./q.py:allreduce:162 (80 samples, 1.74%)</title><rect x="693.0" y="101" width="20.5" height="15.0" fill="rgb(224,169,42)" rx="2" ry="2" />
+<text  x="696.01" y="111.5" ></text>
+</g>
+<g >
+<title>/usr/lib/python3.5/multiprocessing/util.py:_exit_function:287 (1 samples, 0.02%)</title><rect x="1189.0" y="149" width="0.2" height="15.0" fill="rgb(234,125,2)" rx="2" ry="2" />
+<text  x="1191.97" y="159.5" ></text>
+</g>
+<g >
+<title>/root/qsgd_env/lib/python3.5/site-packages/torch/distributed/rendezvous.py:rendezvous:49 (1 samples, 0.02%)</title><rect x="20.8" y="101" width="0.2" height="15.0" fill="rgb(218,123,29)" rx="2" ry="2" />
+<text  x="23.78" y="111.5" ></text>
+</g>
+<g >
+<title>/root/qsgd_env/lib/python3.5/site-packages/torch/distributed/distributed_c10d.py:_check_single_tensor:213 (2 samples, 0.04%)</title><rect x="791.8" y="69" width="0.5" height="15.0" fill="rgb(210,165,14)" rx="2" ry="2" />
+<text  x="794.79" y="79.5" ></text>
+</g>
+<g >
+<title>/root/qsgd_env/lib/python3.5/site-packages/torch/distributed/distributed_c10d.py:new_group:1494 (1 samples, 0.02%)</title><rect x="92.6" y="101" width="0.3" height="15.0" fill="rgb(234,67,36)" rx="2" ry="2" />
+<text  x="95.62" y="111.5" ></text>
+</g>
+<g >
+<title>/root/qsgd_env/lib/python3.5/site-packages/torch/distributed/rendezvous.py:_tcp_rendezvous_handler:80 (1 samples, 0.02%)</title><rect x="11.3" y="101" width="0.2" height="15.0" fill="rgb(221,195,35)" rx="2" ry="2" />
+<text  x="14.28" y="111.5" ></text>
+</g>
+<g >
+<title>/usr/lib/python3.5/urllib/parse.py:urlparse:301 (1 samples, 0.02%)</title><rect x="20.5" y="85" width="0.3" height="15.0" fill="rgb(236,159,46)" rx="2" ry="2" />
+<text  x="23.52" y="95.5" ></text>
+</g>
+<g >
+<title>./q.py:allreduce:174 (421 samples, 9.15%)</title><rect x="1080.4" y="101" width="108.1" height="15.0" fill="rgb(219,209,14)" rx="2" ry="2" />
+<text  x="1083.44" y="111.5" >./q.py:allred..</text>
+</g>
+<g >
+<title>/usr/lib/python3.5/urllib/parse.py:_splitnetloc:319 (2 samples, 0.04%)</title><rect x="18.5" y="53" width="0.5" height="15.0" fill="rgb(211,93,30)" rx="2" ry="2" />
+<text  x="21.47" y="63.5" ></text>
+</g>
+<g >
+<title>./q.py:allreduce:159 (25 samples, 0.54%)</title><rect x="585.8" y="101" width="6.4" height="15.0" fill="rgb(231,17,9)" rx="2" ry="2" />
+<text  x="588.76" y="111.5" ></text>
+</g>
+<g >
+<title>/root/qsgd_env/lib/python3.5/site-packages/torch/distributed/distributed_c10d.py:init_process_group:401 (1 samples, 0.02%)</title><rect x="21.0" y="117" width="0.3" height="15.0" fill="rgb(239,67,33)" rx="2" ry="2" />
+<text  x="24.03" y="127.5" ></text>
+</g>
+<g >
+<title>/root/qsgd_env/lib/python3.5/site-packages/torch/distributed/rendezvous.py:rendezvous:46 (16 samples, 0.35%)</title><rect x="16.7" y="101" width="4.1" height="15.0" fill="rgb(253,219,35)" rx="2" ry="2" />
+<text  x="19.67" y="111.5" ></text>
+</g>
+<g >
+<title>/root/qsgd_env/lib/python3.5/site-packages/torch/distributed/distributed_c10d.py:__new__:69 (1 samples, 0.02%)</title><rect x="10.8" y="101" width="0.2" height="15.0" fill="rgb(218,161,37)" rx="2" ry="2" />
+<text  x="13.77" y="111.5" ></text>
+</g>
+<g >
+<title>&lt;string&gt;:__new__:14 (1 samples, 0.02%)</title><rect x="20.0" y="53" width="0.3" height="15.0" fill="rgb(240,82,27)" rx="2" ry="2" />
+<text  x="23.01" y="63.5" ></text>
+</g>
+<g >
+<title>/root/qsgd_env/lib/python3.5/site-packages/torch/distributed/rendezvous.py:_tcp_rendezvous_handler:95 (16 samples, 0.35%)</title><rect x="12.6" y="101" width="4.1" height="15.0" fill="rgb(213,147,13)" rx="2" ry="2" />
+<text  x="15.57" y="111.5" ></text>
+</g>
+<g >
+<title>/usr/lib/python3.5/multiprocessing/util.py:_exit_function:288 (1 samples, 0.02%)</title><rect x="1189.2" y="149" width="0.3" height="15.0" fill="rgb(208,16,28)" rx="2" ry="2" />
+<text  x="1192.23" y="159.5" ></text>
+</g>
+<g >
+<title>/usr/lib/python3.5/urllib/parse.py:_checknetloc:322 (2 samples, 0.04%)</title><rect x="19.0" y="53" width="0.5" height="15.0" fill="rgb(235,151,13)" rx="2" ry="2" />
+<text  x="21.98" y="63.5" ></text>
+</g>
+<g >
+<title>./q.py:allreduce:166 (108 samples, 2.35%)</title><rect x="787.7" y="101" width="27.7" height="15.0" fill="rgb(244,60,16)" rx="2" ry="2" />
+<text  x="790.69" y="111.5" >...</text>
+</g>
+<g >
+<title>/root/qsgd_env/lib/python3.5/site-packages/torch/distributed/distributed_c10d.py:_new_process_group_helper:478 (24 samples, 0.52%)</title><rect x="93.4" y="85" width="6.1" height="15.0" fill="rgb(213,224,8)" rx="2" ry="2" />
+<text  x="96.39" y="95.5" ></text>
+</g>
+<g >
+<title>./q.py:run:179 (4,241 samples, 92.22%)</title><rect x="100.3" y="117" width="1088.2" height="15.0" fill="rgb(214,228,34)" rx="2" ry="2" />
+<text  x="103.32" y="127.5" >./q.py:run:179</text>
+</g>
+<g >
+<title>/root/qsgd_env/lib/python3.5/site-packages/torch/distributed/distributed_c10d.py:_check_default_pg:191 (8 samples, 0.17%)</title><rect x="756.1" y="69" width="2.1" height="15.0" fill="rgb(233,78,4)" rx="2" ry="2" />
+<text  x="759.13" y="79.5" ></text>
+</g>
+<g >
+<title>./q.py:allreduce:167 (981 samples, 21.33%)</title><rect x="815.4" y="101" width="251.7" height="15.0" fill="rgb(246,21,12)" rx="2" ry="2" />
+<text  x="818.40" y="111.5" >./q.py:allreduce:167</text>
+</g>
+<g >
+<title>/root/qsgd_env/lib/python3.5/site-packages/torch/distributed/distributed_c10d.py:_rank_not_in_group:146 (5 samples, 0.11%)</title><rect x="351.2" y="69" width="1.3" height="15.0" fill="rgb(232,0,47)" rx="2" ry="2" />
+<text  x="354.25" y="79.5" ></text>
+</g>
+<g >
+<title>/root/qsgd_env/lib/python3.5/site-packages/torch/distributed/rendezvous.py:_tcp_rendezvous_handler:84 (2 samples, 0.04%)</title><rect x="11.8" y="101" width="0.5" height="15.0" fill="rgb(221,74,41)" rx="2" ry="2" />
+<text  x="14.80" y="111.5" ></text>
+</g>
+<g >
+<title>./q.py:allreduce:160 (6 samples, 0.13%)</title><rect x="592.2" y="101" width="1.5" height="15.0" fill="rgb(251,189,27)" rx="2" ry="2" />
+<text  x="595.17" y="111.5" ></text>
+</g>
+<g >
+<title>/usr/lib/python3.5/multiprocessing/process.py:_bootstrap:267 (1 samples, 0.02%)</title><rect x="1189.7" y="165" width="0.3" height="15.0" fill="rgb(240,199,0)" rx="2" ry="2" />
+<text  x="1192.74" y="175.5" ></text>
+</g>
+<g >
+<title>./q.py:allreduce:157 (591 samples, 12.85%)</title><rect x="434.1" y="101" width="151.7" height="15.0" fill="rgb(222,45,35)" rx="2" ry="2" />
+<text  x="437.12" y="111.5" >./q.py:allreduce:157</text>
+</g>
+<g >
+<title>/root/qsgd_env/lib/python3.5/site-packages/torch/distributed/distributed_c10d.py:isend:610 (20 samples, 0.43%)</title><rect x="746.4" y="85" width="5.1" height="15.0" fill="rgb(241,144,53)" rx="2" ry="2" />
+<text  x="749.38" y="95.5" ></text>
+</g>
+<g >
+<title>/root/qsgd_env/lib/python3.5/site-packages/torch/distributed/distributed_c10d.py:_rank_not_in_group:147 (2 samples, 0.04%)</title><rect x="750.5" y="69" width="0.5" height="15.0" fill="rgb(215,89,44)" rx="2" ry="2" />
+<text  x="753.48" y="79.5" ></text>
+</g>
+<g >
+<title>/root/qsgd_env/lib/python3.5/site-packages/torch/distributed/distributed_c10d.py:new_group:1500 (26 samples, 0.57%)</title><rect x="92.9" y="101" width="6.6" height="15.0" fill="rgb(211,190,12)" rx="2" ry="2" />
+<text  x="95.87" y="111.5" ></text>
+</g>
+<g >
+<title>/root/qsgd_env/lib/python3.5/site-packages/torch/distributed/rendezvous.py:_tcp_rendezvous_handler:86 (1 samples, 0.02%)</title><rect x="12.3" y="101" width="0.3" height="15.0" fill="rgb(237,229,35)" rx="2" ry="2" />
+<text  x="15.31" y="111.5" ></text>
+</g>
+<g >
+<title>/root/qsgd_env/lib/python3.5/site-packages/torch/distributed/distributed_c10d.py:_check_single_tensor:213 (32 samples, 0.70%)</title><rect x="737.7" y="69" width="8.2" height="15.0" fill="rgb(252,55,53)" rx="2" ry="2" />
+<text  x="740.65" y="79.5" ></text>
+</g>
+<g >
+<title>/usr/lib/python3.5/urllib/parse.py:urlsplit:395 (1 samples, 0.02%)</title><rect x="20.3" y="69" width="0.2" height="15.0" fill="rgb(224,126,54)" rx="2" ry="2" />
+<text  x="23.26" y="79.5" ></text>
+</g>
+<g >
+<title>/root/qsgd_env/lib/python3.5/site-packages/torch/distributed/distributed_c10d.py:get_rank:567 (1 samples, 0.02%)</title><rect x="354.3" y="85" width="0.3" height="15.0" fill="rgb(251,221,7)" rx="2" ry="2" />
+<text  x="357.33" y="95.5" ></text>
+</g>
+<g >
+<title>/root/qsgd_env/lib/python3.5/site-packages/torch/distributed/distributed_c10d.py:_get_group_size:202 (10 samples, 0.22%)</title><rect x="362.3" y="69" width="2.5" height="15.0" fill="rgb(235,139,14)" rx="2" ry="2" />
+<text  x="365.28" y="79.5" ></text>
+</g>
+<g >
+<title>/usr/lib/python3.5/multiprocessing/process.py:run:93 (4,591 samples, 99.83%)</title><rect x="10.5" y="149" width="1178.0" height="15.0" fill="rgb(207,15,31)" rx="2" ry="2" />
+<text  x="13.51" y="159.5" >/usr/lib/python3.5/multiprocessing/process.py:run:93</text>
+</g>
+<g >
+<title>/root/qsgd_env/lib/python3.5/site-packages/torch/distributed/distributed_c10d.py:init_process_group:378 (1 samples, 0.02%)</title><rect x="10.8" y="117" width="0.2" height="15.0" fill="rgb(251,208,54)" rx="2" ry="2" />
+<text  x="13.77" y="127.5" ></text>
+</g>
+<g >
+<title>/root/qsgd_env/lib/python3.5/site-packages/torch/distributed/distributed_c10d.py:__new__:67 (1 samples, 0.02%)</title><rect x="92.6" y="85" width="0.3" height="15.0" fill="rgb(252,166,30)" rx="2" ry="2" />
+<text  x="95.62" y="95.5" ></text>
+</g>
+<g >
+<title>./q.py:allreduce:152 (58 samples, 1.26%)</title><rect x="346.4" y="101" width="14.9" height="15.0" fill="rgb(210,82,51)" rx="2" ry="2" />
+<text  x="349.37" y="111.5" ></text>
+</g>
+<g >
+<title>./q.py:allreduce:156 (102 samples, 2.22%)</title><rect x="408.0" y="101" width="26.1" height="15.0" fill="rgb(235,15,3)" rx="2" ry="2" />
+<text  x="410.95" y="111.5" >...</text>
+</g>
+<g >
+<title>/usr/lib/python3.5/urllib/parse.py:_hostinfo:183 (1 samples, 0.02%)</title><rect x="16.4" y="69" width="0.3" height="15.0" fill="rgb(211,70,36)" rx="2" ry="2" />
+<text  x="19.41" y="79.5" ></text>
+</g>
+<g >
+<title>./q.py:allreduce:150 (17 samples, 0.37%)</title><rect x="342.0" y="101" width="4.4" height="15.0" fill="rgb(211,204,49)" rx="2" ry="2" />
+<text  x="345.01" y="111.5" ></text>
+</g>
+<g >
+<title>/usr/lib/python3.5/urllib/parse.py:urlsplit:348 (1 samples, 0.02%)</title><rect x="17.4" y="69" width="0.3" height="15.0" fill="rgb(206,48,4)" rx="2" ry="2" />
+<text  x="20.44" y="79.5" ></text>
+</g>
+<g >
+<title>/root/qsgd_env/lib/python3.5/site-packages/torch/distributed/distributed_c10d.py:isend:609 (65 samples, 1.41%)</title><rect x="729.7" y="85" width="16.7" height="15.0" fill="rgb(240,204,36)" rx="2" ry="2" />
+<text  x="732.70" y="95.5" ></text>
+</g>
+<g >
+<title>/root/qsgd_env/lib/python3.5/site-packages/torch/distributed/distributed_c10d.py:init_process_group:400 (39 samples, 0.85%)</title><rect x="11.0" y="117" width="10.0" height="15.0" fill="rgb(215,172,1)" rx="2" ry="2" />
+<text  x="14.03" y="127.5" ></text>
+</g>
+<g >
+<title>/root/qsgd_env/lib/python3.5/site-packages/torch/distributed/distributed_c10d.py:_new_process_group_helper:471 (2 samples, 0.04%)</title><rect x="22.1" y="101" width="0.5" height="15.0" fill="rgb(205,134,12)" rx="2" ry="2" />
+<text  x="25.06" y="111.5" ></text>
+</g>
+<g >
+<title>./q.py:allreduce:153 (14 samples, 0.30%)</title><rect x="361.3" y="101" width="3.5" height="15.0" fill="rgb(239,76,18)" rx="2" ry="2" />
+<text  x="364.25" y="111.5" ></text>
+</g>
+<g >
+<title>/usr/lib/python3.5/urllib/parse.py:urlsplit:384 (2 samples, 0.04%)</title><rect x="18.5" y="69" width="0.5" height="15.0" fill="rgb(250,198,29)" rx="2" ry="2" />
+<text  x="21.47" y="79.5" ></text>
+</g>
+<g >
+<title>/usr/lib/python3.5/urllib/parse.py:_coerce_args:106 (1 samples, 0.02%)</title><rect x="16.9" y="69" width="0.3" height="15.0" fill="rgb(212,62,39)" rx="2" ry="2" />
+<text  x="19.93" y="79.5" ></text>
+</g>
+<g >
+<title>/root/qsgd_env/lib/python3.5/site-packages/torch/distributed/distributed_c10d.py:init_process_group:410 (270 samples, 5.87%)</title><rect x="21.3" y="117" width="69.3" height="15.0" fill="rgb(214,213,11)" rx="2" ry="2" />
+<text  x="24.29" y="127.5" >/root/q..</text>
+</g>
+<g >
+<title>/usr/lib/python3.5/multiprocessing/util.py:_exit_function:314 (1 samples, 0.02%)</title><rect x="1189.5" y="149" width="0.2" height="15.0" fill="rgb(254,115,38)" rx="2" ry="2" />
+<text  x="1192.49" y="159.5" ></text>
+</g>
+<g >
+<title>/root/qsgd_env/lib/python3.5/site-packages/torch/distributed/distributed_c10d.py:get_rank:566 (7 samples, 0.15%)</title><rect x="352.5" y="85" width="1.8" height="15.0" fill="rgb(211,97,54)" rx="2" ry="2" />
+<text  x="355.53" y="95.5" ></text>
+</g>
+<g >
+<title>/root/qsgd_env/lib/python3.5/site-packages/torch/distributed/distributed_c10d.py:get_world_size:585 (1 samples, 0.02%)</title><rect x="361.3" y="85" width="0.2" height="15.0" fill="rgb(253,164,6)" rx="2" ry="2" />
+<text  x="364.25" y="95.5" ></text>
+</g>
+<g >
+<title>/root/qsgd_env/lib/python3.5/site-packages/torch/distributed/distributed_c10d.py:get_world_size:588 (13 samples, 0.28%)</title><rect x="361.5" y="85" width="3.3" height="15.0" fill="rgb(207,169,22)" rx="2" ry="2" />
+<text  x="364.51" y="95.5" ></text>
+</g>
+<g >
+<title>/usr/lib/python3.5/multiprocessing/popen_fork.py:_launch:74 (4,599 samples, 100.00%)</title><rect x="10.0" y="181" width="1180.0" height="15.0" fill="rgb(220,183,45)" rx="2" ry="2" />
+<text  x="13.00" y="191.5" >/usr/lib/python3.5/multiprocessing/popen_fork.py:_launch:74</text>
+</g>
+<g >
+<title>/root/qsgd_env/lib/python3.5/site-packages/torch/distributed/distributed_c10d.py:isend:613 (5 samples, 0.11%)</title><rect x="751.5" y="85" width="1.3" height="15.0" fill="rgb(219,89,26)" rx="2" ry="2" />
+<text  x="754.51" y="95.5" ></text>
+</g>
+<g >
+<title>/root/qsgd_env/lib/python3.5/site-packages/torch/distributed/distributed_c10d.py:_rank_not_in_group:146 (9 samples, 0.20%)</title><rect x="748.2" y="69" width="2.3" height="15.0" fill="rgb(251,91,32)" rx="2" ry="2" />
+<text  x="751.17" y="79.5" ></text>
+</g>
+<g >
+<title>/root/qsgd_env/lib/python3.5/site-packages/torch/distributed/distributed_c10d.py:recv:696 (5 samples, 0.11%)</title><rect x="791.0" y="85" width="1.3" height="15.0" fill="rgb(227,16,24)" rx="2" ry="2" />
+<text  x="794.02" y="95.5" ></text>
+</g>
+<g >
+<title>/usr/lib/python3.5/urllib/parse.py:urlsplit:354 (1 samples, 0.02%)</title><rect x="17.7" y="69" width="0.3" height="15.0" fill="rgb(216,21,25)" rx="2" ry="2" />
+<text  x="20.70" y="79.5" ></text>
+</g>
+<g >
+<title>/usr/lib/python3.5/multiprocessing/process.py:_bootstrap:249 (4,592 samples, 99.85%)</title><rect x="10.3" y="165" width="1178.2" height="15.0" fill="rgb(220,224,51)" rx="2" ry="2" />
+<text  x="13.26" y="175.5" >/usr/lib/python3.5/multiprocessing/process.py:_bootstrap:249</text>
+</g>
+<g >
+<title>/root/qsgd_env/lib/python3.5/site-packages/torch/distributed/distributed_c10d.py:_check_single_tensor:215 (2 samples, 0.04%)</title><rect x="745.9" y="69" width="0.5" height="15.0" fill="rgb(237,93,38)" rx="2" ry="2" />
+<text  x="748.86" y="79.5" ></text>
+</g>
+<g >
+<title>/usr/lib/python3.5/urllib/parse.py:urlsplit:392 (2 samples, 0.04%)</title><rect x="19.0" y="69" width="0.5" height="15.0" fill="rgb(205,220,22)" rx="2" ry="2" />
+<text  x="21.98" y="79.5" ></text>
+</g>
+<g >
+<title>all (4,599 samples, 100%)</title><rect x="10.0" y="277" width="1180.0" height="15.0" fill="rgb(231,211,19)" rx="2" ry="2" />
+<text  x="13.00" y="287.5" ></text>
+</g>
+<g >
+<title>/usr/lib/python3.5/multiprocessing/process.py:_bootstrap:252 (5 samples, 0.11%)</title><rect x="1188.5" y="165" width="1.2" height="15.0" fill="rgb(233,67,34)" rx="2" ry="2" />
+<text  x="1191.46" y="175.5" ></text>
+</g>
+<g >
+<title>/usr/lib/python3.5/multiprocessing/util.py:_run_finalizers:249 (1 samples, 0.02%)</title><rect x="1189.5" y="133" width="0.2" height="15.0" fill="rgb(210,137,43)" rx="2" ry="2" />
+<text  x="1192.49" y="143.5" ></text>
+</g>
+<g >
+<title>/root/qsgd_env/lib/python3.5/site-packages/torch/distributed/distributed_c10d.py:_new_process_group_helper:478 (264 samples, 5.74%)</title><rect x="22.6" y="101" width="67.7" height="15.0" fill="rgb(243,57,13)" rx="2" ry="2" />
+<text  x="25.57" y="111.5" >/root/q..</text>
+</g>
+<g >
+<title>/root/qsgd_env/lib/python3.5/site-packages/torch/distributed/distributed_c10d.py:_check_default_pg:192 (1 samples, 0.02%)</title><rect x="354.1" y="69" width="0.2" height="15.0" fill="rgb(205,117,45)" rx="2" ry="2" />
+<text  x="357.07" y="79.5" ></text>
+</g>
+<g >
+<title>/root/qsgd_env/lib/python3.5/site-packages/torch/distributed/distributed_c10d.py:isend:615 (114 samples, 2.48%)</title><rect x="758.4" y="85" width="29.3" height="15.0" fill="rgb(223,37,31)" rx="2" ry="2" />
+<text  x="761.44" y="95.5" >/r..</text>
+</g>
+<g >
+<title>/usr/lib/python3.5/urllib/parse.py:port:160 (1 samples, 0.02%)</title><rect x="12.1" y="85" width="0.2" height="15.0" fill="rgb(214,116,17)" rx="2" ry="2" />
+<text  x="15.05" y="95.5" ></text>
+</g>
+<g >
+<title>/usr/lib/python3.5/multiprocessing/context.py:_Popen:212 (4,599 samples, 100.00%)</title><rect x="10.0" y="229" width="1180.0" height="15.0" fill="rgb(222,97,25)" rx="2" ry="2" />
+<text  x="13.00" y="239.5" >/usr/lib/python3.5/multiprocessing/context.py:_Popen:212</text>
+</g>
+<g >
+<title>/usr/lib/python3.5/multiprocessing/util.py:_exit_function:283 (1 samples, 0.02%)</title><rect x="1188.7" y="149" width="0.3" height="15.0" fill="rgb(216,48,5)" rx="2" ry="2" />
+<text  x="1191.72" y="159.5" ></text>
+</g>
+<g >
+<title>./q.py:allreduce:163 (17 samples, 0.37%)</title><rect x="713.5" y="101" width="4.4" height="15.0" fill="rgb(208,49,20)" rx="2" ry="2" />
+<text  x="716.54" y="111.5" ></text>
+</g>
+<g >
+<title>/usr/lib/python3.5/urllib/parse.py:port:156 (1 samples, 0.02%)</title><rect x="11.8" y="85" width="0.3" height="15.0" fill="rgb(245,122,15)" rx="2" ry="2" />
+<text  x="14.80" y="95.5" ></text>
+</g>
+<g >
+<title>/usr/lib/python3.5/urllib/parse.py:urlsplit:379 (2 samples, 0.04%)</title><rect x="18.0" y="69" width="0.5" height="15.0" fill="rgb(242,53,16)" rx="2" ry="2" />
+<text  x="20.95" y="79.5" ></text>
+</g>
+<g >
+<title>&lt;string&gt;:__new__:14 (1 samples, 0.02%)</title><rect x="20.5" y="69" width="0.3" height="15.0" fill="rgb(230,150,1)" rx="2" ry="2" />
+<text  x="23.52" y="79.5" ></text>
+</g>
+<g >
+<title>/root/qsgd_env/lib/python3.5/site-packages/torch/distributed/distributed_c10d.py:new_group:1464 (1 samples, 0.02%)</title><rect x="92.4" y="101" width="0.2" height="15.0" fill="rgb(205,219,8)" rx="2" ry="2" />
+<text  x="95.36" y="111.5" ></text>
+</g>
+<g >
+<title>/usr/lib/python3.5/multiprocessing/context.py:_Popen:267 (4,599 samples, 100.00%)</title><rect x="10.0" y="213" width="1180.0" height="15.0" fill="rgb(234,140,34)" rx="2" ry="2" />
+<text  x="13.00" y="223.5" >/usr/lib/python3.5/multiprocessing/context.py:_Popen:267</text>
+</g>
+<g >
+<title>/root/qsgd_env/lib/python3.5/site-packages/torch/distributed/distributed_c10d.py:_check_default_pg:192 (1 samples, 0.02%)</title><rect x="758.2" y="69" width="0.2" height="15.0" fill="rgb(247,77,22)" rx="2" ry="2" />
+<text  x="761.18" y="79.5" ></text>
+</g>
+<g >
+<title>/usr/lib/python3.5/urllib/parse.py:urlparse:301 (1 samples, 0.02%)</title><rect x="11.5" y="85" width="0.3" height="15.0" fill="rgb(234,115,51)" rx="2" ry="2" />
+<text  x="14.54" y="95.5" ></text>
+</g>
+<g >
+<title>/root/qsgd_env/lib/python3.5/site-packages/torch/distributed/distributed_c10d.py:_new_process_group_helper:471 (2 samples, 0.04%)</title><rect x="92.9" y="85" width="0.5" height="15.0" fill="rgb(219,209,13)" rx="2" ry="2" />
+<text  x="95.87" y="95.5" ></text>
+</g>
+<g >
+<title>/root/qsgd_env/lib/python3.5/site-packages/torch/distributed/distributed_c10d.py:get_rank:568 (26 samples, 0.57%)</title><rect x="354.6" y="85" width="6.7" height="15.0" fill="rgb(209,33,19)" rx="2" ry="2" />
+<text  x="357.58" y="95.5" ></text>
+</g>
+<g >
+<title>./q.py:allreduce:154 (83 samples, 1.80%)</title><rect x="364.8" y="101" width="21.3" height="15.0" fill="rgb(243,141,12)" rx="2" ry="2" />
+<text  x="367.85" y="111.5" >...</text>
+</g>
+<g >
+<title>/root/qsgd_env/lib/python3.5/site-packages/torch/distributed/distributed_c10d.py:get_rank:563 (10 samples, 0.22%)</title><rect x="350.0" y="85" width="2.5" height="15.0" fill="rgb(219,118,3)" rx="2" ry="2" />
+<text  x="352.97" y="95.5" ></text>
+</g>
+<g >
+<title>./q.py:allreduce:161 (387 samples, 8.41%)</title><rect x="593.7" y="101" width="99.3" height="15.0" fill="rgb(208,41,50)" rx="2" ry="2" />
+<text  x="596.71" y="111.5" >./q.py:allre..</text>
+</g>
+<g >
+<title>/root/qsgd_env/lib/python3.5/site-packages/torch/distributed/distributed_c10d.py:isend:614 (22 samples, 0.48%)</title><rect x="752.8" y="85" width="5.6" height="15.0" fill="rgb(228,116,11)" rx="2" ry="2" />
+<text  x="755.79" y="95.5" ></text>
+</g>
+<g >
+<title>/usr/lib/python3.5/urllib/parse.py:urlsplit:393 (3 samples, 0.07%)</title><rect x="19.5" y="69" width="0.8" height="15.0" fill="rgb(247,118,26)" rx="2" ry="2" />
+<text  x="22.49" y="79.5" ></text>
+</g>
+<g >
+<title>/root/qsgd_env/lib/python3.5/site-packages/torch/distributed/distributed_c10d.py:recv:701 (2 samples, 0.04%)</title><rect x="792.3" y="85" width="0.5" height="15.0" fill="rgb(216,182,19)" rx="2" ry="2" />
+<text  x="795.30" y="95.5" ></text>
+</g>
+<g >
+<title>/usr/lib/python3.5/multiprocessing/process.py:start:105 (4,599 samples, 100.00%)</title><rect x="10.0" y="245" width="1180.0" height="15.0" fill="rgb(246,72,16)" rx="2" ry="2" />
+<text  x="13.00" y="255.5" >/usr/lib/python3.5/multiprocessing/process.py:start:105</text>
+</g>
+<g >
+<title>/usr/lib/python3.5/multiprocessing/popen_fork.py:__init__:20 (4,599 samples, 100.00%)</title><rect x="10.0" y="197" width="1180.0" height="15.0" fill="rgb(232,10,34)" rx="2" ry="2" />
+<text  x="13.00" y="207.5" >/usr/lib/python3.5/multiprocessing/popen_fork.py:__init__:20</text>
+</g>
+<g >
+<title>/root/qsgd_env/lib/python3.5/site-packages/torch/distributed/distributed_c10d.py:recv:720 (2 samples, 0.04%)</title><rect x="814.9" y="85" width="0.5" height="15.0" fill="rgb(232,86,16)" rx="2" ry="2" />
+<text  x="817.88" y="95.5" ></text>
+</g>
+<g >
+<title>./q.py:run:177 (29 samples, 0.63%)</title><rect x="92.1" y="117" width="7.4" height="15.0" fill="rgb(216,86,46)" rx="2" ry="2" />
+<text  x="95.10" y="127.5" ></text>
+</g>
+<g >
+<title>/root/qsgd_env/lib/python3.5/site-packages/torch/distributed/distributed_c10d.py:_check_default_pg:191 (1 samples, 0.02%)</title><rect x="353.8" y="69" width="0.3" height="15.0" fill="rgb(206,111,11)" rx="2" ry="2" />
+<text  x="356.81" y="79.5" ></text>
+</g>
+<g >
+<title>/root/qsgd_env/lib/python3.5/site-packages/torch/distributed/distributed_c10d.py:recv:716 (86 samples, 1.87%)</title><rect x="792.8" y="85" width="22.1" height="15.0" fill="rgb(219,115,1)" rx="2" ry="2" />
+<text  x="795.82" y="95.5" >/..</text>
+</g>
+<g >
+<title>/usr/lib/python3.5/urllib/parse.py:hostname:147 (1 samples, 0.02%)</title><rect x="16.4" y="85" width="0.3" height="15.0" fill="rgb(222,50,12)" rx="2" ry="2" />
+<text  x="19.41" y="95.5" ></text>
+</g>
+<g >
+<title>./q.py:init_processes:190 (4,273 samples, 92.91%)</title><rect x="92.1" y="133" width="1096.4" height="15.0" fill="rgb(252,105,32)" rx="2" ry="2" />
+<text  x="95.10" y="143.5" >./q.py:init_processes:190</text>
+</g>
+<g >
+<title>/root/qsgd_env/lib/python3.5/site-packages/torch/distributed/distributed_c10d.py:_get_group_size:200 (2 samples, 0.04%)</title><rect x="361.8" y="69" width="0.5" height="15.0" fill="rgb(245,136,52)" rx="2" ry="2" />
+<text  x="364.77" y="79.5" ></text>
+</g>
+<g >
+<title>./q.py:allreduce:155 (85 samples, 1.85%)</title><rect x="386.1" y="101" width="21.9" height="15.0" fill="rgb(239,195,21)" rx="2" ry="2" />
+<text  x="389.14" y="111.5" >...</text>
+</g>
+<g >
+<title>/root/qsgd_env/lib/python3.5/site-packages/torch/distributed/distributed_c10d.py:_rank_not_in_group:148 (2 samples, 0.04%)</title><rect x="751.0" y="69" width="0.5" height="15.0" fill="rgb(221,185,7)" rx="2" ry="2" />
+<text  x="754.00" y="79.5" ></text>
+</g>
+<g >
+<title>./q.py:run:178 (3 samples, 0.07%)</title><rect x="99.5" y="117" width="0.8" height="15.0" fill="rgb(243,188,46)" rx="2" ry="2" />
+<text  x="102.55" y="127.5" ></text>
+</g>
+</g>
+</svg>
