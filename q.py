@@ -9,8 +9,8 @@ import numpy as np
 import sys
 import time
 dataSz = 32
-tensor = torch.zeros(2**10)
-epochs = 10000
+tensor = torch.zeros(2**6)
+epochs = 2
 #targets = torch.from_numpy(targets)
 def quantize(tensor):
     N = list(tensor.size())[0]
@@ -68,10 +68,8 @@ def unquantize_shrink(tensor):
 """
 GPU i is responsible for chunk i
 """
-def ms_allreduceWith(quantize, unquantize):
-    return lambda tensor: ms_allreduce_q(tensor, quantize, unquantize)
 
-def ms_allreduce_q(tensor, quantize=quantize, unquantize=unquantize):
+def ms_allreduce(tensor, quantize=quantize_vector, unquantize=unquantize_vector):
     r = dist.get_rank()
     arraySize=list(tensor.size())[0]
     acc = torch.zeros(arraySize)
@@ -80,14 +78,16 @@ def ms_allreduce_q(tensor, quantize=quantize, unquantize=unquantize):
     acc[r*chunksize:(r+1)*chunksize] = tensor[r*chunksize:(r+1)*chunksize]
     reqs = []
     #"Naive all-reduce"
+    #i = 0
+    #print('actual: {} vs. expected: {}'.format(torch.zeros(int(arraySize / (chunksize * dataSz))).size(), quantize(tensor[i*chunksize:(i+1)*chunksize]).size()))
     for i in range(dist.get_world_size()): # K steps
         if i != r:
             reqs += [dist.isend(tensor=quantize(tensor[i*chunksize:(i+1)*chunksize]), dst=i)] # K concurrent transfers
     for i in range(dist.get_world_size()): # K steps
         if i != r:
-            recv = torch.zeros(arraySize, dtype=bool)
-            dist.recv(tensor=recv[r*chunksize:(r+1)*chunksize],src=i) # K / ??? values...
-            acc += unquantize(recv)
+            recv = torch.zeros(chunksize)
+            dist.recv(tensor=recv,src=i) # K / ??? values...
+            acc[r*chunksize:(r+1)*chunksize] += unquantize(recv)
     for req in reqs:
         req.wait()
     reqs = []
@@ -98,45 +98,13 @@ def ms_allreduce_q(tensor, quantize=quantize, unquantize=unquantize):
     #"Naive all-gather"
     for i in range(dist.get_world_size()):
         if i != r:
-            recv = torch.zeros(arraySize, dtype=bool)
-            dist.recv(tensor=recv[i*chunksize:(i+1)*chunksize], src=i)
-            acc[i*chunksize:(i+1)*chunksize] += unquantize(recv[i*chunksize:(i+1)*chunksize])
+            recv = torch.zeros(chunksize)
+            dist.recv(tensor=recv, src=i)
+            acc[i*chunksize:(i+1)*chunksize] += unquantize(recv)
     for req in reqs:
         req.wait()
     tensor[:] = acc[:]
-def ms_allreduce(tensor):
-    r = dist.get_rank()
-    arraySize=list(tensor.size())[0]
-    acc = torch.zeros(arraySize)
-    chunksize = arraySize // dist.get_world_size()
-    assert chunksize % dataSz == 0
-    acc[r*chunksize:(r+1)*chunksize] = tensor[r*chunksize:(r+1)*chunksize]
-    reqs = []
-    #"Naive all-reduce"
-    for i in range(dist.get_world_size()): # K steps
-        if i != r:
-            reqs += [dist.isend(tensor=(tensor[i*chunksize:(i+1)*chunksize]), dst=i)] # K concurrent transfers
-    for i in range(dist.get_world_size()): # K steps
-        if i != r:
-            recv = torch.zeros(arraySize, dtype=bool)
-            dist.recv(tensor=recv[r*chunksize:(r+1)*chunksize],src=i) # K / ??? values...
-            acc += (recv)
-    for req in reqs:
-        req.wait()
-    reqs = []
-    #"Naive all-gather"
-    for i in range(dist.get_world_size()):
-        if i != r:
-            reqs += [dist.isend(tensor=(acc[r*chunksize:(r+1)*chunksize]),dst=i)]
-    #"Naive all-gather"
-    for i in range(dist.get_world_size()):
-        if i != r:
-            recv = torch.zeros(arraySize, dtype=bool)
-            dist.recv(tensor=recv[i*chunksize:(i+1)*chunksize], src=i)
-            acc[i*chunksize:(i+1)*chunksize] += (recv[i*chunksize:(i+1)*chunksize])
-    for req in reqs:
-        req.wait()
-    tensor[:] = acc[:]
+
 
 
 """ Implementation of a ring-reduce with addition. """
@@ -168,15 +136,9 @@ def allreduce(tensor):
     recv[:] = accum[:]
 
 def run(rank, size):
-    fn = {
-        "Ring": allreduce,
-        "SaturatedRing": ms_allreduce,
-        "QuantizedRingNp": ms_allreduceWith(quantize_vector, unquantize_vector),
-        "QuantizedRingNat": ms_allreduceWith(quantize_shrink, unquantize_shrink) 
-    }[sys.argv[2]]
     group = dist.new_group(list(range(size)))
     for i in range(epochs):
-        fn(tensor)
+        ms_allreduce(tensor)
 
 def init_processes(rank, size, fn, backend='gloo'):
     """ Initialize the distributed environment. """
@@ -186,23 +148,14 @@ def init_processes(rank, size, fn, backend='gloo'):
     os.environ['GLOO_SOCKET_IFNAME'] = 'ens786f0'
     time.sleep(10)# to hide the rendez-vous from profiling 
     dist.init_process_group(backend, rank=rank, world_size=size, init_method='tcp://{}:23456'.format(ip))
+
     fn(rank, size)
 
 #https://stackoverflow.com/questions/54361763/pytorch-why-is-the-memory-occupied-by-the-tensor-variable-so-small
 if __name__ == "__main__":
-    """t = torch.ones(2**5)
-    q1 = quantize_vector(t)
-    q2 = quantize_shrink(t)
-    print('shrink', unquantize_shrink(q2))
-    print('vector', unquantize_vector(q1))
-    print('t_size=', list(t.size())[0])
-    print('q1_size=', list(q1.size())[0])
-    print('q2_size=', list(q2.size())[0])
-    #print(np.dtype(t.dtype).itemsize)
-    print('Original: ', sys.getsizeof(t.storage()))
-    print('Vector: ',sys.getsizeof(q1.storage()))
-    print('Int: ',sys.getsizeof(q2.storage()))"""
+    
     p = Process(target=init_processes, args=(int(sys.argv[1]), 2, run))
     p.start()
     print(p.pid)
     p.join()
+
