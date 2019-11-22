@@ -83,9 +83,10 @@ def ms_allreduce(tensor, quantize=quantize_vector, unquantize=unquantize_vector)
     for i in range(dist.get_world_size()): # K steps
         if i != r:
             reqs += [dist.isend(tensor=quantize(tensor[i*chunksize:(i+1)*chunksize]), dst=i)] # K concurrent transfers
+    
+    recv = torch.zeros(chunksize)
     for i in range(dist.get_world_size()): # K steps
         if i != r:
-            recv = torch.zeros(chunksize)
             dist.recv(tensor=recv,src=i) # K / ??? values...
             acc[r*chunksize:(r+1)*chunksize] += unquantize(recv)
     for req in reqs:
@@ -98,7 +99,6 @@ def ms_allreduce(tensor, quantize=quantize_vector, unquantize=unquantize_vector)
     #"Naive all-gather"
     for i in range(dist.get_world_size()):
         if i != r:
-            recv = torch.zeros(chunksize)
             dist.recv(tensor=recv, src=i)
             acc[i*chunksize:(i+1)*chunksize] += unquantize(recv)
     for req in reqs:
