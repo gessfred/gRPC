@@ -9,8 +9,8 @@ import numpy as np
 import sys
 import time
 dataSz = 32
-tensor = torch.zeros(2**6)
-epochs = 2
+tensor = torch.zeros(2**10)
+epochs = 1000
 #targets = torch.from_numpy(targets)
 def quantize(tensor):
     N = list(tensor.size())[0]
@@ -69,7 +69,7 @@ def unquantize_shrink(tensor):
 GPU i is responsible for chunk i
 """
 
-def ms_allreduce(tensor, quantize=quantize_shrink, unquantize=unquantize_shrink):
+def ms_allreduce(tensor, quantize=quantize_vector, unquantize=unquantize_vector):
     r = dist.get_rank()
     arraySize=list(tensor.size())[0]
     acc = torch.zeros(arraySize)
@@ -176,7 +176,7 @@ def allreduce(tensor):
 def run(rank, size):
     group = dist.new_group(list(range(size)))
     for i in range(epochs):
-        ms_allreduce_un(tensor)
+        ms_allreduce(tensor)
 
 def init_processes(rank, size, fn, backend='gloo'):
     """ Initialize the distributed environment. """
