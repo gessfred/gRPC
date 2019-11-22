@@ -85,7 +85,7 @@ def ms_allreduce(tensor, quantize=quantize_vector, unquantize=unquantize_vector)
         if i != r:
             reqs += [dist.isend(tensor=quantize(tensor[i*chunksize:(i+1)*chunksize]), dst=i)] # K concurrent transfers
     
-    recv = torch.zeros(arraySize // (dataSz * dist.get_world_))
+    recv = torch.zeros(arraySize // (dataSz * world))
     for i in range(world): # K steps
         if i != r:
             dist.recv(tensor=recv,src=i) # K / ??? values...
