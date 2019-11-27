@@ -30,15 +30,19 @@ def quantize_vector(tensor):
 
 def unquantize_vector(tensor):
     unpacked = np.unpackbits(tensor.numpy().view(np.uint8))
+    print(tensor.numpy().view(np.uint8))
     #tensor[...] = 1 stays 1
-    unpacked[unpacked == 0] = -1
+    
+    #unpacked = unpacked.astype(int)
+    #unpacked[unpacked == 0] = -1
     return torch.from_numpy(unpacked).type(torch.float64)
+
 def quantize_shrink(tensor):
     N = list(tensor.size())[0]
     print(N)
     #assert N % dataSz == 0
     N2 = N // dataSz
-    res = torch.zeros(N2, dtype=int) 
+    res = torch.zeros(N2, dtype=torch.int32) 
     for i in range(N2):
         x = 0
         for j in range(dataSz):
@@ -49,6 +53,8 @@ def quantize_shrink(tensor):
             else:
                 z = 0
             x = x | z
+        if x > 2147483647:
+            x -= 2 ** 32
         res[i] = x
     return res
 
