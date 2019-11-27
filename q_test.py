@@ -6,7 +6,7 @@ from q import unquantize_shrink as q1_
 from q import quantize_vector as vq1
 from q import unquantize_vector as vq1_
 
-tensor = torch.rand(2**5) - 0.5
+tensor = torch.rand(2**12) - 0.5
 #tensor = torch.ones(2**5)
 
 print(tensor)
