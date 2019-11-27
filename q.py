@@ -30,11 +30,8 @@ def quantize_vector(tensor):
 
 def unquantize_vector(tensor):
     unpacked = np.unpackbits(tensor.numpy().view(np.uint8))
-    print(tensor.numpy().view(np.uint8))
     #tensor[...] = 1 stays 1
-    
-    #unpacked = unpacked.astype(int)
-    #unpacked[unpacked == 0] = -1
+    unpacked[unpacked == 0] = -1
     return torch.from_numpy(unpacked).type(torch.float64)
 
 def quantize_shrink(tensor):
