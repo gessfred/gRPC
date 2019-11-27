@@ -29,8 +29,10 @@ def quantize_vector(tensor):
     return torch.from_numpy(packed.view(np.int32))
 
 def unquantize_vector(tensor):
-    unpacked = np.unpackbits(tensor.numpy().view(np.uint8))
+    unpacked = np.unpackbits(np.flip(tensor.numpy().view('uint8')))
     #tensor[...] = 1 stays 1
+    
+    unpacked = unpacked.astype(int)
     unpacked[unpacked == 0] = -1
     return torch.from_numpy(unpacked).type(torch.float64)
 
