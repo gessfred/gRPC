@@ -22,8 +22,8 @@ for i in range(100):
 for i in range(100):
     q1_t = vq1(tensor)
 
-#for i in range(100):
-vq_1 = vq1_(q1_t)
+for i in range(100):
+    vq_1 = vq1_(q1_t)
 
 # c
 for i in range(100):
@@ -31,14 +31,6 @@ for i in range(100):
 
 for i in range(100):
     q_2 = q2_(q2_t)
-
-print(q1_t)
-print(q2_t)
-
-print()
-
-print(vq_1)
-print(q_2)
 
 assert((q1_t == q2_t).all())
 assert((vq_1 == q_2).all())
