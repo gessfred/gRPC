@@ -3,7 +3,7 @@ import os
 import torch
 import torch.distributed as dist
 from torch.multiprocessing import Process
-
+from quantizy import dataSz
 
 """
 unsaturated ring all-reduce
