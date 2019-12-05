@@ -12,6 +12,7 @@ from torch.multiprocessing import Process
 import json
 import datetime
 import argparse
+import time
 def profile(iterations, size, quantization):
     with open('config.json') as cfg:
         config = json.load(cfg)
@@ -23,6 +24,7 @@ def profile(iterations, size, quantization):
         os.environ['GLOO_SOCKET_IFNAME'] = master["interface"]
         dist.init_process_group('gloo', rank=os.environ['RANK'], timeout=datetime.timedelta(seconds=10), world_size=2, init_method='tcp://{}:60000'.format(IP))
         dist.new_group(range(2))
+        time.sleep(15)
         subject = torch.ones(2**size)
         qn = quantizy(quantization)
         for _ in range(iterations):

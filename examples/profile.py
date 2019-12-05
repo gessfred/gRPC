@@ -27,7 +27,7 @@ def profile(iterations, size, quantization):
         for _ in range(iterations):
             ms_allreduce(subject, *qn)
     
-if __name__ == '__main__':
+"""if __name__ == '__main__':
     
     parser = argparse.ArgumentParser(description='Process some integers.')
     parser.add_argument('-iterations', type=int, dest='iterations', action='store', nargs=1,
@@ -36,4 +36,4 @@ if __name__ == '__main__':
     parser.add_argument('-quantize', dest='quantize', default='cast', action='store', nargs=1, help='implementation of quantize among (cast, concept, numpy, extension)')
     parser.add_argument('-size', type=int, dest='size', default=12, action='store', nargs=1, help='size of the input tensor')
     args = parser.parse_args()
-    profile(args.iterations[0], args.size[0], args.quantize)
+    profile(args.iterations[0], args.size[0], args.quantize)"""
