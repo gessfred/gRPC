@@ -8,7 +8,7 @@ from torch.multiprocessing import Process
 import time
 from subprocess import run, Popen, PIPE
 def profile(iters, size, version):
-    time.sleep(5)
+    time.sleep(3)
     tensor = torch.ones(2**size)
     qu, unqu = quantizy(version)
     for _ in range(iters):
@@ -35,7 +35,7 @@ if __name__ == '__main__':
 #NOTE: we put a timeout of 20s but it's whatever
     txt = open('{}.txt'.format(args.output), 'wb')
     svg = open('{}.svg'.format(args.output), 'wb')
-    p1 = Popen(['pyflame', '-x', '-r 0.00001', '-s 20', '-p {}'.format(p.pid)], stdout=PIPE)
+    p1 = Popen(['pyflame', '-x', '-r 0.00001', '-s 60', '-p {}'.format(p.pid)], stdout=PIPE)
     if not args.flamegraph:
         txt.write(p1.stdout.read())
         print('Saved text output to {}.txt'.format(args.output))
