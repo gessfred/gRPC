@@ -29,10 +29,9 @@ def pyflame(pid, output, mode):
         print('Saved FlameGraph svg output to {}.svg'.format(output))
 
 def perf(pid, output, mode):
-    p1 = Popen(['perf', 'record', '-F 10000', '-p', pid], stdout=PIPE)
+    p1 = Popen(['perf', 'record', '-F 10000', '-p', pid, '--', 'sleep 10'], stdout=PIPE)
 
 def vtune(pid, output, mode):
-    run(['source', '/opt/intel/vtune_amplifier_2019/amplxe-vars.sh'])
     p1 = Popen(['amplxe-cl', '--collect', 'hotspots', '-target-pid', pid])
 
 tools = {
@@ -53,17 +52,17 @@ if __name__ == '__main__':
     parser.add_argument('-t', dest='tool', default='pyflame', action='store', help='profiling tool to use')
     parser.add_argument('--all', help='run a batch benchmark for different input sizes and algorithm versions', action='store_true')
     args = parser.parse_args()
-    profile = tools[args.tool] if args.tool in [k for k, v in tools] else pyflame
+    profile = tools[args.tool] if args.tool in [k for k in tools] else pyflame
     if args.all:
         for size in range(8, 30, 2):
-            iters = 1000 if size < 16 else 100
+            iters = 100
             for version in ['numpy', 'ext']:
                 p = Process(target=run, args=(iters, size, version))
                 p.start()
-                profile(str(p.pid), 'data-{}-{}'.format(version, size), args.flamegraph)
+                profile(str(p.pid), 'data-{}-{}'.format(version, size), args.mode)
                 p.join()
     else:
-        p = Process(target=run, args=(iters, size, version))
+        p = Process(target=run, args=(args.iterations, args.size, args.version))
         p.start()
-        profile(str(p.pid), args.output, args.flamegraph)
+        profile(str(p.pid), args.output, args.mode)
         p.join()
