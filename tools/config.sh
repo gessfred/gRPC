@@ -18,3 +18,9 @@ apt-get install -y libgtk-3-0 libasound2 libxss1 libnss3 xserver-xorg
 apt-get install linux-source linux-headers-generic -y
 #perf record python run.py
 #perf report
+
+cd /tmp
+curl -O https://repo.anaconda.com/archive/Anaconda3-2019.03-Linux-x86_64.sh
+bash Anaconda3-2019.03-Linux-x86_64.sh
+conda create --name cs471
+conda install pytorch torchvision cudatoolkit=10.1 -c pytorch
