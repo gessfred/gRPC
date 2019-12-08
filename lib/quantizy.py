@@ -19,15 +19,22 @@ NumPy implementations
 """
 #https://stackoverflow.com/questions/49791312/numpy-packbits-pack-to-uint16-array
 def quantize_vector(tensor):
-    quantized = (tensor.numpy() > 0).astype(int)
-    packed = np.packbits((quantized.reshape(-1, 4, 8)[:, ::-1]))
-    return torch.from_numpy(packed.view(np.int32))
+    quantized = tensor.numpy()
+    quantized = quantized > 0
+    quantized = quantized.astype(int)
+    quantized = quantized.reshape(-1, 4, 8)[:, ::-1]
+    packed = np.packbits(quantized)
+    packed = packed.view(np.int32)
+    return torch.from_numpy(packed)
 
 def unquantize_vector(tensor):
-    unpacked = np.unpackbits(tensor.numpy().view(np.uint8))
+    unpacked = tensor.numpy()
+    unpacked = unpacked.view(np.uint8)
+    unpacked = np.unpackbits(unpacked)
     #tensor[...] = 1 stays 1
     unpacked[unpacked == 0] = -1
-    return torch.from_numpy(unpacked).type(torch.float64)
+    res = torch.from_numpy(unpacked)
+    return res.type(torch.float64)
 """
 Python proof of concept of the basic packing algorithm
 """

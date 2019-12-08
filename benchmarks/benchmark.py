@@ -13,11 +13,12 @@ def run(iters, size, version):
     tensor = torch.ones(2**size)
     qu, unqu = quantizy(version)
     for _ in range(iters):
-        unqu(qu(tensor))
+        q = qu(tensor)
+        unqu(q)
 
 def pyflame(pid, output, mode):
     #NOTE: we put a timeout of 20s but it's whatever
-    p1 = Popen(['pyflame', '-x', '-r 0.00001', '-s 60', '-p {}'.format(pid)], stdout=PIPE)
+    p1 = Popen(['pyflame', '-x', '-r 0.00001', '-s 360', '-p {}'.format(pid)], stdout=PIPE)
     if mode == 'text':
         with open('{}.txt'.format(output), 'wb') as txt:
             txt.write(p1.stdout.read())
@@ -55,7 +56,7 @@ if __name__ == '__main__':
     profile = tools[args.tool] if args.tool in [k for k in tools] else pyflame
     if args.all:
         for size in range(8, 30, 2):
-            iters = 100
+            iters = 1000
             for version in ['numpy', 'ext']:
                 p = Process(target=run, args=(iters, size, version))
                 p.start()
