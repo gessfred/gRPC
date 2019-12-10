@@ -3,7 +3,7 @@ import sys
 sys.path.append('../lib')
 import torch
 import argparse
-from lib.all_reduce import ms_allreduce
+from all_reduce import ms_allreduce
 from quantizy import quantizy
 from torch.multiprocessing import Process
 import time
@@ -70,6 +70,8 @@ if __name__ == '__main__':
     parser.add_argument('-t', dest='tool', default='pyflame', action='store', help='profiling tool to use')
     parser.add_argument('-f', dest='func', default='quantize', help='function to profile', action='store')
     parser.add_argument('--all', help='run a batch benchmark for different input sizes and algorithm versions', action='store_true')
+    parser.add_argument('--empty', action='store_true', help='do not use a profiling tool vs. run ')
+    
     args = parser.parse_args()
     profile = tools[args.tool] if args.tool in [k for k in tools] else pyflame
     run = run_allreduce if args.func == 'all-reduce' else run_quantize
@@ -79,10 +81,12 @@ if __name__ == '__main__':
             for version in ['numpy', 'ext']:
                 p = Process(target=run, args=(iters, size, version))
                 p.start()
-                profile(str(p.pid), 'data-{}-{}'.format(version, size), args.mode)
+                if not args.empty:
+                    profile(str(p.pid), 'data-{}-{}'.format(version, size), args.mode)
                 p.join()
     else:
         p = Process(target=run, args=(args.iterations, args.size, args.version))
         p.start()
-        profile(str(p.pid), args.output, args.mode)
+        if not args.empty:
+            profile(str(p.pid), args.output, args.mode)
         p.join()
