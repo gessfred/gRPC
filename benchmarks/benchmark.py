@@ -12,13 +12,16 @@ import torch.distributed as dist
 import os
 import datetime
 
-def run_allreduce(iters, size, version):
+def init():
     IP = "10.90.38.4"
     os.environ['MASTER_ADDR'] = IP
     os.environ['MASTER_PORT'] = '29500'
     os.environ['GLOO_SOCKET_IFNAME'] = "ens786f0"
     dist.init_process_group('gloo', rank=os.environ['RANK'], timeout=datetime.timedelta(seconds=10), world_size=2, init_method='tcp://{}:60000'.format(IP))
     dist.new_group(range(2))
+
+def run_allreduce(iters, size, version):
+    
     time.sleep(3)
     subject = torch.ones(2**size)
     qn = quantizy(version)
@@ -75,6 +78,8 @@ if __name__ == '__main__':
     args = parser.parse_args()
     profile = tools[args.tool] if args.tool in [k for k in tools] else pyflame
     run = run_allreduce if args.func == 'all-reduce' else run_quantize
+    if args.func == 'all-reduce':
+        init()
     if args.all:
         for size in range(8, 30, 2):
             iters = 1000
