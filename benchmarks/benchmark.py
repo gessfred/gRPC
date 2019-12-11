@@ -19,7 +19,11 @@ def init():
     os.environ['GLOO_SOCKET_IFNAME'] = "ens786f0"
     dist.init_process_group('gloo', rank=os.environ['RANK'], timeout=datetime.timedelta(seconds=10), world_size=2, init_method='tcp://{}:60000'.format(IP))
     dist.new_group(range(2))
-
+def ping(rank):
+    req = dist.isend(torch.ones(1), dst=rank + 1 % 2)
+    dist.recv(torch.ones(1), src=rank + 1 % 2)
+    req.wait()
+    print('pinged')
 def run_allreduce(iters, size, version):
     
     time.sleep(3)
@@ -67,31 +71,34 @@ if __name__ == '__main__':
                         help='number of iterations')
     parser.add_argument('-v', dest='version', default='cast', action='store', help='implementation of the subject function')
     parser.add_argument('-sz', type=int, dest='size', default=12, action='store', help='size of the input tensor')
-    parser.add_argument('--flamegraph', help='store the output in a flamegraph', action='store_true')
     parser.add_argument('-m', dest='mode', action='store', help='output type in [flamegraph, folded, txt]')
     parser.add_argument('-o', dest='output', default='bench', action='store', help='where to store the output file')
     parser.add_argument('-t', dest='tool', default='pyflame', action='store', help='profiling tool to use')
     parser.add_argument('-f', dest='func', default='quantize', help='function to profile', action='store')
     parser.add_argument('--all', help='run a batch benchmark for different input sizes and algorithm versions', action='store_true')
     parser.add_argument('--empty', action='store_true', help='do not use a profiling tool vs. run ')
-    
-    args = parser.parse_args()
-    profile = tools[args.tool] if args.tool in [k for k in tools] else pyflame
-    run = run_allreduce if args.func == 'all-reduce' else run_quantize
-    if args.func == 'all-reduce':
+    parser.add_argument('--ping', action='store_true', help='sends a RTT ping to rightmost neighbour')
+    if args.ping:
         init()
-    if args.all:
-        for size in range(8, 30, 2):
-            iters = 1000
-            for version in ['numpy', 'ext']:
-                p = Process(target=run, args=(iters, size, version))
-                p.start()
-                if not args.empty:
-                    profile(str(p.pid), 'data-{}-{}'.format(version, size), args.mode)
-                p.join()
+        ping(os.environ['RANK'])
     else:
-        p = Process(target=run, args=(args.iterations, args.size, args.version))
-        p.start()
-        if not args.empty:
-            profile(str(p.pid), args.output, args.mode)
-        p.join()
+        args = parser.parse_args()
+        profile = tools[args.tool] if args.tool in [k for k in tools] else pyflame
+        run = run_allreduce if args.func == 'all-reduce' else run_quantize
+        if args.func == 'all-reduce':
+            init()
+        if args.all:
+            for size in range(8, 30, 2):
+                iters = 1000
+                for version in ['numpy', 'ext']:
+                    p = Process(target=run, args=(iters, size, version))
+                    p.start()
+                    if not args.empty:
+                        profile(str(p.pid), 'data-{}-{}'.format(version, size), args.mode)
+                    p.join()
+        else:
+            p = Process(target=run, args=(args.iterations, args.size, args.version))
+            p.start()
+            if not args.empty:
+                profile(str(p.pid), args.output, args.mode)
+            p.join()
