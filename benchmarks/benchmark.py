@@ -63,12 +63,12 @@ def ms_allreduce_un(tensor):
     tensor[:] = acc[:]
 
 def run_allreduce(iters, size, version):
-    
-    time.sleep(3)
+    start = time.time()
     subject = torch.ones(2**size)
     qn = quantizy(version)
     for _ in range(iters):
-        ms_allreduce(subject, *qn)
+        ms_allreduce_un(subject)
+    print('exec time: {}'.format(time.time() - start))
 
 def run_quantize(iters, size, version):
     time.sleep(3)
@@ -116,11 +116,11 @@ if __name__ == '__main__':
     parser.add_argument('--all', help='run a batch benchmark for different input sizes and algorithm versions', action='store_true')
     parser.add_argument('--empty', action='store_true', help='do not use a profiling tool vs. run ')
     parser.add_argument('--ping', action='store_true', help='sends a RTT ping to rightmost neighbour')
+    args = parser.parse_args()
     if args.ping:
         init()
         ping(os.environ['RANK'])
     else:
-        args = parser.parse_args()
         profile = tools[args.tool] if args.tool in [k for k in tools] else pyflame
         run = run_allreduce if args.func == 'all-reduce' else run_quantize
         if args.func == 'all-reduce':
