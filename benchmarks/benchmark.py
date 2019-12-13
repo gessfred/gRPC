@@ -24,6 +24,44 @@ def ping(rank):
     dist.recv(torch.ones(1), src=rank + 1 % 2)
     req.wait()
     print('pinged')
+dataSz = 32
+def ms_allreduce_un(tensor):
+    r = dist.get_rank()
+    arraySize=list(tensor.size())[0]
+    acc = torch.zeros(arraySize)
+    world = dist.get_world_size()
+    chunksize = arraySize // world
+    assert chunksize % dataSz == 0
+    acc[r*chunksize:(r+1)*chunksize] = tensor[r*chunksize:(r+1)*chunksize]
+    reqs = []
+    #"Naive all-reduce"
+    #i = 0
+    #print('actual: {} vs. expected: {}'.format(torch.zeros(int(arraySize / (chunksize * dataSz))).size(), quantize(tensor[i*chunksize:(i+1)*chunksize]).size()))
+    for i in range(world): # K steps
+        if i != r:
+            reqs += [dist.isend(tensor=(tensor[i*chunksize:(i+1)*chunksize]), dst=i)] # K concurrent transfers
+    
+    recv = torch.zeros(arraySize // (world))
+    for i in range(world): # K steps
+        if i != r:
+            dist.recv(tensor=recv,src=i) # K / ??? values...
+            acc[r*chunksize:(r+1)*chunksize] += (recv)
+    for req in reqs:
+        req.wait()
+    reqs = []
+    #"Naive all-gather"
+    for i in range(world):
+        if i != r:
+            reqs += [dist.isend(tensor=(acc[r*chunksize:(r+1)*chunksize]),dst=i)]
+    #"Naive all-gather"
+    for i in range(world):
+        if i != r:
+            dist.recv(tensor=recv, src=i)
+            acc[i*chunksize:(i+1)*chunksize] += (recv)
+    for req in reqs:
+        req.wait()
+    tensor[:] = acc[:]
+
 def run_allreduce(iters, size, version):
     
     time.sleep(3)
