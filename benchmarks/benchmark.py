@@ -3,7 +3,7 @@ import sys
 sys.path.append('../lib')
 import torch
 import argparse
-from all_reduce import ms_allreduce
+from all_reduce import ms_allreduce, ms_allreduce_un
 from quantizy import quantizy
 from torch.multiprocessing import Process
 import time
@@ -24,59 +24,19 @@ def ping(rank):
     dist.recv(torch.ones(1), src=rank + 1 % 2)
     req.wait()
     print('pinged')
-dataSz = 32
-def ms_allreduce_un(tensor):
-    r = dist.get_rank()
-    arraySize=list(tensor.size())[0]
-    acc = torch.zeros(arraySize)
-    world = dist.get_world_size()
-    chunksize = arraySize // world
-    assert chunksize % dataSz == 0
-    acc[r*chunksize:(r+1)*chunksize] = tensor[r*chunksize:(r+1)*chunksize]
-    reqs = []
-    #"Naive all-reduce"
-    #i = 0
-    #print('actual: {} vs. expected: {}'.format(torch.zeros(int(arraySize / (chunksize * dataSz))).size(), quantize(tensor[i*chunksize:(i+1)*chunksize]).size()))
-    for i in range(world): # K steps
-        if i != r:
-            reqs += [dist.isend(tensor=(tensor[i*chunksize:(i+1)*chunksize]), dst=i)] # K concurrent transfers
-    
-    recv = torch.zeros(arraySize // (world))
-    for i in range(world): # K steps
-        if i != r:
-            dist.recv(tensor=recv,src=i) # K / ??? values...
-            acc[r*chunksize:(r+1)*chunksize] += (recv)
-    for req in reqs:
-        req.wait()
-    reqs = []
-    #"Naive all-gather"
-    for i in range(world):
-        if i != r:
-            reqs += [dist.isend(tensor=(acc[r*chunksize:(r+1)*chunksize]),dst=i)]
-    #"Naive all-gather"
-    for i in range(world):
-        if i != r:
-            dist.recv(tensor=recv, src=i)
-            acc[i*chunksize:(i+1)*chunksize] += (recv)
-    for req in reqs:
-        req.wait()
-    tensor[:] = acc[:]
-
-def run_allreduce(iters, size, version):
+"""
+    run:
+    iters: number of iterations
+    size: input size or range of input sizes
+"""
+def run(fn, args, size, iters=100):
+    init()
+    time.sleep(2)
     start = time.time()
-    subject = torch.ones(2**size)
-    qn = quantizy(version)
-    for _ in range(iters):
-        ms_allreduce_un(subject)
-    print('exec time: {}'.format(time.time() - start))
-
-def run_quantize(iters, size, version):
-    time.sleep(3)
     tensor = torch.ones(2**size)
-    qu, unqu = quantizy(version)
     for _ in range(iters):
-        q = qu(tensor)
-        unqu(q)
+        fn(tensor, *args)
+    exec_time = time.time() - start
 
 def pyflame(pid, output, mode):
     #NOTE: we put a timeout of 20s but it's whatever
@@ -102,41 +62,42 @@ tools = {
     "perf": perf,
     "pyflame": pyflame,
 }
+
+functions = {
+    "ring-all-reduce": None,
+    "all-reduce-unsaturated": ms_allreduce_un,
+    "all-reduce": ms_allreduce
+}
+
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Process some integers.')
-    parser.add_argument('-it', type=int, dest='iterations', action='store',
-                        default=10,
-                        help='number of iterations')
-    parser.add_argument('-v', dest='version', default='cast', action='store', help='implementation of the subject function')
+    rank = int(os.environ['RANK'])
+    parser = argparse.ArgumentParser(description='Benchmark runner')
+    parser.add_argument('-it', type=int, dest='iterations', action='store',default=10,help='number of iterations')
+    parser.add_argument('-v', dest='version', default='cast', action='store', help='all-reduce:numpy, all-reduce: implementation of the subject function')
     parser.add_argument('-sz', type=int, dest='size', default=12, action='store', help='size of the input tensor')
-    parser.add_argument('-m', dest='mode', action='store', help='output type in [flamegraph, folded, txt]')
     parser.add_argument('-o', dest='output', default='bench', action='store', help='where to store the output file')
-    parser.add_argument('-t', dest='tool', default='pyflame', action='store', help='profiling tool to use')
-    parser.add_argument('-f', dest='func', default='quantize', help='function to profile', action='store')
-    parser.add_argument('--all', help='run a batch benchmark for different input sizes and algorithm versions', action='store_true')
-    parser.add_argument('--empty', action='store_true', help='do not use a profiling tool vs. run ')
+    parser.add_argument('-prof', dest='tool', action='store', help='profiling tool to use pyflame:txt, pyflame:flame, pyflame:folded, perf:flame, perf:folded, vtune')
     parser.add_argument('--ping', action='store_true', help='sends a RTT ping to rightmost neighbour')
     args = parser.parse_args()
     if args.ping:
         init()
-        ping(os.environ['RANK'])
+        ping(rank)
     else:
-        profile = tools[args.tool] if args.tool in [k for k in tools] else pyflame
-        run = run_allreduce if args.func == 'all-reduce' else run_quantize
-        if args.func == 'all-reduce':
-            init()
-        if args.all:
-            for size in range(8, 30, 2):
-                iters = 1000
-                for version in ['numpy', 'ext']:
-                    p = Process(target=run, args=(iters, size, version))
-                    p.start()
-                    if not args.empty:
-                        profile(str(p.pid), 'data-{}-{}'.format(version, size), args.mode)
-                    p.join()
-        else:
-            p = Process(target=run, args=(args.iterations, args.size, args.version))
-            p.start()
-            if not args.empty:
-                profile(str(p.pid), args.output, args.mode)
-            p.join()
+        #profile = tools[args.tool] if args.tool in [k for k in tools] else lambda pid, out, mode: None
+        func = args.version.split(':')
+        fn = functions[func[0]] if func[0] in [k for k in functions] else None
+        q = []
+        if len(func) == 2:
+            q = quantizy(func[1])
+        prof = args.tool.split(':')
+        mode = None
+        if len(prof) == 2:
+            mode = prof[1]
+        profiled = not len(prof) == 0 and not prof[0] == '' 
+        profile = tools[args.tool] if args.tool in [k for k in tools] else lambda pid, out, mode: None
+        p = Process(target=run, args=(fn, q, args.size, args.iterations))
+        p.start()
+        if profiled:
+            time.sleep(1)
+            profile(str(p.pid), args.output, mode)
+        p.join()
