@@ -73,7 +73,7 @@ if __name__ == '__main__':
     rank = int(os.environ['RANK'])
     parser = argparse.ArgumentParser(description='Benchmark runner')
     parser.add_argument('-it', type=int, dest='iterations', action='store',default=10,help='number of iterations')
-    parser.add_argument('-v', dest='version', default='cast', action='store', help='all-reduce:numpy, all-reduce: implementation of the subject function')
+    parser.add_argument('-v', dest='version', default='cast', action='store', help='all-reduce:numpy, all-reduce:ext, all-reduce-unsaturated implementation of the subject function')
     parser.add_argument('-sz', type=int, dest='size', default=12, action='store', help='size of the input tensor')
     parser.add_argument('-o', dest='output', default='bench', action='store', help='where to store the output file')
     parser.add_argument('-prof', dest='tool', action='store', help='profiling tool to use pyflame:txt, pyflame:flame, pyflame:folded, perf:flame, perf:folded, vtune')
@@ -89,7 +89,7 @@ if __name__ == '__main__':
         q = []
         if len(func) == 2:
             q = quantizy(func[1])
-        prof = args.tool.split(':')
+        prof = args.tool.split(':') if args.tool is not None else []
         mode = None
         if len(prof) == 2:
             mode = prof[1]
