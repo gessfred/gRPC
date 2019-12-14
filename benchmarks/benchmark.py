@@ -73,11 +73,11 @@ functions = {
 def benchmark(fn, q, size, iterations, profile, output, mode, rate):
     #profile = tools[args.tool] if args.tool in [k for k in tools] else lambda pid, out, mode: None
     
-    p = Process(target=run, args=(fn, q, args.size, args.iterations))
+    p = Process(target=run, args=(fn, q, size, iterations))
     p.start()
     if profiled:
         time.sleep(1)
-        profile(str(p.pid), args.output, mode, rate)
+        profile(str(p.pid), output, mode, rate)
     p.join()
 
 if __name__ == '__main__':
