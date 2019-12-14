@@ -92,7 +92,7 @@ if __name__ == '__main__':
             q = quantizy(func[1])
         prof = args.tool.split(':') if args.tool is not None else []
         mode = None
-        if len(prof) == 2:
+        if len(prof) > 1:
             mode = prof[1]
         profiled = not len(prof) == 0 and not prof[0] == '' 
         profile = tools[prof[0]] if profiled and prof[0] in [k for k in tools] else lambda pid, out, mode: None
