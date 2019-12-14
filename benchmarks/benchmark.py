@@ -29,13 +29,13 @@ def ping(rank):
     iters: number of iterations
     size: input size or range of input sizes
 """
-def run(fn, args, size, iters=100, numberOfThreads=1):
+def run(fn, args, size, iters=100):
     init()
     time.sleep(2)
     start = time.time()
     tensor = torch.ones(2**size)
     for _ in range(iters):
-        fn(tensor, *args, numberOfThreads)
+        fn(tensor, *args)
     exec_time = time.time() - start
     print(exec_time)
 
@@ -72,8 +72,8 @@ functions = {
 
 def benchmark(fn, q, size, iterations, profile, output, mode, rate, numberOfThreads):
     #profile = tools[args.tool] if args.tool in [k for k in tools] else lambda pid, out, mode: None
-    
-    p = Process(target=run, args=(fn, q, size, iterations, numberOfThreads))
+    q = q if len(q) == 0 else q + [numberOfThreads]
+    p = Process(target=run, args=(fn, q, size, iterations))
     p.start()
     if profiled:
         time.sleep(1)

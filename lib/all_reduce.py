@@ -27,7 +27,7 @@ def ring_all_reduce(tensor):
 """
 
 """
-def ms_allreduce(tensor, quantize, unquantize):
+def ms_allreduce(tensor, quantize, unquantize, numberOfThreads=1):
     r = dist.get_rank()
     arraySize=list(tensor.size())[0]
     acc = torch.zeros(arraySize)
@@ -41,25 +41,31 @@ def ms_allreduce(tensor, quantize, unquantize):
     #print('actual: {} vs. expected: {}'.format(torch.zeros(int(arraySize / (chunksize * dataSz))).size(), quantize(tensor[i*chunksize:(i+1)*chunksize]).size()))
     for i in range(world): # K steps
         if i != r:
-            reqs += [dist.isend(tensor=quantize(tensor[i*chunksize:(i+1)*chunksize], 2), dst=i)] # K concurrent transfers
+            chunk = tensor[i*chunksize:(i+1)*chunksize]
+            qchunk = quantize(chunk, numberOfThreads)
+            reqs += [dist.isend(tensor=qchunk, dst=i)] # K concurrent transfers
     
     recv = torch.zeros(arraySize // (dataSz * world), dtype=torch.int32)
     for i in range(world): # K steps
         if i != r:
             dist.recv(tensor=recv,src=i) # K / ??? values...
-            acc[r*chunksize:(r+1)*chunksize] += unquantize(recv, 2)
+            chunk = unquantize(recv, numberOfThreads)
+            acc[r*chunksize:(r+1)*chunksize] += chunk
     for req in reqs:
         req.wait()
     reqs = []
     #"Naive all-gather"
     for i in range(world):
         if i != r:
-            reqs += [dist.isend(tensor=quantize(acc[r*chunksize:(r+1)*chunksize], 2),dst=i)]
+            chunk = acc[r*chunksize:(r+1)*chunksize]
+            qchunk = quantize(chunk, numberOfThreads)
+            reqs += [dist.isend(tensor=qchunk,dst=i)]
     #"Naive all-gather"
     for i in range(world):
         if i != r:
             dist.recv(tensor=recv, src=i)
-            acc[i*chunksize:(i+1)*chunksize] += unquantize(recv, 2)
+            chunk = unquantize(recv, numberOfThreads)
+            acc[i*chunksize:(i+1)*chunksize] += chunk
     for req in reqs:
         req.wait()
     tensor[:] = acc[:]
