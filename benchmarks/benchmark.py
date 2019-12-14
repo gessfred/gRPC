@@ -95,7 +95,7 @@ if __name__ == '__main__':
         if len(prof) == 2:
             mode = prof[1]
         profiled = not len(prof) == 0 and not prof[0] == '' 
-        profile = tools[prof[0]] if prof[0] in [k for k in tools] else lambda pid, out, mode: None
+        profile = tools[prof[0]] if profiled and prof[0] in [k for k in tools] else lambda pid, out, mode: None
         rate = 0.00001 if len(prof) < 3 else prof[2]
         p = Process(target=run, args=(fn, q, args.size, args.iterations))
         p.start()
