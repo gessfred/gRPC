@@ -106,4 +106,11 @@ if __name__ == '__main__':
         profiled = not len(prof) == 0 and not prof[0] == '' 
         profile = tools[prof[0]] if profiled and prof[0] in [k for k in tools] else lambda pid, out, mode: None
         rate = 0.00001 if len(prof) < 3 else prof[2]
-        benchmark(fn, q, args.size, args.iterations, profile, args.output, mode, rate)
+        iters = args.iterations if args.iterations is not None else 10
+        if args.size is None:
+            for size in [14, 18, 22, 26]:
+                print('{}'.format(size))
+                benchmark(fn, q, size, iters, profile, args.output, mode, rate)
+        else:
+            size = args.size if args.size is not None else 10
+            benchmark(fn, q, size, iters, profile, args.output, mode, rate)
