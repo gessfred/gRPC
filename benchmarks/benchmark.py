@@ -70,12 +70,22 @@ functions = {
     "all-reduce": ms_allreduce
 }
 
+def benchmark(fn, q, size, iterations, profile, output, mode, rate):
+    #profile = tools[args.tool] if args.tool in [k for k in tools] else lambda pid, out, mode: None
+    
+    p = Process(target=run, args=(fn, q, args.size, args.iterations))
+    p.start()
+    if profiled:
+        time.sleep(1)
+        profile(str(p.pid), args.output, mode, rate)
+    p.join()
+
 if __name__ == '__main__':
     rank = int(os.environ['RANK'])
     parser = argparse.ArgumentParser(description='Benchmark runner')
-    parser.add_argument('-it', type=int, dest='iterations', action='store',default=10,help='number of iterations')
+    parser.add_argument('-it', type=int, dest='iterations', action='store',help='number of iterations')
     parser.add_argument('-v', dest='version', default='cast', action='store', help='all-reduce:numpy, all-reduce:ext, all-reduce-unsaturated implementation of the subject function')
-    parser.add_argument('-sz', type=int, dest='size', default=12, action='store', help='size of the input tensor')
+    parser.add_argument('-sz', type=int, dest='size', action='store', help='size of the input tensor')
     parser.add_argument('-o', dest='output', default='bench', action='store', help='where to store the output file')
     parser.add_argument('-prof', dest='tool', action='store', help='profiling tool to use pyflame:txt, pyflame:flame, pyflame:folded, perf:flame, perf:folded, vtune')
     parser.add_argument('--ping', action='store_true', help='sends a RTT ping to rightmost neighbour')
@@ -84,7 +94,6 @@ if __name__ == '__main__':
         init()
         ping(rank)
     else:
-        #profile = tools[args.tool] if args.tool in [k for k in tools] else lambda pid, out, mode: None
         func = args.version.split(':')
         fn = functions[func[0]] if func[0] in [k for k in functions] else None
         q = []
@@ -97,9 +106,4 @@ if __name__ == '__main__':
         profiled = not len(prof) == 0 and not prof[0] == '' 
         profile = tools[prof[0]] if profiled and prof[0] in [k for k in tools] else lambda pid, out, mode: None
         rate = 0.00001 if len(prof) < 3 else prof[2]
-        p = Process(target=run, args=(fn, q, args.size, args.iterations))
-        p.start()
-        if profiled:
-            time.sleep(1)
-            profile(str(p.pid), args.output, mode, rate)
-        p.join()
+        benchmark(fn, q, args.size, args.iterations, profile, args.output, mode, rate)
