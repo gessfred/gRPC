@@ -1,6 +1,6 @@
 #include <torch/extension.h>
 
-torch::Tensor quantize_shrink(torch::Tensor tensor){
+torch::Tensor quantize_shrink(torch::Tensor tensor, size_t numberOfThreads){
     auto tensor_a = tensor.accessor<float,1>();
     int N = torch::size(tensor, 0);
     
@@ -26,7 +26,7 @@ torch::Tensor quantize_shrink(torch::Tensor tensor){
     return res;
 }
 
-torch::Tensor unquantize_shrink(torch::Tensor tensor){
+torch::Tensor unquantize_shrink(torch::Tensor tensor, size_t numberOfThreads){
     auto tensor_a = tensor.accessor<int,1>();
     int N2 = torch::size(tensor, 0);
 

@@ -66,7 +66,7 @@ tools = {
 
 functions = {
     "ring-all-reduce": None,
-    "all-reduce-unsaturated": ms_allreduce_un,
+    "all-reduce-unquantized": ms_allreduce_un,
     "all-reduce": ms_allreduce
 }
 
@@ -98,6 +98,7 @@ if __name__ == '__main__':
         fn = functions[func[0]] if func[0] in [k for k in functions] else None
         q = []
         if len(func) == 2:
+            print(func[1])
             q = quantizy(func[1])
         prof = args.tool.split(':') if args.tool is not None else []
         mode = None
