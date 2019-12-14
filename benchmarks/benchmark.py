@@ -41,7 +41,7 @@ def run(fn, args, size, iters=100):
 
 def pyflame(pid, output, mode, rate):
     #NOTE: we put a timeout of 20s but it's whatever
-    p1 = Popen(['pyflame', '-x', '-r {}'.format(rate), '-s 360', '-p {}'.format(pid)], stdout=PIPE)
+    p1 = Popen(['pyflame', '-x', '-r {}'.format(rate), '-s 3600', '-p {}'.format(pid)], stdout=PIPE)
     if mode == 'text':
         with open('{}.txt'.format(output), 'wb') as txt:
             txt.write(p1.stdout.read())
