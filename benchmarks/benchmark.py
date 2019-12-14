@@ -110,7 +110,7 @@ if __name__ == '__main__':
         if args.size is None:
             for size in [14, 18, 22, 26]:
                 print('{}'.format(size))
-                benchmark(fn, q, size, iters, profile, args.output, mode, rate)
+                benchmark(fn, q, size, iters, profile, '{}-{}'.format(args.output, size), mode, rate)
         else:
             size = args.size if args.size is not None else 10
             benchmark(fn, q, size, iters, profile, args.output, mode, rate)
