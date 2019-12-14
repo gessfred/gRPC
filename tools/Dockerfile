@@ -33,6 +33,7 @@ RUN vtune_amplifier_2019_update6/install.sh -s silent.cfg
 RUN source /opt/intel/vtune_amplifier/amplxe-vars.sh
 RUN go build -o server /go/src/google.golang.org/grpc/examples/helloworld/greeter_server/main.go
 ENV AMPLXE_RUNTOOL_OPTIONS="--profiling-signal 32"
+ENV AMPLXE_RUNTOOL_OPTIONS="--no-altstack"
 # RUN source /opt/intel/vtune_amplifier/amplxe-vars.sh
 # RUN amplxe-cl -collect hotspots --run-pass-thru=--profiling-signal=111 -result-dir r001hs ./server
 # RUN amplxe-cl --collect hotspots --run-pass-thru=--no-altstack --result-dir sl ./sleep

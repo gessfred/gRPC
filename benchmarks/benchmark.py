@@ -3,7 +3,7 @@ import sys
 sys.path.append('../lib')
 import torch
 import argparse
-from all_reduce import ms_allreduce, ms_allreduce_un
+from all_reduce import ms_allreduce, ms_allreduce_un, ring_all_reduce
 from quantizy import quantizy
 from torch.multiprocessing import Process
 import time
@@ -29,13 +29,13 @@ def ping(rank):
     iters: number of iterations
     size: input size or range of input sizes
 """
-def run(fn, args, size, iters=100):
+def run(fn, args, size, iters=100, numberOfThreads=1):
     init()
     time.sleep(2)
     start = time.time()
     tensor = torch.ones(2**size)
     for _ in range(iters):
-        fn(tensor, *args)
+        fn(tensor, *args, numberOfThreads)
     exec_time = time.time() - start
     print(exec_time)
 
@@ -65,15 +65,15 @@ tools = {
 }
 
 functions = {
-    "ring-all-reduce": None,
+    "ring-all-reduce": ring_all_reduce,
     "all-reduce-unquantized": ms_allreduce_un,
     "all-reduce": ms_allreduce
 }
 
-def benchmark(fn, q, size, iterations, profile, output, mode, rate):
+def benchmark(fn, q, size, iterations, profile, output, mode, rate, numberOfThreads):
     #profile = tools[args.tool] if args.tool in [k for k in tools] else lambda pid, out, mode: None
     
-    p = Process(target=run, args=(fn, q, size, iterations))
+    p = Process(target=run, args=(fn, q, size, iterations, numberOfThreads))
     p.start()
     if profiled:
         time.sleep(1)
@@ -89,6 +89,7 @@ if __name__ == '__main__':
     parser.add_argument('-o', dest='output', default='bench', action='store', help='where to store the output file')
     parser.add_argument('-prof', dest='tool', action='store', help='profiling tool to use pyflame:txt, pyflame:flame, pyflame:folded, perf:flame, perf:folded, vtune')
     parser.add_argument('--ping', action='store_true', help='sends a RTT ping to rightmost neighbour')
+    parser.add_argument('--threads', dest='numberOfThreads', action='store', default=1, type=int)
     args = parser.parse_args()
     if args.ping:
         init()
@@ -111,7 +112,7 @@ if __name__ == '__main__':
         if args.size is None:
             for size in [14, 18, 22, 26]:
                 print('{}'.format(size))
-                benchmark(fn, q, size, iters, profile, '{}-{}'.format(args.output, size), mode, rate)
+                benchmark(fn, q, size, iters, profile, '{}-{}'.format(args.output, size), mode, rate, args.numberOfThreads)
         else:
             size = args.size if args.size is not None else 10
-            benchmark(fn, q, size, iters, profile, args.output, mode, rate)
+            benchmark(fn, q, size, iters, profile, args.output, mode, rate, args.numberOfThreads)
