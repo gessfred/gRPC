@@ -39,9 +39,9 @@ def run(fn, args, size, iters=100):
     exec_time = time.time() - start
     print(exec_time)
 
-def pyflame(pid, output, mode):
+def pyflame(pid, output, mode, rate):
     #NOTE: we put a timeout of 20s but it's whatever
-    p1 = Popen(['pyflame', '-x', '-r 0.00001', '-s 360', '-p {}'.format(pid)], stdout=PIPE)
+    p1 = Popen(['pyflame', '-x', '-r {}'.format(rate), '-s 360', '-p {}'.format(pid)], stdout=PIPE)
     if mode == 'text':
         with open('{}.txt'.format(output), 'wb') as txt:
             txt.write(p1.stdout.read())
@@ -95,10 +95,11 @@ if __name__ == '__main__':
         if len(prof) == 2:
             mode = prof[1]
         profiled = not len(prof) == 0 and not prof[0] == '' 
-        profile = tools[args.tool] if args.tool in [k for k in tools] else lambda pid, out, mode: None
+        profile = tools[prof[0]] if prof[0] in [k for k in tools] else lambda pid, out, mode: None
+        rate = 0.00001 if len(prof) < 3 else prof[2]
         p = Process(target=run, args=(fn, q, args.size, args.iterations))
         p.start()
         if profiled:
             time.sleep(1)
-            profile(str(p.pid), args.output, mode)
+            profile(str(p.pid), args.output, mode, rate)
         p.join()
