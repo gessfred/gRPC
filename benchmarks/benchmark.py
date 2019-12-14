@@ -37,6 +37,7 @@ def run(fn, args, size, iters=100):
     for _ in range(iters):
         fn(tensor, *args)
     exec_time = time.time() - start
+    print(exec_time)
 
 def pyflame(pid, output, mode):
     #NOTE: we put a timeout of 20s but it's whatever
