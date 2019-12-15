@@ -80,6 +80,18 @@ def benchmark(fn, q, size, iterations, profile, output, mode, rate, numberOfThre
         profile(str(p.pid), output, mode, rate)
     p.join()
 
+def benchmarkQ(iters):
+    quantize, unquantize = quantizy('ext_par')
+    tensor = torch.one(2**20)
+    
+    for numberOfThreads in [1, 2, 4, 8, 16, 24, 32, 48]:
+        start = time.time()
+        for _ in range(iters):
+            unquantize(quantize(tensor, numberOfThreads), numberOfThreads)
+        runtime = time.time() - start
+        print('{}: {}'.format(numberOfThreads, runtime))
+    
+
 if __name__ == '__main__':
     rank = int(os.environ['RANK'])
     parser = argparse.ArgumentParser(description='Benchmark runner')
@@ -91,11 +103,14 @@ if __name__ == '__main__':
     parser.add_argument('--ping', action='store_true', help='sends a RTT ping to rightmost neighbour')
     parser.add_argument('--threads', dest='numberOfThreads', action='store', default=1, type=int)
     args = parser.parse_args()
+    func = args.version.split(':') if args.version is not None else None
+    iters = args.iterations if args.iterations is not None else 10
     if args.ping:
         init()
         ping(rank)
+    elif func is not None and len(func) > 0 and func[0] == 'quantize':
+        benchmarkQ(iters)
     else:
-        func = args.version.split(':')
         fn = functions[func[0]] if func[0] in [k for k in functions] else None
         q = []
         if len(func) == 2:
@@ -108,7 +123,6 @@ if __name__ == '__main__':
         profiled = not len(prof) == 0 and not prof[0] == '' 
         profile = tools[prof[0]] if profiled and prof[0] in [k for k in tools] else lambda pid, out, mode: None
         rate = 0.00001 if len(prof) < 3 else prof[2]
-        iters = args.iterations if args.iterations is not None else 10
         if args.size is None:
             for size in [14, 18, 22, 26]:
                 print('{}'.format(size))
