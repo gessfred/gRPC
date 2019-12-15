@@ -30,6 +30,7 @@ def ping(rank):
     size: input size or range of input sizes
 """
 def run(fn, args, size, iters=100):
+    time.sleep(1)
     init()
     time.sleep(2)
     start = time.time()
@@ -38,6 +39,7 @@ def run(fn, args, size, iters=100):
         fn(tensor, *args)
     exec_time = time.time() - start
     print(exec_time)
+    time.sleep(1)
 
 def pyflame(pid, output, mode, rate):
     #NOTE: we put a timeout of 20s but it's whatever
