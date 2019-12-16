@@ -27,7 +27,7 @@ def ring_all_reduce(tensor):
 """
 
 """
-def ms_allreduce(tensor, quantize, unquantize, numberOfThreads=1):
+def ms_allreduce(r, world, peers, tensor, quantize, unquantize, numberOfThreads=1):
     r = dist.get_rank()
     arraySize=list(tensor.size())[0]
     acc = torch.zeros(arraySize)
@@ -70,7 +70,7 @@ def ms_allreduce(tensor, quantize, unquantize, numberOfThreads=1):
         req.wait()
     tensor[:] = acc[:]
 
-def ms_allreduce_un(tensor):
+def ms_allreduce_un(r, world, peers, tensor):
     r = dist.get_rank()
     arraySize=list(tensor.size())[0]
     acc = torch.zeros(arraySize)
@@ -107,7 +107,7 @@ def ms_allreduce_un(tensor):
         req.wait()
     tensor[:] = acc[:]
 
-def allreduce(tensor):
+def allreduce(r, world, peers, tensor):
     r = dist.get_rank()
     world = dist.get_world_size()
     peers = list(filter(lambda i: i != r, list(range(world))))
@@ -130,10 +130,7 @@ def allreduce(tensor):
     for req in reqs:
         req.wait()
 
-def allreduce_quant(tensor, quantize, unquantize, numberOfThreads=24):
-    r = dist.get_rank()
-    world = dist.get_world_size()
-    peers = list(filter(lambda i: i != r, list(range(world))))
+def allreduce_quant(r, world, peers, tensor, quantize, unquantize, numberOfThreads=24):
     sizeOfTensor=list(tensor.size())[0]
     chunksize = sizeOfTensor // world
     reqs = []

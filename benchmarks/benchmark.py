@@ -18,7 +18,7 @@ def init():
     os.environ['MASTER_PORT'] = '29500'
     os.environ['GLOO_SOCKET_IFNAME'] = "ens786f0"
     dist.init_process_group('gloo', rank=os.environ['RANK'], timeout=datetime.timedelta(seconds=10), world_size=2, init_method='tcp://{}:60000'.format(IP))
-    dist.new_group(range(2))
+    return dist.new_group(range(2))
 def ping(rank):
     req = dist.isend(torch.ones(1), dst=rank + 1 % 2)
     dist.recv(torch.ones(1), src=rank + 1 % 2)
@@ -32,14 +32,26 @@ def ping(rank):
 def run(fn, args, size, iters=100):
     time.sleep(1)
     init()
+    r = dist.get_rank()
+    world = dist.get_world_size()
+    peers = list(filter(lambda i: i != r, list(range(world))))
     time.sleep(2)
-    start = time.time()
     tensor = torch.ones(2**size)
+    start = time.time()
     for _ in range(iters):
         fn(tensor, *args)
     exec_time = time.time() - start
     print(exec_time)
     time.sleep(1)
+
+def run_baseline(size, iters):
+    group = init()
+    tensor = torch.ones(2**size)
+    start = time.time()
+    for _ in range(iters):
+        dist.all_reduce(tensor, op=dist.reduce_op.SUM, group=group)
+    exec_time = time.time() - start
+    print(exec_time)
 
 def pyflame(pid, output, mode, rate):
     #NOTE: we put a timeout of 20s but it's whatever
@@ -110,6 +122,9 @@ if __name__ == '__main__':
     if args.ping:
         init()
         ping(rank)
+    elif func is not None and len(func) > 0 and func[0] == 'baseline':
+        for size in [14, 18, 22, 26]:
+            run_baseline(size, iters)
     elif func is not None and len(func) > 0 and func[0] == 'quantize':
         benchmarkQ(iters)
     else:

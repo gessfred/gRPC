@@ -11,12 +11,15 @@ import numpy as numpy
 from all_reduce import ms_allreduce_un, ring_all_reduce, allreduce, allreduce_quant, ms_allreduce
 from quantizy import quantizy
 def run(rank, size):
+    r = dist.get_rank()
+    world = dist.get_world_size()
+    peers = list(filter(lambda i: i != r, list(range(world))))
     tensor = torch.ones(64)
     group = dist.new_group(list(range(size)))
     q = quantizy('numpy')
-    allreduce_quant(tensor, *q)
+    allreduce_quant(r, world, peers,tensor, *q)
     tensor2 = torch.ones(64)
-    ms_allreduce(tensor2, *q)
+    ms_allreduce(r, world, peers, tensor2, *q)
     print(tensor)
     print('rank', tensor2)
 
