@@ -50,7 +50,7 @@ def run_baseline(iters):
         tensor = torch.ones(2**size)
         start = time.time()
         for _ in range(iters):
-            dist.all_reduce(tensor, op=dist.reduce_op.SUM, group=group)
+            dist.all_reduce(tensor, op=torch.distributed.ReduceOp.SUM, group=group)
         exec_time = time.time() - start
         print(exec_time)
 
