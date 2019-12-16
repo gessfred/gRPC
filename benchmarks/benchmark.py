@@ -3,7 +3,7 @@ import sys
 sys.path.append('../lib')
 import torch
 import argparse
-from all_reduce import ms_allreduce, ms_allreduce_un, ring_all_reduce
+from all_reduce import ms_allreduce, ms_allreduce_un, ring_all_reduce, allreduce, allreduce_quant
 from quantizy import quantizy
 from torch.multiprocessing import Process
 import time
@@ -81,8 +81,10 @@ tools = {
 
 functions = {
     "ring-all-reduce": ring_all_reduce,
-    "all-reduce-unquantized": ms_allreduce_un,
-    "all-reduce": ms_allreduce
+    "ms-all-reduce-unquantized": ms_allreduce_un,
+    "ms-all-reduce": ms_allreduce,
+    "all-reduce": allreduce,
+    "all-reduce-quant": allreduce_quant,
 }
 
 def benchmark(fn, q, size, iterations, profile, output, mode, rate, numberOfThreads):
