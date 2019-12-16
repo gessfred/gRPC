@@ -44,14 +44,15 @@ def run(fn, args, size, iters=100):
     print(exec_time)
     time.sleep(1)
 
-def run_baseline(size, iters):
+def run_baseline(iters):
     group = init()
-    tensor = torch.ones(2**size)
-    start = time.time()
-    for _ in range(iters):
-        dist.all_reduce(tensor, op=dist.reduce_op.SUM, group=group)
-    exec_time = time.time() - start
-    print(exec_time)
+    for size in [14, 18, 22, 26]:
+        tensor = torch.ones(2**size)
+        start = time.time()
+        for _ in range(iters):
+            dist.all_reduce(tensor, op=dist.reduce_op.SUM, group=group)
+        exec_time = time.time() - start
+        print(exec_time)
 
 def pyflame(pid, output, mode, rate):
     #NOTE: we put a timeout of 20s but it's whatever
@@ -123,8 +124,7 @@ if __name__ == '__main__':
         init()
         ping(rank)
     elif func is not None and len(func) > 0 and func[0] == 'baseline':
-        for size in [14, 18, 22, 26]:
-            run_baseline(size, iters)
+        run_baseline(iters)
     elif func is not None and len(func) > 0 and func[0] == 'quantize':
         benchmarkQ(iters)
     else:
