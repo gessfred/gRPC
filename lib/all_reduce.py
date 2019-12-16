@@ -138,7 +138,7 @@ def allreduce_quant(r, world, peers, tensor, quantize, unquantize, numberOfThrea
         chunk = tensor[i*chunksize:(i+1)*chunksize]
         qchunk = quantize(chunk, numberOfThreads)
         reqs += [dist.isend(tensor=qchunk, dst=i)] # K concurrent transfers
-    recv = torch.zeros(sizeOfTensor // (world * dataSz))
+    recv = torch.zeros(sizeOfTensor // (world * dataSz), dtype=torch.int32)
     for i in peers: # K steps
         dist.recv(tensor=recv,src=i) # K / ??? values...
         chunk = unquantize(recv, numberOfThreads)
