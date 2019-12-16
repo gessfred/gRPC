@@ -39,7 +39,7 @@ def run(fn, args, size, iters=100):
     tensor = torch.ones(2**size)
     start = time.time()
     for _ in range(iters):
-        fn(tensor, *args)
+        fn(r, world, peers, tensor, *args)
     exec_time = time.time() - start
     print(exec_time)
     time.sleep(1)
