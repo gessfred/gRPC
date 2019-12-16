@@ -8,13 +8,17 @@ from torch.multiprocessing import Process
 import cProfile
 from functools import reduce
 import numpy as numpy
-from all_reduce import ms_allreduce_un, ring_all_reduce, allreduce
-
+from all_reduce import ms_allreduce_un, ring_all_reduce, allreduce, allreduce_quant, ms_allreduce
+from quantizy import quantizy
 def run(rank, size):
-    tensor = torch.ones(2**3)
+    tensor = torch.ones(64)
     group = dist.new_group(list(range(size)))
-    allreduce(tensor)
-    print('rank', tensor)
+    q = quantizy('numpy')
+    allreduce_quant(tensor, *q)
+    tensor2 = torch.ones(64)
+    ms_allreduce(tensor2, *q)
+    print(tensor)
+    print('rank', tensor2)
 
 def init_processes(rank, size, fn, backend='gloo'):
     """ Initialize the distributed environment. """
@@ -24,7 +28,7 @@ def init_processes(rank, size, fn, backend='gloo'):
     fn(rank, size)
 
 if __name__ == '__main__':
-    size = 8
+    size = 2
     processes = []
     for rank in range(size):
         p = Process(target=init_processes, args=(rank, size, run))

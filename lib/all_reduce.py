@@ -129,3 +129,36 @@ def allreduce(tensor):
         tensor[i*chunksize:(i+1)*chunksize] += recv
     for req in reqs:
         req.wait()
+
+def allreduce_quant(tensor, quantize, unquantize, numberOfThreads=24):
+    r = dist.get_rank()
+    world = dist.get_world_size()
+    peers = list(filter(lambda i: i != r, list(range(world))))
+    sizeOfTensor=list(tensor.size())[0]
+    chunksize = sizeOfTensor // world
+    reqs = []
+    for i in peers: # K steps
+        chunk = tensor[i*chunksize:(i+1)*chunksize]
+        qchunk = quantize(chunk, numberOfThreads)
+        reqs += [dist.isend(tensor=qchunk, dst=i)] # K concurrent transfers
+    recv = torch.zeros(sizeOfTensor // (world * dataSz))
+    for i in peers: # K steps
+        dist.recv(tensor=recv,src=i) # K / ??? values...
+        chunk = unquantize(recv, numberOfThreads)
+        tensor[r*chunksize:(r+1)*chunksize] += chunk
+    for req in reqs:
+        req.wait()
+    # we have to set to zero the values that we are not responsible (they will be included on their way back)
+    tensor[0:r*chunksize] = 0
+    tensor[(r+1)*chunksize:sizeOfTensor] = 0
+    reqs = []
+    for i in peers:
+        chunk = tensor[r*chunksize:(r+1)*chunksize]
+        qchunk = quantize(chunk, numberOfThreads)
+        reqs += [dist.isend(tensor=qchunk,dst=i)]
+    for i in peers:
+        dist.recv(tensor=recv, src=i)
+        chunk = unquantize(recv, numberOfThreads)
+        tensor[i*chunksize:(i+1)*chunksize] += chunk
+    for req in reqs:
+        req.wait()
