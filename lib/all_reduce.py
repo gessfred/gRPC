@@ -106,3 +106,26 @@ def ms_allreduce_un(tensor):
     for req in reqs:
         req.wait()
     tensor[:] = acc[:]
+
+def allreduce(tensor):
+    r = dist.get_rank()
+    world = dist.get_world_size()
+    peers = list(filter(lambda i: i != r, list(range(world))))
+    sizeOfTensor=list(tensor.size())[0]
+    chunksize = sizeOfTensor // world
+    reqs = [dist.isend(tensor=tensor[i*chunksize:(i+1)*chunksize], dst=i) for i in peers] # K concurrent transfers
+    recv = torch.zeros(sizeOfTensor // (world))
+    for i in peers: # K steps
+        dist.recv(tensor=recv,src=i) # K / ??? values...
+        tensor[r*chunksize:(r+1)*chunksize] += recv[:]
+    for req in reqs:
+        req.wait()
+    # we have to set to zero the values that we are not responsible (they will be included on their way back)
+    tensor[0:r*chunksize] = 0
+    tensor[(r+1)*chunksize:sizeOfTensor] = 0
+    reqs = [dist.isend(tensor=tensor[r*chunksize:(r+1)*chunksize],dst=i) for i in peers]
+    for i in peers:
+        dist.recv(tensor=recv, src=i)
+        tensor[i*chunksize:(i+1)*chunksize] += recv
+    for req in reqs:
+        req.wait()
