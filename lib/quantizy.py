@@ -1,7 +1,7 @@
 import torch
 import numpy as np
 from q_cpp import quantize_shrink, unquantize_shrink
-from q_par_cpp import quantize_shrink_par, unquantize_shrink_par, inplace_quantize, quantize_collapse
+from q_par_cpp import quantize_shrink_par, unquantize_shrink_par
 dataSz = 32
 """
 Naive functions
@@ -78,8 +78,6 @@ def quantizy(version):
         "concept": [quantize_pof, unquantize_pof],
         "ext": [quantize_shrink, unquantize_shrink],
         "ext_par": [quantize_shrink_par, unquantize_shrink_par],
-        "inplace": [inplace_quantize, unquantize_shrink_par],
-        "collapse": [quantize_collapse, unquantize_shrink_par],
     }
     return versions[version]
 #
