@@ -1,7 +1,7 @@
 import torch
 import numpy as np
-from q_cpp import quantize_shrink, unquantize_shrink, inplace_quantize, quantize_collapse
-from q_par_cpp import quantize_shrink_par, unquantize_shrink_par
+from q_cpp import quantize_shrink, unquantize_shrink
+from q_par_cpp import quantize_shrink_par, unquantize_shrink_par, inplace_quantize, quantize_collapse
 dataSz = 32
 """
 Naive functions
