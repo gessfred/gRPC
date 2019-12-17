@@ -1,9 +1,10 @@
 #include <torch/extension.h>
 
 
-torch::Tensor inplace_quantize(torch::Tensor res, torch::Tensor tensor, size_t numberOfThreads) {
+torch::Tensor inplace_quantize(torch::Tensor tensor, size_t numberOfThreads, torch::Tensor res) {
     auto tensor_a = tensor.accessor<float,1>();
     auto res_a = res.accessor<int,1>();
+    #pragma omp parallel for num_threads(numberOfThreads)
     for(int i = 0; i < N2; i++){
         int x = 0;
         for(int j = 0; j < 32; j++){
@@ -54,7 +55,7 @@ torch::Tensor quantize_collapse(torch::Tensor tensor, size_t numberOfThreads) {
     }
     return res;
 }
-
+/*
 torch::Tensor quantize_vector(torch::Tensor tensor, size_t numberOfThreads) {
     auto tensor_a = tensor.accessor<float,1>();
     int originalSize = torch::size(tensor, 0);
@@ -69,7 +70,7 @@ torch::Tensor quantize_vector(torch::Tensor tensor, size_t numberOfThreads) {
         }
     }
     return res;
-}
+}*/
 /*
 torch::Tensor quantize(torch::Tensor tensor, size_t numberOfThreads){
     auto tensor_a = tensor.accessor<float,1>();
@@ -100,7 +101,7 @@ torch::Tensor quantize(torch::Tensor tensor, size_t numberOfThreads){
     }
     return res;
 }*/
-
+/*
 torch::Tensor unquantize_collapse(torch::Tensor tensor, size_t numberOfThreads) {
     auto tensor_a = tensor.accessor<int,1>();
     int shrunkSize = torch::size(tensor, 0);
@@ -123,7 +124,7 @@ torch::Tensor unquantize_collapse(torch::Tensor tensor, size_t numberOfThreads) 
     }
     return res;
 }
-
+*/
 torch::Tensor unquantize_shrink(torch::Tensor tensor, size_t numberOfThreads){
     auto tensor_a = tensor.accessor<int,1>();
     int N2 = torch::size(tensor, 0);
