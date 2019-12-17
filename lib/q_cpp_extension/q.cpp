@@ -117,8 +117,6 @@ torch::Tensor unquantize_shrink(torch::Tensor tensor, size_t numberOfThreads){
 }
 
 PYBIND11_MODULE(q_cpp, m) {
-  m.def("quantize_collapse", &quantize_collapse, "quantize_collapse");
-  m.def("inplace_quantize", &inplace_quantize, "inplace_quantize");
   m.def("quantize_shrink", &quantize_shrink, "quantize shrink");
   m.def("unquantize_shrink", &unquantize_shrink, "unquantize shrink");
 }
