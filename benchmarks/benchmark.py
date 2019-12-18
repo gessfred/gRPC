@@ -67,10 +67,10 @@ def pyflame(pid, output, mode, rate):
             svg.write(p2.stdout.read())
         print('Saved FlameGraph svg output to {}.svg'.format(output))
 
-def perf(pid, output, mode):
+def perf(pid, output, mode, rate):
     p1 = Popen(['perf', 'record', '-F 10000', '-p', pid, '--', 'sleep 10'], stdout=PIPE)
 
-def vtune(pid, output, mode):
+def vtune(pid, output, mode, rate):
     p1 = Popen(['amplxe-cl', '--collect', 'hotspots', '-target-pid', pid])
 
 tools = {
