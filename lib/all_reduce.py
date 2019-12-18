@@ -121,12 +121,10 @@ def allreduce(r, world, peers, tensor):
     for req in reqs:
         req.wait()
     # we have to set to zero the values that we are not responsible (they will be included on their way back)
-    tensor[0:r*chunksize] = 0
-    tensor[(r+1)*chunksize:sizeOfTensor] = 0
     reqs = [dist.isend(tensor=tensor[r*chunksize:(r+1)*chunksize],dst=i) for i in peers]
     for i in peers:
         dist.recv(tensor=recv, src=i)
-        tensor[i*chunksize:(i+1)*chunksize] += recv
+        tensor[i*chunksize:(i+1)*chunksize] = recv
     for req in reqs:
         req.wait()
 
@@ -146,8 +144,6 @@ def allreduce_quant(r, world, peers, tensor, quantize, unquantize, numberOfThrea
     for req in reqs:
         req.wait()
     # we have to set to zero the values that we are not responsible (they will be included on their way back)
-    tensor[0:r*chunksize] = 0
-    tensor[(r+1)*chunksize:sizeOfTensor] = 0
     reqs = []
     for i in peers:
         chunk = tensor[r*chunksize:(r+1)*chunksize]
@@ -156,6 +152,6 @@ def allreduce_quant(r, world, peers, tensor, quantize, unquantize, numberOfThrea
     for i in peers:
         dist.recv(tensor=recv, src=i)
         chunk = unquantize(recv, numberOfThreads)
-        tensor[i*chunksize:(i+1)*chunksize] += chunk
+        tensor[i*chunksize:(i+1)*chunksize] = chunk
     for req in reqs:
         req.wait()
