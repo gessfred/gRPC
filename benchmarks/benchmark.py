@@ -36,7 +36,7 @@ def run(fn, args, size, iters=100):
     peers = list(filter(lambda i: i != r, list(range(world))))
     # Barrier here
     tensor = torch.ones(2**size)
-    dist.barrier(group)
+    #dist.barrier(group)
     start = time.time()
     for _ in range(iters):
         fn(r, world, peers, tensor, *args)
@@ -72,6 +72,9 @@ def perf(pid, output, mode, rate):
 
 def vtune(pid, output, mode, rate):
     p1 = Popen(['amplxe-cl', '--collect', 'hotspots', '-target-pid', pid])
+
+def pyspy(pid, output, mode, rate):
+    p1 = Popen(['py-spy', 'record', '-o {}'.format(output), '--pid {}'.format(pid)])
 
 tools = {
     "vtune": vtune,
@@ -143,7 +146,7 @@ if __name__ == '__main__':
         profile = tools[prof[0]] if profiled and prof[0] in [k for k in tools] else lambda pid, out, mode: None
         rate = 0.00001 if len(prof) < 3 else prof[2]
         if args.size is None:
-            for size in [14, 18, 22, 26]:
+            for size in range(10, 20):
                 print('{}'.format(size))
                 benchmark(fn, q, size, iters, profile, '{}-{}'.format(args.output, size), mode, rate, args.numberOfThreads)
         else:
