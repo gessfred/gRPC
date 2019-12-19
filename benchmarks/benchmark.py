@@ -80,6 +80,7 @@ tools = {
     "vtune": vtune,
     "perf": perf,
     "pyflame": pyflame,
+    "py-spy": pyspy,
 }
 
 functions = {
