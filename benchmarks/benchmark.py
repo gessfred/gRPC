@@ -30,19 +30,19 @@ def ping(rank):
     size: input size or range of input sizes
 """
 def run(fn, args, size, iters=100):
-    time.sleep(1)
-    init()
+    group = init()
     r = dist.get_rank()
     world = dist.get_world_size()
     peers = list(filter(lambda i: i != r, list(range(world))))
-    time.sleep(2)
+    # Barrier here
     tensor = torch.ones(2**size)
+    dist.barrier(group)
     start = time.time()
     for _ in range(iters):
         fn(r, world, peers, tensor, *args)
     exec_time = time.time() - start
     print(exec_time)
-    time.sleep(1)
+    time.sleep(5)
 
 def run_baseline(iters):
     group = init()
