@@ -129,8 +129,8 @@ if __name__ == '__main__':
     if args.ping:
         init()
         ping(rank)
-    elif func is not None and len(func) > 0 and func[0] == 'baseline':
-        run_baseline(iters)
+    #elif func is not None and len(func) > 0 and func[0] == 'baseline':
+    #    run_baseline(iters)
     elif func is not None and len(func) > 0 and func[0] == 'quantize':
         benchmarkQ(iters)
     else:
@@ -147,7 +147,7 @@ if __name__ == '__main__':
         profile = tools[prof[0]] if profiled and prof[0] in [k for k in tools] else lambda pid, out, mode: None
         rate = 0.00001 if len(prof) < 3 else prof[2]
         if args.size is None:
-            for size in range(10, 20):
+            for size in range(12, 31, 4):
                 print('{}'.format(size))
                 benchmark(fn, q, size, iters, profile, '{}-{}'.format(args.output, size), mode, rate, args.numberOfThreads)
         else:
