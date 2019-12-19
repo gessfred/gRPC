@@ -147,7 +147,7 @@ if __name__ == '__main__':
         profile = tools[prof[0]] if profiled and prof[0] in [k for k in tools] else lambda pid, out, mode: None
         rate = 0.00001 if len(prof) < 3 else prof[2]
         if args.size is None:
-            for size in range(12, 31, 4):
+            for size in [14, 18, 22, 26]:
                 print('{}'.format(size))
                 benchmark(fn, q, size, iters, profile, '{}-{}'.format(args.output, size), mode, rate, args.numberOfThreads)
         else:
