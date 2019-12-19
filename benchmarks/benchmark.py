@@ -36,13 +36,12 @@ def run(fn, args, size, iters=100):
     peers = list(filter(lambda i: i != r, list(range(world))))
     # Barrier here
     tensor = torch.ones(2**size)
-    #dist.barrier(group)
+    dist.barrier(group)
     start = time.time()
     for _ in range(iters):
         fn(r, world, peers, tensor, *args)
     exec_time = time.time() - start
     print(exec_time)
-    time.sleep(5)
 
 def run_baseline(iters):
     group = init()
@@ -74,7 +73,7 @@ def vtune(pid, output, mode, rate):
     p1 = Popen(['amplxe-cl', '--collect', 'hotspots', '-target-pid', pid])
 
 def pyspy(pid, output, mode, rate):
-    p1 = Popen(['py-spy', 'record', '-o {}'.format(output), '--pid {}'.format(pid)])
+    p1 = Popen(['py-spy', 'record', '-o', output, '--pid', pid])
 
 tools = {
     "vtune": vtune,
