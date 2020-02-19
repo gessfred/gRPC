@@ -1,6 +1,4 @@
 #!/usr/bin/env python
-import sys
-sys.path.append('../lib')
 import torch
 import argparse
 from all_reduce import ms_allreduce, ms_allreduce_un, ring_all_reduce, allreduce, allreduce_quant
@@ -13,11 +11,12 @@ import os
 import datetime
 
 def init():
-    IP = "10.90.38.4"
-    os.environ['MASTER_ADDR'] = IP
-    os.environ['MASTER_PORT'] = '29500'
-    os.environ['GLOO_SOCKET_IFNAME'] = "ens786f0"
-    dist.init_process_group('gloo', rank=os.environ['RANK'], timeout=datetime.timedelta(seconds=10), world_size=2, init_method='tcp://{}:60000'.format(IP))
+    print('init...')
+    IP = os.environ['MASTER_ADDR']
+    os.environ['MASTER_PORT'] = os.environ['PYTORCH_PORT']#'29500'
+    os.environ['GLOO_SOCKET_IFNAME'] = os.environ['PYTORCH_SOCKET']
+    dist.init_process_group('gloo', rank=int(os.environ['RANK']), timeout=datetime.timedelta(seconds=10), world_size=2, init_method='tcp://{}:60000'.format(IP))
+    print('init process group!')
     return dist.new_group(range(2))
 def ping(rank):
     req = dist.isend(torch.ones(1), dst=rank + 1 % 2)
@@ -29,7 +28,10 @@ def ping(rank):
     iters: number of iterations
     size: input size or range of input sizes
 """
-def run(fn, args, size, iters=100):
+def run(fn, args):
+    size = 32
+    iters = 1
+    print('running...')
     group = init()
     r = dist.get_rank()
     world = dist.get_world_size()
@@ -90,11 +92,24 @@ functions = {
     "all-reduce-quant": allreduce_quant,
 }
 
+def test():
+    group = init()
+    r = dist.get_rank()
+    world = dist.get_world_size()
+    start = time.time()
+    req = dist.isend(torch.ones(1), dst=(r + 1) % 2)
+    dist.recv(torch.ones(1), src=(r + 1) % 2)
+    req.wait()
+    exec_time = time.time() - start
+    print('exec_time:', exec_time)
+
 def benchmark(fn, q, size, iterations, profile, output, mode, rate, numberOfThreads):
     #profile = tools[args.tool] if args.tool in [k for k in tools] else lambda pid, out, mode: None
     q = q if len(q) == 0 else q + [numberOfThreads]
-    p = Process(target=run, args=(fn, q, size, iterations))
+    p = Process(target=run, args=(fn, q))
+    print('starting process...', p.pid)
     p.start()
+    print('started process...')
     if profiled:
         time.sleep(1)
         profile(str(p.pid), output, mode, rate)
@@ -112,8 +127,9 @@ def benchmarkQ(iters):
         print('{}: {}'.format(numberOfThreads, runtime))
     
 
-if __name__ == '__main__':
+def main():
     rank = int(os.environ['RANK'])
+    print('rank is {}'.format(rank))
     parser = argparse.ArgumentParser(description='Benchmark runner')
     parser.add_argument('-it', type=int, dest='iterations', action='store',help='number of iterations')
     parser.add_argument('-v', dest='version', default='cast', action='store', help='all-reduce:numpy, all-reduce:ext, all-reduce-unsaturated implementation of the subject function')
@@ -133,6 +149,7 @@ if __name__ == '__main__':
     elif func is not None and len(func) > 0 and func[0] == 'quantize':
         benchmarkQ(iters)
     else:
+        print('Benchmarking...')
         fn = functions[func[0]] if func[0] in [k for k in functions] else None
         q = []
         if len(func) == 2:
@@ -152,3 +169,8 @@ if __name__ == '__main__':
         else:
             size = args.size if args.size is not None else 10
             benchmark(fn, q, size, iters, profile, args.output, mode, rate, args.numberOfThreads)
+
+if __name__ == '__main__':
+    p = Process(target=test)
+    p.start()
+    p.join()

@@ -1,0 +1,22 @@
+version: '3'
+services: 
+    master:
+        image: jet
+        expose: 
+            - "60000"
+            - "29500"
+        environment: 
+            - RANK=0
+            - MASTER_ADDR=master
+            - PYTORCH_PORT=29501
+            - PYTORCH_SOCKET=eth0
+    slave:
+        image: jet
+        expose: 
+            - "6000"
+            - "29500"
+        environment: 
+            - RANK=1
+            - MASTER_ADDR=master
+            - PYTORCH_PORT=29501
+            - PYTORCH_SOCKET=eth0
