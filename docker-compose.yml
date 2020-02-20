@@ -1,7 +1,7 @@
 version: '3'
 services: 
     master:
-        image: jet
+        dockerfile: Dockerfile
         expose: 
             - "60000"
             - "29500"
@@ -11,7 +11,7 @@ services:
             - PYTORCH_PORT=29501
             - PYTORCH_SOCKET=eth0
     slave:
-        image: jet
+        dockerfile: Dockerfile
         expose: 
             - "6000"
             - "29500"

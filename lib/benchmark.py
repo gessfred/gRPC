@@ -171,6 +171,7 @@ def main():
             benchmark(fn, q, size, iters, profile, args.output, mode, rate, args.numberOfThreads)
 
 if __name__ == '__main__':
+    print('Benchmarking...')
     p = Process(target=test)
     p.start()
     p.join()

@@ -15,7 +15,7 @@ spec:
                     value: eth0
                   - name: RANK
                     value: "1"
-                  image: jet
+                  image: gessfred/pyparsa
                   name: slave
 ---
 apiVersion: apps/v1
@@ -35,5 +35,5 @@ spec:
                     value: eth0
                   - name: RANK
                     value: "0"
-                  image: jet
+                  image: gessfred/pyparsa
                   name: master
