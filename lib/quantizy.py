@@ -2,6 +2,8 @@ import torch
 import numpy as np
 from q_cpp import quantize_shrink, unquantize_shrink
 from q_par_cpp import quantize_shrink_par, unquantize_shrink_par
+from q_general_cpp import quantize_general, unquantize_general
+
 dataSz = 32
 """
 Naive functions
@@ -44,7 +46,7 @@ def quantize_pof(tensor, numberOfThreads):
     print(N)
     #assert N % dataSz == 0
     N2 = N // dataSz
-    res = torch.zeros(N2, dtype=int) 
+    res = torch.zeros(N2, dtype=int)
     for i in range(N2):
         x = 0
         for j in range(dataSz):
@@ -78,6 +80,7 @@ def quantizy(version):
         "concept": [quantize_pof, unquantize_pof],
         "ext": [quantize_shrink, unquantize_shrink],
         "ext_par": [quantize_shrink_par, unquantize_shrink_par],
+        "general": [quantize_general, unquantize_general]
     }
     return versions[version]
 #
