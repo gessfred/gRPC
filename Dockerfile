@@ -11,3 +11,5 @@ COPY . ${LIB}
 RUN cd ${LIB}/lib/q_cpp_extension/ && python setup.py install
 RUN cd ${LIB}/lib/q_par_cpp_extension/ && python setup.py install
 ENTRYPOINT [ "python", "/jet/lib/benchmark.py", "-v ext" ]
+EXPOSE 29500
+EXPOSE 60000
