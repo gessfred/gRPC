@@ -41,16 +41,13 @@ class Net(nn.Module):
 def train(args, model, device, train_loader, optimizer, epoch):
     group = dist.new_group([0, 1])
     model.train()
-    quantization_error = [None]*len(list(model.parameters()))
+    gpu = torch.device('cuda')
     rank = dist.get_rank()
-    log = lambda msg: print(msg) if rank == 0 else None
-    peers = list(filter(lambda x: x != rank, [0,1]))
-    world = dist.get_world_size()
     for batch_idx, (data, target) in enumerate(train_loader):
         dim = len(target) // 4
         data = data[:dim] if rank == 0 else data[dim:]
         target = target[:dim] if rank == 0 else target[dim:]
-        data, target = data.to(device), target.to(device)
+        data, target = data.to(gpu), target.to(gpu)
         optimizer.zero_grad()
         output = model(data)
         loss = F.nll_loss(output, target)
@@ -113,8 +110,6 @@ def sanity_test():
 def main(args, rank=0, size=0):
     os.environ['RANK'] = str(rank)
 
-
-
     use_cuda = not args.no_cuda and torch.cuda.is_available()
 
     torch.manual_seed(args.seed)
@@ -145,9 +140,10 @@ def main(args, rank=0, size=0):
         test(args, model, device, test_loader)
         scheduler.step()
 
-    #if args.save_model:
-    #    torch.save(model.state_dict(), "mnist_cnn.pt")
+    if args.save_model:
+        torch.save(model.state_dict(), "mnist_cnn.pt")
 
+#for running locally
 def init_processes(args, fn, size=2):
     processes=[]
     for rank in range(size):
@@ -157,9 +153,4 @@ def init_processes(args, fn, size=2):
     return lambda: [p.join() for p in processes]
 
 if __name__ == '__main__':
-    #main(init())
-    os.environ['MASTER_ADDR'] = '127.0.0.1'
-    os.environ['MASTER_PORT'] = '29500'
-    os.environ['GLOO_SOCKET_IFNAME'] = 'en0'
-    join = init_processes(init(), main)
-    join()
+    main()

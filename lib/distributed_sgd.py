@@ -15,7 +15,8 @@ class DistributedSGD(SGD):
         self.init(2)
         self.world = 2
         self.params = self.param_groups[0]['params']
-
+        self.gpu = torch.device('cuda')
+        self.cpu = torch.device('cpu')
 
     def init(self, world_size):
         dist.init_process_group('gloo', rank=self.rank, timeout=datetime.timedelta(seconds=10), world_size=2, init_method='tcp://{}:60000'.format(os.environ['MASTER_ADDR']))
@@ -25,10 +26,12 @@ class DistributedSGD(SGD):
     def step(self, closure=None):
         #average gradients
         for i, parameter in enumerate(self.params):
+            parameter.grad.to(self.cpu)
             local = parameter.grad.clone()
             if self.quantization_error[i] is not None:
                 parameter.grad += self.quantization_error[i]
             allreduce_quant(self.rank, self.world, self.peers, parameter.grad)
             parameter.grad /= self.world
             self.quantization_error[i] = local - parameter.grad
+            parameter.grad.to(self.gpu)
         super().step(closure)
