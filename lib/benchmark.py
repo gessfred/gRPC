@@ -18,6 +18,7 @@ def init():
     dist.init_process_group('gloo', rank=int(os.environ['RANK']), timeout=datetime.timedelta(seconds=10), world_size=2, init_method='tcp://{}:60000'.format(IP))
     print('init process group!')
     return dist.new_group(range(2))
+
 def ping(rank):
     req = dist.isend(torch.ones(1), dst=rank + 1 % 2)
     dist.recv(torch.ones(1), src=rank + 1 % 2)

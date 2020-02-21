@@ -15,9 +15,9 @@ spec:
           env:
            - name: MASTER_ADDR
              value: 192.168.0.4
-           - name: PYTORCH_PORT
+           - name: MASTER_PORT
              value: "29500"
-           - name: PYTORCH_SOCKET
+           - name: GLOO_SOCKET_IFNAME
              value: eth0
            - name: RANK
              value: "0"
@@ -36,9 +36,9 @@ spec:
        env:
         - name: MASTER_ADDR
           value: 192.168.0.4
-        - name: PYTORCH_PORT
+        - name: MASTER_PORT
           value: "29500"
-        - name: PYTORCH_SOCKET
+        - name: GLOO_SOCKET_IFNAME
           value: eth0
         - name: RANK
           value: "1"
