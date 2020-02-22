@@ -32,8 +32,8 @@ object Deploy extends App {
 |    containers:
 |    - name: ${node.name}
 |      image: gessfred/pyparsa
-|      command: [ "ls" ]
-|      args: [ "/mnt/data" ]
+|      command: [ "python" ]
+|      args: [ "/jet/lib/mnist.py", "--lr 0.01" ]
 |      volumeMounts:
 |       - name: datasets
 |         mountPath: /mnt/data

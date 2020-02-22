@@ -153,4 +153,4 @@ def init_processes(args, fn, size=2):
     return lambda: [p.join() for p in processes]
 
 if __name__ == '__main__':
-    main()
+    main(init())
