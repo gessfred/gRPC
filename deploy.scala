@@ -33,7 +33,7 @@ object Deploy extends App {
 |    - name: ${node.name}
 |      image: gessfred/pyparsa
 |      command: [ "python" ]
-|      args: [ "/jet/lib/mnist.py", "--lr 0.01" ]
+|      args: [ "/jet/lib/mnist.py", "--lr", "0.01" ]
 |      volumeMounts:
 |       - name: datasets
 |         mountPath: /mnt/data
@@ -44,6 +44,8 @@ object Deploy extends App {
 |        value: "29500"
 |      - name: GLOO_SOCKET_IFNAME
 |        value: eth0
+|      - name: DATAPATH
+|        value: /mnt/data
 |      - name: RANK
 |        value: \"${node.rank}\"""".stripMargin
     val spec = nodes.zip(0.until(nodes.length)).map{

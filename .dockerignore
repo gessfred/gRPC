@@ -1,5 +1,6 @@
-/1bitSHD
-/data
-/tools
+.vscode
+/1bitSGD
 /dev
-*__pycache__
+/data
+/examples
+.git 
