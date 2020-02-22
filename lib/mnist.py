@@ -103,9 +103,7 @@ def init():
     return args
 def sanity_test():
     pass
-def main(args, rank=0, size=0):
-    os.environ['RANK'] = str(rank)
-
+def main(args):
     use_cuda = not args.no_cuda and torch.cuda.is_available()
 
     torch.manual_seed(args.seed)
