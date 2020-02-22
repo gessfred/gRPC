@@ -21,8 +21,8 @@ object Deploy extends App {
 |    containers:
 |    - name: ${node.name}
 |      image: gessfred/pyparsa
-|      command: [ "python" ]
-|      args: [ "/jet/lib/mnist.py", "--lr", "0.01" ]
+|      command: [ "nvcc" ]
+|      args: [ "-version" ]
 |      ports:
 |      - name: rendezvous
 |        containerPort: 60000
