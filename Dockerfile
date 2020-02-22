@@ -9,9 +9,15 @@ ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 RUN pip install numpy torch torchvision
 #RUN git clone https://github.com/facebookincubator/gloo.git
 #RUN cd /gloo && mkdir build && cd build && cmake .. && make && make install
-ADD . ${LIB}
+# This is to not recompile those every time
+ADD /lib/q_cpp_extension ${LIB}/lib/q_cpp_extension
+ADD /lib/q_par_cpp_extension ${LIB}/lib/q_par_cpp_extension
 RUN cd ${LIB}/lib/q_cpp_extension/ && python setup.py install
 RUN cd ${LIB}/lib/q_par_cpp_extension/ && python setup.py install
+ADD /lib/all_reduce.py ${LIB}/lib/all_reduce.py
+ADD /lib/distributed_sgd.py ${LIB}/lib/distributed_sgd.py
+ADD /lib/mnist.py ${LIB}/lib/mnist.py
+ADD /lib/quantizy.py ${LIB}/quantizy.py
 ENTRYPOINT [ "python", "/jet/lib/mnist.py", "--lr", "0.01" ]
 EXPOSE 29500
 EXPOSE 60000
