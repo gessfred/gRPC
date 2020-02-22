@@ -1,3 +1,4 @@
+import torch
 from torch.optim.optimizer import Optimizer, required
 from torch.optim.sgd import SGD
 import torch.distributed as dist

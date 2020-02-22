@@ -7,19 +7,6 @@ object Deploy extends App {
     case class Node(domain: String, rank: Int) {
         val name = if(rank == 0) "master" else s"slave${rank}"
     }
-    val volume = """apiVersion: v1
-|kind: PersistentVolume
-|metadata:
-|  name: task-pv-volume
-|  labels:
-|    type: local
-|spec:
-|  storageClassName: manual
-|  accessModes:
-|   - ReadWriteOnce
-|  hostPath:
-|    path: "/mnt/data"""".stripMargin
-    //def rendezvous(node: Node) = 
     def pod(node: Node): String = s"""apiVersion: v1
 |kind: Pod
 |metadata:
@@ -35,7 +22,7 @@ object Deploy extends App {
 |    - name: ${node.name}
 |      image: gessfred/pyparsa
 |      command: [ "python" ]
-|      args: [ "/jet/lib/benchmark.py" ]
+|      args: [ "/jet/lib/mnist.py", "--lr", "0.01" ]
 |      ports:
 |      - name: rendezvous
 |        containerPort: 60000
