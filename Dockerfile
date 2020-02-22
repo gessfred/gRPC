@@ -1,4 +1,4 @@
-FROM ubuntu
+FROM nvidia/cuda
 #ENV PATH /jet
 ENV LIB /jet
 RUN apt-get update -y 
