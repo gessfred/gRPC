@@ -13,7 +13,6 @@ import os
 import numpy as np
 from distributed_sgd import DistributedSGD
 
-
 class Net(nn.Module):
     def __init__(self):
         super(Net, self).__init__()
@@ -117,15 +116,16 @@ def main(args, rank=0, size=0):
     device = torch.device("cuda" if use_cuda else "cpu")
 
     kwargs = {'num_workers': 1, 'pin_memory': True} if use_cuda else {}
+    datapath = os.environ['DATAPATH']
     train_loader = torch.utils.data.DataLoader(
-        datasets.MNIST('../data', train=True, download=True,
+        datasets.MNIST(datapath, train=True, download=True,
                     transform=transforms.Compose([
                         transforms.ToTensor(),
                         transforms.Normalize((0.1307,), (0.3081,))
                     ])),
         batch_size=args.batch_size, shuffle=True, **kwargs)
     test_loader = torch.utils.data.DataLoader(
-        datasets.MNIST('../data', train=False, transform=transforms.Compose([
+        datasets.MNIST(datapath, train=False, transform=transforms.Compose([
                         transforms.ToTensor(),
                         transforms.Normalize((0.1307,), (0.3081,))
                     ])),
