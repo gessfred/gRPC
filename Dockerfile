@@ -17,7 +17,7 @@ RUN cd ${LIB}/lib/q_par_cpp_extension/ && python setup.py install
 ADD /lib/all_reduce.py ${LIB}/lib/all_reduce.py
 ADD /lib/distributed_sgd.py ${LIB}/lib/distributed_sgd.py
 ADD /lib/mnist.py ${LIB}/lib/mnist.py
-ADD /lib/quantizy.py ${LIB}/quantizy.py
+ADD /lib/quantizy.py ${LIB}/lib/quantizy.py
 ENTRYPOINT [ "python", "/jet/lib/mnist.py", "--lr", "0.01" ]
 EXPOSE 29500
 EXPOSE 60000

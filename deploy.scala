@@ -19,11 +19,13 @@ object Deploy extends App {
 |   - ReadWriteOnce
 |  hostPath:
 |    path: "/mnt/data"""".stripMargin
+    //def rendezvous(node: Node) = 
     def pod(node: Node): String = s"""apiVersion: v1
 |kind: Pod
 |metadata:
 |    name: ${node.name}
 |spec:
+|    restartPolicy: Never
 |    nodeName: ${node.domain}
 |    volumes:
 |     - name: datasets
@@ -34,6 +36,9 @@ object Deploy extends App {
 |      image: gessfred/pyparsa
 |      command: [ "python" ]
 |      args: [ "/jet/lib/mnist.py", "--lr", "0.01" ]
+|      ports:
+|      - name: rendezvous
+|        containerPort: 60000
 |      volumeMounts:
 |       - name: datasets
 |         mountPath: /mnt/data
