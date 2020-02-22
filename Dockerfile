@@ -18,6 +18,7 @@ ADD /lib/all_reduce.py ${LIB}/lib/all_reduce.py
 ADD /lib/distributed_sgd.py ${LIB}/lib/distributed_sgd.py
 ADD /lib/mnist.py ${LIB}/lib/mnist.py
 ADD /lib/quantizy.py ${LIB}/lib/quantizy.py
+ADD /lib/benchmark.py ${LIB}/lib/benchmark.py
 ENTRYPOINT [ "python", "/jet/lib/mnist.py", "--lr", "0.01" ]
 EXPOSE 29500
 EXPOSE 60000

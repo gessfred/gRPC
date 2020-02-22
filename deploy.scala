@@ -35,7 +35,7 @@ object Deploy extends App {
 |    - name: ${node.name}
 |      image: gessfred/pyparsa
 |      command: [ "python" ]
-|      args: [ "/jet/lib/mnist.py", "--lr", "0.01" ]
+|      args: [ "/jet/lib/benchmark.py" ]
 |      ports:
 |      - name: rendezvous
 |        containerPort: 60000
