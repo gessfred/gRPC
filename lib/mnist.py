@@ -49,11 +49,13 @@ def train(args, model, device, train_loader, optimizer, epoch):
         data = data[:dim] if rank == 0 else data[dim:]
         target = target[:dim] if rank == 0 else target[dim:]
         data, target = data.to(gpu), target.to(gpu)
+        print('data.to(gpu)')
         optimizer.zero_grad()
         output = model(data)
         loss = F.nll_loss(output, target)
         #update model gradients here
         loss.backward()
+        print('step')
         optimizer.step()
         if batch_idx % args.log_interval == 0:
             print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
