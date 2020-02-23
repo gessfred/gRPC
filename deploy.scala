@@ -1,12 +1,14 @@
 object Deploy extends App {
     def tab(x: Int) = 0.until(x).map(x => "  ").reduceLeft(_ + _)
     val env = Map("MASTER_ADDR" -> "192.168.0.4", "MASTER_PORT" -> "\"29500\"", "GLOO_SOCKET_IFNAME" -> "eth0")
-    val nodes = "iccluster088" :: Nil //:: "iccluster095" :: Nil
+    val nodes = "iccluster088" :: "iccluster088" :: Nil //:: "iccluster095" :: Nil
     val cmd = "cat <<EOF | kubectl apply -f -\n"
     val eof = "\nEOF"
     case class Node(domain: String, rank: Int) {
         val name = if(rank == 0) "master" else s"slave${rank}"
     }
+    case class Command(bin: String, args: List[String])
+    //192.168.0.4
     def pod(node: Node): String = s"""apiVersion: v1
 |kind: Pod
 |metadata:
@@ -21,8 +23,11 @@ object Deploy extends App {
 |    containers:
 |    - name: ${node.name}
 |      image: gessfred/pyparsa
-|      command: [ "ls" ]
-|      args: [ "/jet/lib" ]
+|      command: [ "python" ]
+|      args: [ "/jet/lib/mnist.py", "--lr", "0.01" ]
+|      resources:
+|        limits:
+|          nvidia.com/gpu: 1
 |      ports:
 |      - name: rendezvous
 |        containerPort: 60000
@@ -31,7 +36,7 @@ object Deploy extends App {
 |         mountPath: /mnt/data
 |      env:
 |      - name: MASTER_ADDR
-|        value: 192.168.0.4
+|        value: 192.168.0.6
 |      - name: MASTER_PORT
 |        value: "29500"
 |      - name: GLOO_SOCKET_IFNAME

@@ -38,10 +38,12 @@ class Net(nn.Module):
         return output
 
 def train(args, model, device, train_loader, optimizer, epoch):
+    print('training...')
     group = dist.new_group([0, 1])
     model.train()
     gpu = torch.device('cuda')
     rank = dist.get_rank()
+    print('first batch.:.')
     for batch_idx, (data, target) in enumerate(train_loader):
         dim = len(target) // 4
         data = data[:dim] if rank == 0 else data[dim:]

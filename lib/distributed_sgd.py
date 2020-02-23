@@ -20,10 +20,6 @@ class DistributedSGD(SGD):
         self.cpu = torch.device('cpu')
 
     def rendezvous(self, world_size):
-        print(os.environ['GLOO_SOCKET_IFNAME'])
-        print(os.environ['MASTER_ADDR'])
-        print(os.environ['MASTER_PORT'])
-        print(int(os.environ['RANK']))
         dist.init_process_group('gloo', rank=self.rank, timeout=datetime.timedelta(seconds=10), world_size=2, init_method='tcp://{}:60000'.format(os.environ['MASTER_ADDR']))
         self.peers = list(filter(lambda x: x != self.rank, [0,1]))
         return dist.new_group(range(world_size))
