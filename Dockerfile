@@ -7,6 +7,10 @@ ENV VIRTUAL_ENV=/opt/venv
 RUN python3 -m virtualenv --python=/usr/bin/python3 $VIRTUAL_ENV
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 RUN pip install numpy torch torchvision
+
+RUN dpkg -i cuda-repo-ubuntu_18.04_amd64.deb
+RUN apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu/amd64/7fa2af80.pub
+RUN apt-get install -y cuda 
 #RUN git clone https://github.com/facebookincubator/gloo.git
 #RUN cd /gloo && mkdir build && cd build && cmake .. && make && make install
 # This is to not recompile those every time
@@ -19,6 +23,7 @@ ADD /lib/distributed_sgd.py ${LIB}/lib/distributed_sgd.py
 ADD /lib/mnist.py ${LIB}/lib/mnist.py
 ADD /lib/quantizy.py ${LIB}/lib/quantizy.py
 ADD /lib/benchmark.py ${LIB}/lib/benchmark.py
+ADD /lib/gpu.py ${LIB}/lib/gpu.py
 ENTRYPOINT [ "python", "/jet/lib/mnist.py", "--lr", "0.01" ]
 EXPOSE 29500
 EXPOSE 60000
