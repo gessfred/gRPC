@@ -2,8 +2,6 @@
 #include <map>
 #include <vector>
 #include <stdexcept>
-#include <iostream>
-#include <bitset>
 
 /**
 std::vector<float> _1bit = {-0.6745, 0, 0.6745};
@@ -20,7 +18,7 @@ std::vector<float> _2bit_q = {-0.6745, 0, 0.6745};
 std::vector<float> _2bit_uq = {-1.1503, -0.3186, 0.3186, 1.1503};
 std::vector<float> _4bit_q = {-1.5341, -1.1503, -0.8871, -0.6745, -0.4888, -0.3186, -0.1573, 0,
                             0.1573, 0.3186, 0.4888, 0.6745, 0.8871, 1.1503, 1.5341};
-  std::vector<float> _4bit_uq = {-1.8627, -1.3180, -1.0100, -0.7764, -0.5791, -0.4023, -0.2372, -0.0784,
+std::vector<float> _4bit_uq = {-1.8627, -1.3180, -1.0100, -0.7764, -0.5791, -0.4023, -0.2372, -0.0784,
                             0.0784,  0.2372, 0.4023,  0.5791, 0.7764, 1.0100, 1.3180, 1.8627};
 
 std::map<int, std::vector<float>> quantization_levels = {
@@ -56,6 +54,7 @@ torch::Tensor quantize_general(torch::Tensor tensor, size_t bits, size_t numberO
     size_t length = quantization_limits.size();
     size_t pack_limit = 32/bits;
 
+    #pragma omp parallel for num_threads(numberOfThreads)
     for(size_t i = 0; i < N2; i++){
         int x = 0;
         for(size_t j = 0; j < pack_limit; j++){
@@ -90,6 +89,7 @@ torch::Tensor unquantize_general(torch::Tensor tensor, size_t bits, size_t numbe
     auto res = torch::zeros(N, torch::kFloat32);
     auto res_a = res.accessor<float,1>();
 
+    #pragma omp parallel for num_threads(numberOfThreads)
     for(size_t i = 0; i < N2; i++){
         unsigned int x = (unsigned int)tensor_a[i];
         for(size_t j = 0; j < pack_limit; j++){
