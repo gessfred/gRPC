@@ -56,7 +56,7 @@ class DistributedSGD(SGD):
             end.record()
             torch.cuda.synchronize()
             self.profile['transfer'] += start.elapsed_time(end)
-        self.profile['total'] += time.time() - start()
+        self.profile['total'] += time.time() - t0
         super().step(closure)
     
     def quantized_step(self, closure=None):
