@@ -9,7 +9,7 @@ from q_cpp import quantize_shrink, unquantize_shrink
 from all_reduce import allreduce_quant
 
 class DistributedSGD(SGD):
-    def __init__(self, params, lr=required, momentum=0, dampening=0,  weight_decay=0, nesterov=False):
+    def __init__(self, params, lr=required, momentum=0, dampening=0,  weight_decay=0, nesterov=False, quantized=True):
         super().__init__(params, lr, momentum, dampening, weight_decay, nesterov)
         self.quantization_error = [None]*len(list(self.param_groups[0]['params']))
         self.rank = int(os.environ['RANK'])
@@ -19,6 +19,7 @@ class DistributedSGD(SGD):
         self.gpu = torch.device('cuda')
         self.cpu = torch.device('cpu')
         self.ping()
+        self.step = self.quantized_step if quantized else self.step_
 
     def ping(self):
         rank = self.rank
@@ -31,8 +32,16 @@ class DistributedSGD(SGD):
         dist.init_process_group('gloo', rank=self.rank, timeout=datetime.timedelta(seconds=10), world_size=2, init_method='tcp://{}:60000'.format(os.environ['MASTER_ADDR']))
         self.peers = list(filter(lambda x: x != self.rank, [0,1]))
         return dist.new_group(range(world_size))
+
+    def step_(self, closure=None):
+        for i, parameter in enumerate(self.params):
+            parameter.grad.to(self.cpu)
+            dist.all_reduce(parameter.grad, group=self.group)
+            parameter.grad /= self.world
+            parameter.grad.to(self.gpu)
+        super().step(closure)
     
-    def step(self, closure=None):
+    def quantized_step(self, closure=None):
         #average gradients
         for i, parameter in enumerate(self.params):
             parameter.grad.to(self.cpu)

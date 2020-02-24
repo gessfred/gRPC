@@ -23,6 +23,8 @@ object Deploy extends App {
 |    containers:
 |    - name: ${node.name}
 |      image: gessfred/pyparsa
+|      command: [ "sleep" ]
+|      args: [ "infinity" ]
 |      resources:
 |        limits:
 |          nvidia.com/gpu: 1
