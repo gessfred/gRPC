@@ -20,7 +20,7 @@ std::vector<float> _2bit_q = {-0.6745, 0, 0.6745};
 std::vector<float> _2bit_uq = {-1.1503, -0.3186, 0.3186, 1.1503};
 std::vector<float> _4bit_q = {-1.5341, -1.1503, -0.8871, -0.6745, -0.4888, -0.3186, -0.1573, 0,
                             0.1573, 0.3186, 0.4888, 0.6745, 0.8871, 1.1503, 1.5341};
-std::vector<float> _4bit_uq = {-1.8627, -1.3180, -1.0100, -0.7764, -0.5791, -0.4023 -0.2372, -0.0784,
+  std::vector<float> _4bit_uq = {-1.8627, -1.3180, -1.0100, -0.7764, -0.5791, -0.4023, -0.2372, -0.0784,
                             0.0784,  0.2372, 0.4023,  0.5791, 0.7764, 1.0100, 1.3180, 1.8627};
 
 std::map<int, std::vector<float>> quantization_levels = {
@@ -82,17 +82,18 @@ torch::Tensor unquantize_general(torch::Tensor tensor, size_t bits, size_t numbe
     auto tensor_a = tensor.accessor<int,1>();
     size_t N2 = torch::size(tensor, 0);
 
-    size_t N = N2 * 32;
+    size_t pack_limit = 32/bits;
+    unsigned int mask = (1<<bits)-1;
+    std::vector<float> unquantization_values = unquantization_levels[bits];
+
+    size_t N = N2 * pack_limit;
     auto res = torch::zeros(N, torch::kFloat32);
     auto res_a = res.accessor<float,1>();
-    size_t pack_limit = 32/bits;
-    unsigned int mask = (2<<bits)-1;
-    std::vector<float> unquantization_values = unquantization_levels[bits];
 
     for(size_t i = 0; i < N2; i++){
         unsigned int x = (unsigned int)tensor_a[i];
         for(size_t j = 0; j < pack_limit; j++){
-            int z = (x >> (32 - j*bits)) & mask;
+            int z = (x >> (32 - (j+1)*bits)) & mask;
             res_a[pack_limit*i + j] = unquantization_values[z];
         }
     }
