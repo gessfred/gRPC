@@ -2,6 +2,7 @@
 import sys
 sys.path.append('../lib')
 import torch
+import time
 from quantizy import quantizy
 
 
@@ -10,11 +11,11 @@ def check_equality(q, uq):
     tensor = torch.empty(32).normal_(mean=0,std=1)
     for bits in [1,2,4]:
         print('bits: {}'.format(bits))
-        quantized = q(tensor, bits, 24)
-        requantized = q(uq(quantized, bits, 24), bits, 24)
+        quantized = q(tensor, bits, 1)
+        requantized = q(uq(quantized, bits, 1), bits, 1)
         assert(torch.eq(quantized, requantized).all())
         print(' q( uq( q(t)) = q(t) --- correct')
-
+    print()
 
 def check_unquantize(q,uq):
     print('Checking unquantization...')
@@ -45,8 +46,8 @@ def check_unquantize(q,uq):
 
     for bits, expected in zip([1,2,4], res):
         print('bits: {}'.format(bits))
-        quantized = q(tensor, bits, 24)
-        actual = uq(quantized, bits, 24)
+        quantized = q(tensor, bits, 1)
+        actual = uq(quantized, bits, 1)
         assert( len(expected) == len(actual) )
         print(' length correct')
         #print(expected)
@@ -77,7 +78,7 @@ def check_quantize(fn):
     #print(tensor)
     for bits, expected in zip([1,2,4],res):
         print('bits: {}'.format(bits))
-        actual = fn(tensor, bits, 24)
+        actual = fn(tensor, bits, 1)
         assert( len(expected) == len(actual) )
         print(' length correct')
         for val, e in zip(actual.data, expected):
@@ -87,8 +88,29 @@ def check_quantize(fn):
             print(' --- correct')
         print()
 
+def check_parallelisation(q,uq, max_threads = 32, size = 10, iters=100):
+    tensor = torch.ones(2**size)
+
+    print('Quantization:')
+    for bits in [1,2,4]:
+        print('bits: {}'.format(bits))
+        print('...........  Quantization / Unquantization')
+        quantized = q(tensor, bits, 1)
+        for threads in range(1,max_threads+1):
+            start = time.time()
+            for _ in range(iters):
+                q(tensor, bits, threads)
+            exec_time_q = time.time() - start
+            start = time.time()
+            for _ in range(iters):
+                uq(quantized, bits, threads)
+            exec_time_uq = time.time() - start
+            print('threads: {:2}, time: {:6.6} / time: {:6.6}'.format(threads, str(exec_time_q), str(exec_time_uq)))
+        print()
+
 if __name__ == '__main__':
     q, uq = quantizy('general')
     check_quantize(q)
     check_unquantize(q,uq)
     check_equality(q,uq)
+    check_parallelisation(q,uq, 32, 18, 5000)
