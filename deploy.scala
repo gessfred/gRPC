@@ -23,8 +23,6 @@ object Deploy extends App {
 |    containers:
 |    - name: ${node.name}
 |      image: gessfred/pyparsa
-|      command: [ "python" ]
-|      args: [ "/jet/lib/mnist.py", "--lr", "0.01" ]
 |      resources:
 |        limits:
 |          nvidia.com/gpu: 1
