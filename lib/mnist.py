@@ -6,7 +6,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 from torchvision import datasets, transforms
 from torch.optim.lr_scheduler import StepLR
-
+from distributed_sgd import DistributedSGD
 
 class Net(nn.Module):
     def __init__(self):
@@ -113,7 +113,7 @@ def main():
         batch_size=args.test_batch_size, shuffle=True, **kwargs)
 
     model = Net().to(device)
-    optimizer = optim.Adadelta(model.parameters(), lr=args.lr)
+    optimizer = DistributedSGD(model.parameters(), lr=args.lr)
 
     scheduler = StepLR(optimizer, step_size=1, gamma=args.gamma)
     for epoch in range(1, args.epochs + 1):
