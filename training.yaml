@@ -1,0 +1,44 @@
+apiVersion: v1
+kind: Pod
+metadata:
+    name: master
+spec:
+    nodeName: iccluster088
+    containers:
+        - name: master
+          image: gessfred/pyparsa
+          command: ["python"]
+          args: ["/jet/lib/benchmark.py"]
+          ports:
+           - name: rendezvous
+             containerPort: 60000
+          env:
+           - name: MASTER_ADDR
+             value: 192.168.0.4
+           - name: MASTER_PORT
+             value: "29500"
+           - name: GLOO_SOCKET_IFNAME
+             value: eth0
+           - name: RANK
+             value: "0"
+---
+apiVersion: v1
+kind: Pod
+metadata:
+    name: slave
+spec:
+    nodeName: iccluster095
+    containers:
+     - name: slave
+       image: gessfred/pyparsa
+       command: ["python"]
+       args: ["/jet/lib/benchmark.py"]
+       env:
+        - name: MASTER_ADDR
+          value: 192.168.0.4
+        - name: MASTER_PORT
+          value: "29500"
+        - name: GLOO_SOCKET_IFNAME
+          value: eth0
+        - name: RANK
+          value: "1"

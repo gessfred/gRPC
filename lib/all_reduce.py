@@ -3,8 +3,8 @@ import os
 import torch
 import torch.distributed as dist
 from torch.multiprocessing import Process
-from quantizy import dataSz
-
+from quantizy import dataSz, quantize_shrink, unquantize_shrink
+import math
 """
 unsaturated ring all-reduce
 """
@@ -128,30 +128,47 @@ def allreduce(r, world, peers, tensor):
     for req in reqs:
         req.wait()
 
-def allreduce_quant(r, world, peers, tensor, quantize, unquantize, numberOfThreads=24):
+def pad(sz, world_size):
+    precision = 32
+    sz1 = int(math.ceil(sz / float(precision)))
+    return int(math.ceil(sz1 / float(world_size))) * precision * world_size
+
+def allreduce_quant(r, world, peers, tensor, numberOfThreads=24):
+    #preparation (flattening, padding, ...)
+    
+    originalShape = tensor.shape
+    tensor = tensor.flatten()
+    originalSize=list(tensor.size())[0]
+    paddedSize = pad(originalSize, world)
+    tensor = torch.nn.functional.pad(tensor, (0,paddedSize-originalSize))
     sizeOfTensor=list(tensor.size())[0]
+    flatSize = sizeOfTensor // dataSz
     chunksize = sizeOfTensor // world
     reqs = []
     for i in peers: # K steps
         chunk = tensor[i*chunksize:(i+1)*chunksize]
-        qchunk = quantize(chunk, numberOfThreads)
+        qchunk = quantize_shrink(chunk, numberOfThreads) #qchunk is int32
         reqs += [dist.isend(tensor=qchunk, dst=i)] # K concurrent transfers
     recv = torch.zeros(sizeOfTensor // (world * dataSz), dtype=torch.int32)
     for i in peers: # K steps
         dist.recv(tensor=recv,src=i) # K / ??? values...
-        chunk = unquantize(recv, numberOfThreads)
+        chunk = unquantize_shrink(recv, numberOfThreads)
         tensor[r*chunksize:(r+1)*chunksize] += chunk
     for req in reqs:
         req.wait()
     # we have to set to zero the values that we are not responsible (they will be included on their way back)
+
     reqs = []
     for i in peers:
         chunk = tensor[r*chunksize:(r+1)*chunksize]
-        qchunk = quantize(chunk, numberOfThreads)
+        qchunk = quantize_shrink(chunk, numberOfThreads)
         reqs += [dist.isend(tensor=qchunk,dst=i)]
     for i in peers:
         dist.recv(tensor=recv, src=i)
-        chunk = unquantize(recv, numberOfThreads)
+        chunk = unquantize_shrink(recv, numberOfThreads)
         tensor[i*chunksize:(i+1)*chunksize] = chunk
     for req in reqs:
         req.wait()
+    #clean-up/put everything back in place
+    tensor = tensor[:originalSize].reshape(originalShape)
+    return tensor

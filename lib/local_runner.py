@@ -1,6 +1,4 @@
 #!/usr/bin/env python
-import sys
-sys.path.append('../lib')
 import os
 import torch
 import torch.distributed as dist

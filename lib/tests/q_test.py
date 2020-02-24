@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 import sys
-sys.path.append('../lib')
+sys.path.append('..')
 import torch
 import time
 from quantizy import quantizy

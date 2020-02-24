@@ -1,0 +1,22 @@
+version: '3'
+services: 
+    master:
+        dockerfile: Dockerfile
+        expose: 
+            - "60000"
+            - "29500"
+        environment: 
+            - RANK=0
+            - MASTER_ADDR=master
+            - PYTORCH_PORT=29501
+            - PYTORCH_SOCKET=eth0
+    slave:
+        dockerfile: Dockerfile
+        expose: 
+            - "6000"
+            - "29500"
+        environment: 
+            - RANK=1
+            - MASTER_ADDR=master
+            - PYTORCH_PORT=29501
+            - PYTORCH_SOCKET=eth0

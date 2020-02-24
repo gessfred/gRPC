@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+    name: master
+spec:
+    template:
+        spec:
+            containers:
+                - env:
+                  - name: MASTER_ADDR
+                    value: master
+                  - name: PYTORCH_PORT
+                    value: "29501"
+                  - name: PYTORCH_SOCKET
+                    value: eth0
+                  - name: RANK
+                    value: "1"
+                  image: gessfred/pyparsa
+                  name: slave
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: 
+    name: slave
+spec: 
+    template: 
+        spec: 
+            containers:
+                - env:
+                  - name: MASTER_ADDR
+                    value: master
+                  - name: PYTORCH_PORT
+                    value: "29501"
+                  - name: PYTORCH_SOCKET
+                    value: eth0
+                  - name: RANK
+                    value: "0"
+                  image: gessfred/pyparsa
+                  name: master
