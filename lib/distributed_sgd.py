@@ -5,6 +5,7 @@ import torch.distributed as dist
 import os
 import datetime
 import random
+import time
 from q_cpp import quantize_shrink, unquantize_shrink
 from all_reduce import allreduce_quant
 
@@ -20,6 +21,7 @@ class DistributedSGD(SGD):
         self.cpu = torch.device('cpu')
         self.ping()
         self.step = self.quantized_step if quantized else self.step_
+        self.profile = {'transfer': 0.0, 'communication': 0.0, 'packing': 0.0, 'computation': 0.0, 'total': 0.0}
 
     def ping(self):
         rank = self.rank
@@ -35,11 +37,26 @@ class DistributedSGD(SGD):
         return dist.new_group(range(world_size))
 
     def step_(self, closure=None):
+        t0 = time.time()
         for i, parameter in enumerate(self.params):
+            start = torch.cuda.Event(enable_timing=True)
+            end = torch.cuda.Event(enable_timing=True)
+            start.record()
             parameter.grad.to(self.cpu)
+            end.record()
+            torch.cuda.synchronize()
+            self.profile['transfer'] += start.elapsed_time(end)
             dist.all_reduce(parameter.grad, group=self.group)
             parameter.grad /= self.world
+            start.record()
+            start = torch.cuda.Event(enable_timing=True)
+            end = torch.cuda.Event(enable_timing=True)
+            start.record()
             parameter.grad.to(self.gpu)
+            end.record()
+            torch.cuda.synchronize()
+            self.profile['transfer'] += start.elapsed_time(end)
+        self.profile['total'] += time.time() - start()
         super().step(closure)
     
     def quantized_step(self, closure=None):
