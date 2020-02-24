@@ -22,7 +22,7 @@ object Deploy extends App {
 |         path: /mnt/data
 |    containers:
 |    - name: ${node.name}
-|      image: pyparsa
+|      image: gessfred/pyparsa
 |      command: [ "python" ]
 |      args: [ "/jet/lib/mnist.py", "--lr", "0.01" ]
 |      resources:

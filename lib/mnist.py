@@ -36,9 +36,12 @@ class Net(nn.Module):
 def train(args, model, device, train_loader, optimizer, epoch):
     model.train()
     for batch_idx, (data, target) in enumerate(train_loader):
+        print('batch', batch_idx)
         data, target = data.to(device), target.to(device)
+        print('on device')
         optimizer.zero_grad()
         output = model(data)
+        print('eval')
         loss = F.nll_loss(output, target)
         loss.backward()
         optimizer.step()
@@ -117,6 +120,7 @@ def main():
 
     scheduler = StepLR(optimizer, step_size=1, gamma=args.gamma)
     for epoch in range(1, args.epochs + 1):
+        print('EPOCH', epoch)
         train(args, model, device, train_loader, optimizer, epoch)
         test(args, model, device, test_loader)
         scheduler.step()

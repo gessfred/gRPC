@@ -18,6 +18,14 @@ class DistributedSGD(SGD):
         self.params = self.param_groups[0]['params']
         self.gpu = torch.device('cuda')
         self.cpu = torch.device('cpu')
+        self.ping()
+
+    def ping(self):
+        rank = self.rank
+        req = dist.isend(torch.ones(1), dst=rank + 1 % 2)
+        dist.recv(torch.ones(1), src=rank + 1 % 2)
+        req.wait()
+        print('pinged')
 
     def rendezvous(self, world_size):
         dist.init_process_group('gloo', rank=self.rank, timeout=datetime.timedelta(seconds=10), world_size=2, init_method='tcp://{}:60000'.format(os.environ['MASTER_ADDR']))
