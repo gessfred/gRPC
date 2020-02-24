@@ -23,8 +23,9 @@ class DistributedSGD(SGD):
 
     def ping(self):
         rank = self.rank
-        req = dist.isend(torch.ones(1), dst=rank + 1 % 2)
-        dist.recv(torch.ones(1), src=rank + 1 % 2)
+        neighbour = (rank + 1) % 2
+        req = dist.isend(torch.ones(1), dst=neighbour)
+        dist.recv(torch.ones(1), src=neighbour)
         req.wait()
         print('pinged')
 
