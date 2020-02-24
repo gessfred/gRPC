@@ -13,8 +13,10 @@ RUN pip install numpy torch torchvision
 # This is to not recompile those every time
 ADD /lib/q_cpp_extension ${LIB}/lib/q_cpp_extension
 ADD /lib/q_par_cpp_extension ${LIB}/lib/q_par_cpp_extension
+ADD /lib/q_general_cpp_extension ${LIB}/lib/q_general_cpp_extension
 RUN cd ${LIB}/lib/q_cpp_extension/ && python setup.py install
 RUN cd ${LIB}/lib/q_par_cpp_extension/ && python setup.py install
+RUN cd ${LIB}/lib/q_general_cpp_extension/ && python setup.py install
 ADD /lib/all_reduce.py ${LIB}/lib/all_reduce.py
 ADD /lib/distributed_sgd.py ${LIB}/lib/distributed_sgd.py
 ADD /lib/mnist.py ${LIB}/lib/mnist.py

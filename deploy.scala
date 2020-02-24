@@ -1,7 +1,7 @@
 object Deploy extends App {
     def tab(x: Int) = 0.until(x).map(x => "  ").reduceLeft(_ + _)
     val env = Map("MASTER_ADDR" -> "192.168.0.4", "MASTER_PORT" -> "\"29500\"", "GLOO_SOCKET_IFNAME" -> "eth0")
-    val nodes = "iccluster088" :: Nil //:: "iccluster095" :: Nil
+    val nodes = "iccluster088" :: "iccluster095" :: Nil
     val cmd = "cat <<EOF | kubectl apply -f -\n"
     val eof = "\nEOF"
     case class Node(domain: String, rank: Int) {
@@ -22,7 +22,7 @@ object Deploy extends App {
 |         path: /mnt/data
 |    containers:
 |    - name: ${node.name}
-|      image: gessfred/pyparsa
+|      image: pyparsa
 |      command: [ "python" ]
 |      args: [ "/jet/lib/mnist.py", "--lr", "0.01" ]
 |      resources:
