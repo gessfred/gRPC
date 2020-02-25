@@ -8,6 +8,7 @@ import random
 import time
 from q_cpp import quantize_shrink, unquantize_shrink
 from all_reduce import allreduce_quant
+import subprocess
 
 class DistributedSGD(SGD):
     def __init__(self, params, lr=required, momentum=0, dampening=0,  weight_decay=0, nesterov=False, quantized=True):
@@ -22,6 +23,7 @@ class DistributedSGD(SGD):
         self.ping()
         self.step = self.quantized_step if quantized else self.step_
         #setup pyflame
+        subprocess.Popen(['pyflame', '--pid={}'.format(os.getpid(), '--output=/mnt/data/test.svg'])
         self.profile = {'transfer': 0.0, 'communication': 0.0, 'packing': 0.0, 'computation': 0.0, 'total': 0.0}
 
     def ping(self):
