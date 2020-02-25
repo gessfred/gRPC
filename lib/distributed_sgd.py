@@ -21,6 +21,7 @@ class DistributedSGD(SGD):
         self.cpu = torch.device('cpu')
         self.ping()
         self.step = self.quantized_step if quantized else self.step_
+        #setup pyflame
         self.profile = {'transfer': 0.0, 'communication': 0.0, 'packing': 0.0, 'computation': 0.0, 'total': 0.0}
 
     def ping(self):
@@ -45,8 +46,10 @@ class DistributedSGD(SGD):
             parameter.grad.to(self.cpu)
             end.record()
             torch.cuda.synchronize()
-            self.profile['transfer'] += start.elapsed_time(end)
+            self.profile['transfer'] += start.elapsed_time(end) / 1000
+            a1 = time.time()
             dist.all_reduce(parameter.grad, group=self.group)
+            self.profile['communication'] += time.time() - a1
             parameter.grad /= self.world
             start.record()
             start = torch.cuda.Event(enable_timing=True)
@@ -55,7 +58,7 @@ class DistributedSGD(SGD):
             parameter.grad.to(self.gpu)
             end.record()
             torch.cuda.synchronize()
-            self.profile['transfer'] += start.elapsed_time(end)
+            self.profile['transfer'] += start.elapsed_time(end) / 1000
         self.profile['total'] += time.time() - t0
         super().step(closure)
     
