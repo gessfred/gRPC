@@ -11,7 +11,7 @@ from all_reduce import allreduce_quant
 import subprocess
 
 class DistributedSGD(SGD):
-    def __init__(self, params, lr=required, momentum=0, dampening=0,  weight_decay=0, nesterov=False, quantized=True):
+    def __init__(self, params, lr=required, momentum=0, dampening=0,  weight_decay=0, nesterov=False, dtype='32bit'):
         super().__init__(params, lr, momentum, dampening, weight_decay, nesterov)
         self.quantization_error = [None]*len(list(self.param_groups[0]['params']))
         self.rank = int(os.environ['RANK'])
@@ -21,7 +21,10 @@ class DistributedSGD(SGD):
         self.gpu = torch.device('cuda')
         self.cpu = torch.device('cpu')
         self.ping()
-        self.step = self.quantized_step if quantized else self.step_
+        if dtype == '1bit':
+            self.step = self.quantized_step
+        elif dtype == '32bit':
+            self.step = self.step_
         #setup pyflame
         subprocess.Popen(['pyflame', '--pid={}'.format(os.getpid()), '--output=/mnt/data/test.svg'])
         self.profile = {'transfer': 0.0, 'communication': 0.0, 'packing': 0.0, 'computation': 0.0, 'total': 0.0}
@@ -71,6 +74,7 @@ class DistributedSGD(SGD):
             local = parameter.grad.clone()
             if self.quantization_error[i] is not None:
                 parameter.grad += self.quantization_error[i]
+            print(parameter.grad, flush=True)
             allreduce_quant(self.rank, self.world, self.peers, parameter.grad)
             parameter.grad /= self.world
             self.quantization_error[i] = local - parameter.grad

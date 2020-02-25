@@ -71,6 +71,7 @@ def test(args, model, device, test_loader):
 def main():
     # Training settings
     parser = argparse.ArgumentParser(description='PyTorch MNIST Example')
+    parser.add_argument('--dtype', default='32bit', help='level of compression. either \{1bit, 2bit, 4bit, 32bit\}')
     parser.add_argument('--batch-size', type=int, default=64, metavar='N',
                         help='input batch size for training (default: 64)')
     parser.add_argument('--test-batch-size', type=int, default=1000, metavar='N',
@@ -114,7 +115,7 @@ def main():
         batch_size=args.test_batch_size, shuffle=True, **kwargs)
 
     model = Net().to(device)
-    optimizer = DistributedSGD(model.parameters(), lr=args.lr, quantized=False)
+    optimizer = DistributedSGD(model.parameters(), lr=args.lr, dtype=args.dtype)
 
     scheduler = StepLR(optimizer, step_size=1, gamma=args.gamma)
     for epoch in range(1, args.epochs + 1):
