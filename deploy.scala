@@ -20,6 +20,16 @@ object Deploy extends App {
 |     - name: datasets
 |       hostPath:
 |         path: /mnt/data
+|     - name: mdb-creds
+|       secret:
+|         secretName: mongodb-secret
+|         items:
+|         - key: username
+|           path: admin/username
+|           mode: 0444
+|         - key: password
+|           path: admin/password
+|           mode: 0444
 |    containers:
 |    - name: ${node.name}
 |      image: gessfred/pyparsa
@@ -34,7 +44,14 @@ object Deploy extends App {
 |      volumeMounts:
 |       - name: datasets
 |         mountPath: /mnt/data
+|       - name: mdb-creds
+|         mountPath: /etc/mdb-creds
+|         readOnly: true
 |      env:
+|      - name: mdb-usr
+|        value: /etc/mdb-creds/admin/username
+|      - name: mdb-pwd
+|        value: /etc/mdb-creds/admin/password
 |      - name: MASTER_ADDR
 |        value: 192.168.0.6
 |      - name: MASTER_PORT
