@@ -24,7 +24,7 @@ object Deploy extends App {
 |    - name: ${node.name}
 |      image: gessfred/pyparsa
 |      command: [ "python" ]
-|      args: [ "/jet/lib/mnist.py", "--lr", "0.01", "--dtype", "1bit" ]
+|      args: [ "/jet/lib/mnist.py", "--lr", "0.01", "--dtype", "32bit" ]
 |      resources:
 |        limits:
 |          nvidia.com/gpu: 1

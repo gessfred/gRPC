@@ -101,7 +101,7 @@ def main():
     model = Net().to(device)
     optimizer = DistributedSGD(model.parameters(), lr=args.lr, dtype=args.dtype)
 
-    rep = Reporter()
+    rep = Reporter(model='?', dataset='MNIST', description='experimenting with data collection', args=args, use_cuda=use_cuda)
     scheduler = StepLR(optimizer, step_size=1, gamma=args.gamma)
     for epoch in range(1, args.epochs + 1):
         train(args, model, device, train_loader, optimizer, epoch)
