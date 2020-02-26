@@ -140,13 +140,17 @@ def allreduce_quant(r, world, peers, tensor, numberOfThreads=24):
     tensor = tensor.flatten()
     originalSize=list(tensor.size())[0]
     paddedSize = pad(originalSize, world)
+    print(originalSize, '=>', paddedSize, flush=True)
     tensor = torch.nn.functional.pad(tensor, (0,paddedSize-originalSize))
     sizeOfTensor=list(tensor.size())[0]
     flatSize = sizeOfTensor // dataSz
     chunksize = sizeOfTensor // world
+    print('size of Tensor =',sizeOfTensor, ' chunkSize =', chunksize)
+    print('reduce...')
     reqs = []
     for i in peers: # K steps
         chunk = tensor[i*chunksize:(i+1)*chunksize]
+        print('chunk#{}: {}'.format(i, list(chunk.size())[0]), flush=True)
         qchunk = quantize_shrink(chunk, numberOfThreads) #qchunk is int32
         reqs += [dist.isend(tensor=qchunk, dst=i)] # K concurrent transfers
     recv = torch.zeros(sizeOfTensor // (world * dataSz), dtype=torch.int32)
@@ -157,10 +161,11 @@ def allreduce_quant(r, world, peers, tensor, numberOfThreads=24):
     for req in reqs:
         req.wait()
     # we have to set to zero the values that we are not responsible (they will be included on their way back)
-
+    print('allgather...')
     reqs = []
     for i in peers:
         chunk = tensor[r*chunksize:(r+1)*chunksize]
+        print('chunk#{}: {}'.format(i, list(chunk.size())[0]), flush=True)
         qchunk = quantize_shrink(chunk, numberOfThreads)
         reqs += [dist.isend(tensor=qchunk,dst=i)]
     for i in peers:

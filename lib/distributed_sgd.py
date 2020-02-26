@@ -74,7 +74,6 @@ class DistributedSGD(SGD):
             local = parameter.grad.clone()
             if self.quantization_error[i] is not None:
                 parameter.grad += self.quantization_error[i]
-            print(parameter.grad, flush=True)
             allreduce_quant(self.rank, self.world, self.peers, parameter.grad)
             parameter.grad /= self.world
             self.quantization_error[i] = local - parameter.grad
