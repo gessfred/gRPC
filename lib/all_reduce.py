@@ -3,8 +3,9 @@ import os
 import torch
 import torch.distributed as dist
 from torch.multiprocessing import Process
-from quantizy import dataSz, quantize_shrink, unquantize_shrink
+from q_cpp import quantize_shrink, unquantize_shrink
 import math
+dataSz = 32
 """
 unsaturated ring all-reduce
 """

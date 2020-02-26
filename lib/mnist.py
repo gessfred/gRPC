@@ -81,15 +81,16 @@ def main():
     device = torch.device("cuda" if use_cuda else "cpu")
 
     kwargs = {'num_workers': 1, 'pin_memory': True} if use_cuda else {}
+    path = '/mnt/data'
     train_loader = torch.utils.data.DataLoader(
-        datasets.MNIST('/mnt/data', train=True, download=True,
+        datasets.MNIST(path, train=True, download=True,
                        transform=transforms.Compose([
                            transforms.ToTensor(),
                            transforms.Normalize((0.1307,), (0.3081,))
                        ])),
         batch_size=args.batch_size, shuffle=True, **kwargs)
     test_loader = torch.utils.data.DataLoader(
-        datasets.MNIST('/mnt/data', train=False, transform=transforms.Compose([
+        datasets.MNIST(path, train=False, transform=transforms.Compose([
                            transforms.ToTensor(),
                            transforms.Normalize((0.1307,), (0.3081,))
                        ])),

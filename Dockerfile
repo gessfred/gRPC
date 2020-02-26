@@ -26,6 +26,7 @@ ADD /lib/distributed_sgd.py ${LIB}/lib/distributed_sgd.py
 ADD /lib/mnist.py ${LIB}/lib/mnist.py
 ADD /lib/quantizy.py ${LIB}/lib/quantizy.py
 ADD /lib/benchmark.py ${LIB}/lib/benchmark.py
+ADD /lib/parser.py ${LIB}/lib/parser.py
 ADD /lib/gpu.py ${LIB}/lib/gpu.py
 #ENTRYPOINT [ "python", "/jet/lib/mnist.py", "--lr", "0.01" ]
 EXPOSE 29500
