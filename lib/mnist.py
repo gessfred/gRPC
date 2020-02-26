@@ -8,6 +8,7 @@ from torchvision import datasets, transforms
 from torch.optim.lr_scheduler import StepLR
 from distributed_sgd import DistributedSGD
 from parser import SGDParser
+from data_partitioner import partition_dataset
 class Net(nn.Module):
     def __init__(self):
         super(Net, self).__init__()
