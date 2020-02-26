@@ -3,13 +3,14 @@ from subprocess import Popen, PIPE, check_output
 import uuid
 import torch
 import torch.distributed as dist
+import os
 
 """
 This is a internal tool not meant to be used in production :)
 """
 class Reporter():
     def __init__(self, model, dataset, description, args, use_cuda):
-        client = MongoClient('mongodb://mongodb-standalone-0.database:27017')
+        client = MongoClient('mongodb://mongodb-standalone-0.database:27017', username=os.environ['mdb-usr'], password=os.environ['mdb-pwd'])
         self.db = client['admin']['benchmarks']
         path = '/jet/.git'
         self.data = {
