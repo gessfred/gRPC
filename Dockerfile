@@ -30,6 +30,7 @@ ADD /lib/data_partitioner.py ${LIB}/lib/data_partitioner.py
 ADD /lib/parser.py ${LIB}/lib/parser.py
 ADD /lib/reporter.py ${LIB}/lib/reporter.py
 ADD /lib/gpu.py ${LIB}/lib/gpu.py
+ADD .git ${LIB}/.git
 # ENTRYPOINT [ "python", "/jet/lib/mnist.py", "--lr", "0.01" ]
 EXPOSE 29500
 EXPOSE 60000

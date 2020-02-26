@@ -1,10 +1,32 @@
 from pymongo import MongoClient
 from subprocess import Popen, PIPE, check_output
+import uuid
+import torch
+import torch.distributed as dist
 
+"""
+This is a internal tool not meant to be used in production :)
+"""
 class Reporter():
-    def __init__(self):
+    def __init__(self, model, dataset, description, args, use_cuda):
         client = MongoClient('mongodb://mongodb-standalone-0.database:27017')
-        self.db = client.experiments
+        self.db = client['admin']['benchmarks']
+        path = '/jet/.git'
+        self.data = {
+            '_id': uuid.uuid4().hex,
+            'branch': check_output(['git', '--git-dir', path, 'branch']).decode('utf-8').split(' ')[1].split('\n')[0],
+            'commit': check_output(['git', '--git-dir', path, 'show', '--summary']).decode("utf-8").split(' ')[1].split('\n')[0],
+            'model': model,
+            'dataset': dataset,
+            'description': description,
+            'backend': dist.get_backend(),
+            'worldSize': dist.get_world_size(),
+            'rank': dist.get_rank(),
+            'dtype': args.dtype,
+            'cuda': use_cuda,
+            'learningRate': args.lr,
+            'gamma': args.gamma
+        }
         # Create uuid
 
         # Create start timestamp
@@ -13,3 +35,8 @@ class Reporter():
         # Get passed description, dataset, model 
         # Get number of nodes, rank from dist
         # Get dtype, use_cuda, learning_rate, gamma from args
+    def append(self, data):
+        self.data = {**self.data, **data}
+    
+    def collect(self):
+        self.db.insert_one(self.data)

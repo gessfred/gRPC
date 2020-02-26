@@ -74,7 +74,6 @@ def test(args, model, device, test_loader):
 def main():
     # Training settings
     parser = SGDParser(description='PyTorch MNIST Example')
-    rep = Reporter()
     args = parser.parse_args()
     use_cuda = not args.no_cuda and torch.cuda.is_available()
     if use_cuda:
@@ -102,12 +101,13 @@ def main():
     model = Net().to(device)
     optimizer = DistributedSGD(model.parameters(), lr=args.lr, dtype=args.dtype)
 
+    rep = Reporter()
     scheduler = StepLR(optimizer, step_size=1, gamma=args.gamma)
     for epoch in range(1, args.epochs + 1):
         train(args, model, device, train_loader, optimizer, epoch)
         test(args, model, device, test_loader)
         scheduler.step()
-
+    rep.collect()
     if args.save_model:
         torch.save(model.state_dict(), "mnist_cnn.pt")
 
