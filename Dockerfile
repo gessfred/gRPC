@@ -6,7 +6,7 @@ RUN apt-get install -y --no-install-recommends python3 python3-virtualenv build-
 ENV VIRTUAL_ENV=/opt/venv
 RUN python3 -m virtualenv --python=/usr/bin/python3 $VIRTUAL_ENV
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
-RUN pip install numpy torch torchvision
+RUN pip install numpy torch torchvision pymongo
 RUN git clone https://github.com/uber-archive/pyflame.git
 RUN cd /pyflame && ./autogen.sh
 RUN cd /pyflame && ./configure
@@ -28,6 +28,7 @@ ADD /lib/quantizy.py ${LIB}/lib/quantizy.py
 ADD /lib/benchmark.py ${LIB}/lib/benchmark.py
 ADD /lib/data_partioner.py ${LIB}/lib/data_partioner.py
 ADD /lib/parser.py ${LIB}/lib/parser.py
+ADD /lib/reporter.py ${LIB}/lib/reporter.py
 ADD /lib/gpu.py ${LIB}/lib/gpu.py
 #ENTRYPOINT [ "python", "/jet/lib/mnist.py", "--lr", "0.01" ]
 EXPOSE 29500

@@ -9,6 +9,8 @@ from torch.optim.lr_scheduler import StepLR
 from distributed_sgd import DistributedSGD
 from parser import SGDParser
 from data_partitioner import partition_dataset
+from reporter import Reporter
+
 class Net(nn.Module):
     def __init__(self):
         super(Net, self).__init__()
@@ -72,6 +74,7 @@ def test(args, model, device, test_loader):
 def main():
     # Training settings
     parser = SGDParser(description='PyTorch MNIST Example')
+    rep = Reporter()
     args = parser.parse_args()
     use_cuda = not args.no_cuda and torch.cuda.is_available()
     if use_cuda:
