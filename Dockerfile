@@ -26,7 +26,7 @@ ADD /lib/distributed_sgd.py ${LIB}/lib/distributed_sgd.py
 ADD /lib/mnist.py ${LIB}/lib/mnist.py
 ADD /lib/quantizy.py ${LIB}/lib/quantizy.py
 ADD /lib/benchmark.py ${LIB}/lib/benchmark.py
-ADD /lib/data_partioner.py ${LIB}/lib/data_partioner.py
+ADD /lib/data_partitioner.py ${LIB}/lib/data_partitioner.py
 ADD /lib/parser.py ${LIB}/lib/parser.py
 ADD /lib/reporter.py ${LIB}/lib/reporter.py
 ADD /lib/gpu.py ${LIB}/lib/gpu.py
