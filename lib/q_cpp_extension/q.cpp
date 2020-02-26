@@ -1,11 +1,12 @@
 #include <torch/extension.h>
+#include <iostream>
 
 torch::Tensor quantize_shrink(torch::Tensor tensor, size_t numberOfThreads){
     auto tensor_a = tensor.accessor<float,1>();
     int N = torch::size(tensor, 0);
-    
     //assert N % dataSz == 0
     int N2 = N / 32;
+    std::cout << "N " << N << " N2 " << N2 std::endl;
     auto res = torch::zeros(N2, torch::kInt32);
     auto res_a = res.accessor<int,1>();
 
