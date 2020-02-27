@@ -8,9 +8,9 @@ import os
 """
 This is a internal tool not meant to be used in production :)
 """
-class Reporter():
+class Timeline():
     def __init__(self, model, dataset, description, args, use_cuda):
-        client = MongoClient('mongodb://mongodb-standalone-0.database:27017', username=os.environ['mdb-usr'], password=os.environ['mdb-pwd'])
+        client = MongoClient('mongodb://iccluster095.iccluster.epfl.ch:32396', username=os.environ['mdb-usr'], password=os.environ['mdb-pwd'])
         self.db = client['admin']['benchmarks']
         path = '/jet/.git'
         self.data = {
