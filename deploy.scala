@@ -33,8 +33,8 @@ object Deploy extends App {
 |    containers:
 |    - name: ${node.name}
 |      image: gessfred/pyparsa
-|      command: [ "python" ]
-|      args: [ "/jet/lib/mnist.py", "--lr", "0.01", "--dtype", "32bit" ]
+|      command: [ "sleep" ]
+|      args: [ "infinity" ]
 |      resources:
 |        limits:
 |          nvidia.com/gpu: 1
@@ -48,9 +48,9 @@ object Deploy extends App {
 |         mountPath: /etc/mdb-creds
 |         readOnly: true
 |      env:
-|      - name: mdb-usr
+|      - name: MONGO_USR
 |        value: /etc/mdb-creds/admin/username
-|      - name: mdb-pwd
+|      - name: MONGO_PWD
 |        value: /etc/mdb-creds/admin/password
 |      - name: MASTER_ADDR
 |        value: 192.168.0.6

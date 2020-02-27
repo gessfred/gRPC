@@ -10,9 +10,10 @@ This is a internal tool not meant to be used in production :)
 """
 class Timeline():
     def __init__(self, model, dataset, description, args, use_cuda):
-        print('username:{} password{}'.format(os.environ['mdb-usr'], os.environ['mdb-pwd']))
-        client = MongoClient('mongodb://10.98.200.71:27017', username=os.environ['mdb-usr'], password=os.environ['mdb-pwd'])
-        self.db = client['admin']['benchmarks']
+        with open(os.environ['MONGO_USR']) as usr:
+            with open(os.environ['MONGO_PWD']) as pwd:
+                client = MongoClient('mongodb://10.98.200.71:27017', username=usr.read(), password=pwd.read())
+                self.db = client['admin']['benchmarks']
         path = '/jet/.git'
         self.data = {
             '_id': uuid.uuid4().hex,
