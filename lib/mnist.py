@@ -9,7 +9,7 @@ from torch.optim.lr_scheduler import StepLR
 from distributed_sgd import DistributedSGD
 from parser import SGDParser
 from data_partitioner import partition_dataset
-from reporter import Reporter
+from timeline import Timeline
 
 class Net(nn.Module):
     def __init__(self):
