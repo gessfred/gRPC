@@ -13,10 +13,14 @@ RUN cd /pyflame && ./configure
 RUN cd /pyflame && make
 RUN mv /pyflame/src/pyflame /usr/bin
 #RUN wget https://developer.nvidia.com/compute/machine-learning/nccl/secure/v2.5/prod/nccl-repo-ubuntu1804-2.5.6-ga-cuda10.2_1-1_amd64.deb
-ADD nccl-repo-ubuntu1804-2.5.6-ga-cuda10.2_1-1_amd64.deb /
-RUN dpkg -i nccl-repo-ubuntu1804-2.5.6-ga-cuda10.2_1-1_amd64.deb
-RUN apt-get update -y
-RUN apt install libnccl2 libnccl-dev
+# INSTALL NCCL
+#ADD nccl-repo-ubuntu1804-2.5.6-ga-cuda10.2_1-1_amd64.deb /
+#RUN dpkg -i nccl-repo-ubuntu1804-2.5.6-ga-cuda10.2_1-1_amd64.deb
+#RUN apt-get update -y
+#RUN apt install libnccl2 libnccl-dev
+# BUILD NCCL FROM SOURCE
+RUN git clone https://github.com/gessfred/nccl.git
+RUN cd /nccl && make -j src.build
 # RUN git clone https://github.com/facebookincubator/gloo.git
 # RUN cd /gloo && mkdir build && cd build && cmake .. && make && make install
 # This is to not recompile those every time

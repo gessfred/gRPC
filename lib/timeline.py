@@ -12,7 +12,7 @@ class Timeline():
     def __init__(self, model, dataset, description, args, use_cuda):
         with open(os.environ['MONGO_USR']) as usr:
             with open(os.environ['MONGO_PWD']) as pwd:
-                client = MongoClient('mongodb://10.98.200.71:27017', username=usr.read(), password=pwd.read())
+                client = MongoClient('mongodb://iccluster095.iccluster.epfl.ch:32396', username=usr.read(), password=pwd.read())
                 self.db = client['admin']['benchmarks']
         path = '/jet/.git'
         self.data = {
