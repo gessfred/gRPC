@@ -2,7 +2,7 @@ FROM nvidia/cuda:10.1-base-ubuntu18.04
 # ENV PATH /jet
 ENV LIB /jet
 RUN apt-get update -y 
-RUN apt-get install -y --no-install-recommends python3 python3-virtualenv build-essential python3-dev iproute2 procps git cmake autoconf automake autotools-dev g++ pkg-config libtool git wget
+RUN apt-get install -y --no-install-recommends python3 python3-virtualenv build-essential python3-dev iproute2 procps git cmake autoconf automake autotools-dev g++ pkg-config libtool git wget nvidia-cuda-toolkit
 ENV VIRTUAL_ENV=/opt/venv
 RUN python3 -m virtualenv --python=/usr/bin/python3 $VIRTUAL_ENV
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
@@ -19,7 +19,6 @@ RUN mv /pyflame/src/pyflame /usr/bin
 #RUN apt-get update -y
 #RUN apt install libnccl2 libnccl-dev
 # BUILD NCCL FROM SOURCE
-RUN ln -s /usr/bin/nvcc /usr/local/cuda/bin/nvcc 
 ADD /lib/nccl /nccl
 RUN cd /nccl && make -j src.build
 RUN cd /nccl && python setup.py install
