@@ -7,14 +7,7 @@ RUN python3 -m virtualenv --python=/usr/bin/python3 $VIRTUAL_ENV
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 RUN pip install numpy torch torchvision pymongo
 
-FROM pytorch AS pyflame
-RUN git clone https://github.com/uber-archive/pyflame.git
-RUN cd /pyflame && ./autogen.sh
-RUN cd /pyflame && ./configure
-RUN cd /pyflame && make
-RUN mv /pyflame/src/pyflame /usr/bin
-
-FROM pyflame AS nccl
+FROM pytorch AS nccl
 RUN apt-get install -y nvidia-cuda-toolkit
 RUN mkdir /usr/local/cuda/bin
 RUN ln -s /usr/bin/nvcc /usr/local/cuda/bin/nvcc
