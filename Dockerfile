@@ -21,15 +21,15 @@ RUN mv /pyflame/src/pyflame /usr/bin
 # BUILD NCCL FROM SOURCE
 RUN mkdir /usr/local/cuda/bin
 RUN ln -s /usr/bin/nvcc /usr/local/cuda/bin/nvcc
-ADD /lib/nccl/src /nccl/src
-ADD /lib/nccl/ext-net /nccl/ext-net
-ADD /lib/nccl/pkg /nccl/pkg
-ADD /lib/nccl/makefiles /nccl/makefiles
-ADD /lib/nccl/Makefile /nccl
-RUN cd /nccl && make -j src.build
-ADD /lib/nccl/collectives.cc /nccl/collectives.cc
-ADD /lib/nccl/setup.py /nccl/setup.py
-RUN cd /nccl && python setup.py install
+ADD /lib/nccl/src ${LIB}/lib/nccl/src
+ADD /lib/nccl/ext-net ${LIB}/lib/nccl/ext-net
+ADD /lib/nccl/pkg ${LIB}/lib/nccl/pkg
+ADD /lib/nccl/makefiles ${LIB}/lib/nccl/makefiles
+ADD /lib/nccl/Makefile ${LIB}/lib/nccl
+RUN cd ${LIB}/lib/nccl && make -j src.build
+ADD /lib/nccl/collectives.cc ${LIB}/lib/nccl/collectives.cc
+ADD /lib/nccl/setup.py ${LIB}/lib/nccl/setup.py
+RUN cd ${LIB}/lib/nccl && python setup.py install
 # RUN git clone https://github.com/facebookincubator/gloo.git
 # RUN cd /gloo && mkdir build && cd build && cmake .. && make && make install
 # This is to not recompile those every time
@@ -43,6 +43,7 @@ ADD /lib/all_reduce.py ${LIB}/lib/all_reduce.py
 ADD /lib/distributed_sgd.py ${LIB}/lib/distributed_sgd.py
 ADD /lib/mnist.py ${LIB}/lib/mnist.py
 ADD /lib/quantizy.py ${LIB}/lib/quantizy.py
+ADD /lib/nccl.py ${LIB}/lib/nccl.py
 ADD /lib/benchmark.py ${LIB}/lib/benchmark.py
 ADD /lib/data_partitioner.py ${LIB}/lib/data_partitioner.py
 ADD /lib/parser.py ${LIB}/lib/parser.py
