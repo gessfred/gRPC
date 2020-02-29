@@ -21,8 +21,13 @@ RUN mv /pyflame/src/pyflame /usr/bin
 # BUILD NCCL FROM SOURCE
 RUN mkdir /usr/local/cuda/bin
 RUN ln -s /usr/bin/nvcc /usr/local/cuda/bin/nvcc
-ADD /lib/nccl /nccl
+ADD /lib/nccl/src /nccl/src
+ADD /lib/nccl/ext-net /nccl/ext-net
+ADD /lib/nccl/pkg /nccl/pkg
+ADD /lib/nccl/makefiles /nccl/makefiles
 RUN cd /nccl && make -j src.build
+ADD /lib/nccl/collectives.cc /nccl/collectives.cc
+ADD /lib/nccl/setup.py /nccl/setup.py
 RUN cd /nccl && python setup.py install
 # RUN git clone https://github.com/facebookincubator/gloo.git
 # RUN cd /gloo && mkdir build && cd build && cmake .. && make && make install
