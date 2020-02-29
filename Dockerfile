@@ -19,6 +19,8 @@ RUN mv /pyflame/src/pyflame /usr/bin
 #RUN apt-get update -y
 #RUN apt install libnccl2 libnccl-dev
 # BUILD NCCL FROM SOURCE
+RUN mkdir /usr/local/cuda/bin
+RUN ln -s /usr/bin/nvcc /usr/local/cuda/bin/nvcc
 ADD /lib/nccl /nccl
 RUN cd /nccl && make -j src.build
 RUN cd /nccl && python setup.py install
