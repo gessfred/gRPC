@@ -19,8 +19,10 @@ RUN mv /pyflame/src/pyflame /usr/bin
 #RUN apt-get update -y
 #RUN apt install libnccl2 libnccl-dev
 # BUILD NCCL FROM SOURCE
-RUN git clone https://github.com/gessfred/nccl.git
+RUN ln -s /usr/bin/nvcc /usr/local/cuda/bin/nvcc 
+ADD /lib/nccl /nccl
 RUN cd /nccl && make -j src.build
+RUN cd /nccl && python setup.py install
 # RUN git clone https://github.com/facebookincubator/gloo.git
 # RUN cd /gloo && mkdir build && cd build && cmake .. && make && make install
 # This is to not recompile those every time
