@@ -12,7 +12,7 @@ RUN apt-get install -y nvidia-cuda-toolkit
 RUN mkdir /usr/local/cuda/bin
 RUN ln -s /usr/bin/nvcc /usr/local/cuda/bin/nvcc
 ADD /lib/nccl ${LIB}/lib/nccl
-RUN make -C ${LIB}/lib/nccl -j src.build
+RUN make -C ${LIB}/lib/nccl src.build
 RUN cd ${LIB}/lib/nccl && python setup.py install
 
 FROM nccl 
