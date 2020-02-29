@@ -25,6 +25,7 @@ ADD /lib/nccl/src /nccl/src
 ADD /lib/nccl/ext-net /nccl/ext-net
 ADD /lib/nccl/pkg /nccl/pkg
 ADD /lib/nccl/makefiles /nccl/makefiles
+ADD /lib/nccl/Makefile /nccl
 RUN cd /nccl && make -j src.build
 ADD /lib/nccl/collectives.cc /nccl/collectives.cc
 ADD /lib/nccl/setup.py /nccl/setup.py
