@@ -6,8 +6,8 @@
 **.log
 /archive
 experimental
-
-
+/dev
+**.vscode
 
 
 # Byte-compiled / optimized / DLL files
