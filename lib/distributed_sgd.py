@@ -15,9 +15,9 @@ class DistributedSGD(SGD):
         super().__init__(params, lr, momentum, dampening, weight_decay, nesterov)
         self.quantization_error = [None]*len(list(self.param_groups[0]['params']))
         self.rank = int(os.environ['RANK'])
+        self.backend = backend
         self.group = self.rendezvous(2)
         self.world = 2
-        self.backend = backend
         self.params = self.param_groups[0]['params']
         self.gpu = torch.device('cuda')
         self.cpu = torch.device('cpu')

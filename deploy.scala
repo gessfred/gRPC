@@ -32,7 +32,7 @@ object Deploy extends App {
 |           mode: 0444
 |    containers:
 |    - name: ${node.name}
-|      image: gessfred/pyparsa
+|      image: gessfred/pyparsa:nccl
 |      command: [ "python" ]
 |      args: [ "/pyparsa/lib/mnist.py", "--lr", "0.01", "--dtype", "32bit", "--backend", "nccl" ]
 |      resources:
