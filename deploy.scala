@@ -33,6 +33,7 @@ object Deploy extends App {
 |    containers:
 |    - name: ${node.name}
 |      image: gessfred/pyparsa:nccl
+|      imagePullPolicy: Always
 |      command: [ "python" ]
 |      args: [ "/pyparsa/lib/mnist.py", "--lr", "0.01", "--dtype", "32bit", "--backend", "nccl" ]
 |      resources:

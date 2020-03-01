@@ -21,7 +21,6 @@ class DistributedSGD(SGD):
         self.params = self.param_groups[0]['params']
         self.gpu = torch.device('cuda')
         self.cpu = torch.device('cpu')
-        self.ping()
         if dtype == '1bit':
             self.step = self.quantized_step
         elif dtype == '32bit':
@@ -29,14 +28,6 @@ class DistributedSGD(SGD):
         #setup pyflame
         subprocess.Popen(['pyflame', '--pid={}'.format(os.getpid()), '--output=/mnt/data/test.svg'])
         self.profile = {'transfer': 0.0, 'communication': 0.0, 'packing': 0.0, 'computation': 0.0, 'total': 0.0}
-
-    def ping(self):
-        rank = self.rank
-        neighbour = (rank + 1) % 2
-        req = dist.isend(torch.ones(1), dst=neighbour)
-        dist.recv(torch.ones(1), src=neighbour)
-        req.wait()
-        print('pinged')
 
     def rendezvous(self, world_size):
         dist.init_process_group(self.backend, rank=self.rank, timeout=datetime.timedelta(seconds=10), world_size=2, init_method='tcp://{}:60000'.format(os.environ['MASTER_ADDR']))
