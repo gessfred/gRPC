@@ -17,6 +17,7 @@ class DistributedSGD(SGD):
         self.rank = int(os.environ['RANK'])
         self.group = self.rendezvous(2)
         self.world = 2
+        self.backend = backend
         self.params = self.param_groups[0]['params']
         self.gpu = torch.device('cuda')
         self.cpu = torch.device('cpu')
@@ -38,7 +39,7 @@ class DistributedSGD(SGD):
         print('pinged')
 
     def rendezvous(self, world_size):
-        dist.init_process_group(backend, rank=self.rank, timeout=datetime.timedelta(seconds=10), world_size=2, init_method='tcp://{}:60000'.format(os.environ['MASTER_ADDR']))
+        dist.init_process_group(self.backend, rank=self.rank, timeout=datetime.timedelta(seconds=10), world_size=2, init_method='tcp://{}:60000'.format(os.environ['MASTER_ADDR']))
         self.peers = list(filter(lambda x: x != self.rank, [0,1]))
         return dist.new_group(range(world_size))
 
