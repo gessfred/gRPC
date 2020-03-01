@@ -9,7 +9,7 @@ from torch.optim.lr_scheduler import StepLR
 from distributed_sgd import DistributedSGD
 from parser import SGDParser
 from data_partitioner import partition_dataset
-from timeline import Timeline
+from metadata import Metadata
 
 class Net(nn.Module):
     def __init__(self):
@@ -101,13 +101,13 @@ def main():
     model = Net().to(device)
     optimizer = DistributedSGD(model.parameters(), lr=args.lr, dtype=args.dtype, backend=args.backend)
 
-    timeline = Timeline(model='?', dataset='MNIST', description='experimenting with data collection', args=args, use_cuda=use_cuda)
+    meta = Metadata(model='?', dataset='MNIST', description='experimenting with data collection', args=args, use_cuda=use_cuda)
     scheduler = StepLR(optimizer, step_size=1, gamma=args.gamma)
     for epoch in range(1, args.epochs + 1):
         train(args, model, device, train_loader, optimizer, epoch)
         test(args, model, device, test_loader)
         scheduler.step()
-    timeline.collect()
+    meta.collect()
     if args.save_model:
         torch.save(model.state_dict(), "mnist_cnn.pt")
 

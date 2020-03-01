@@ -26,7 +26,6 @@ class DistributedSGD(SGD):
         elif dtype == '32bit':
             self.step = self.step_
         #setup pyflame
-        subprocess.Popen(['pyflame', '--pid={}'.format(os.getpid()), '--output=/mnt/data/test.svg'])
         self.profile = {'transfer': 0.0, 'communication': 0.0, 'packing': 0.0, 'computation': 0.0, 'total': 0.0}
 
     def rendezvous(self, world_size):

@@ -8,7 +8,7 @@ import os
 """
 This is a internal tool not meant to be used in production :)
 """
-class Timeline():
+class Metadata():
     def __init__(self, model, dataset, description, args, use_cuda):
         with open(os.environ['MONGO_USR']) as usr:
             with open(os.environ['MONGO_PWD']) as pwd:
