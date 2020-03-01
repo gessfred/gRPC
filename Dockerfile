@@ -9,6 +9,7 @@ RUN pip install numpy torch torchvision pymongo
 RUN mkdir /usr/local/cuda/bin
 RUN ln -s /usr/bin/nvcc /usr/local/cuda/bin/nvcc
 ADD /lib ${LIB}/lib
+
 RUN make -C ${LIB}/lib/nccl src.build
 RUN cd ${LIB}/lib/nccl && python setup.py install
 RUN cd ${LIB}/lib/q_cpp_extension/ && python setup.py install
