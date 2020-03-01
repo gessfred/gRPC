@@ -23,6 +23,6 @@ class SGDParser(ArgumentParser):
                             help='random seed (default: 1)')
         self.add_argument('--log-interval', type=int, default=10, metavar='N',
                             help='how many batches to wait before logging training status')
-
+        self.add_argument('--backend', default='gloo', help='backend for distributed communication')
         self.add_argument('--save-model', action='store_true', default=False,
                             help='For Saving the current Model')

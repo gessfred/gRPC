@@ -99,7 +99,7 @@ def main():
         batch_size=args.test_batch_size, shuffle=True, **kwargs)
 
     model = Net().to(device)
-    optimizer = DistributedSGD(model.parameters(), lr=args.lr, dtype=args.dtype)
+    optimizer = DistributedSGD(model.parameters(), lr=args.lr, dtype=args.dtype, backend=args.backend)
 
     timeline = Timeline(model='?', dataset='MNIST', description='experimenting with data collection', args=args, use_cuda=use_cuda)
     scheduler = StepLR(optimizer, step_size=1, gamma=args.gamma)
