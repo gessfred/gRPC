@@ -17,6 +17,8 @@ object Deploy extends App {
 |metadata:
 |    name: ${node.name}
 |spec:
+|    imagePullSecrets:
+|    - name: regcred
 |    restartPolicy: Never
 |    nodeName: ${node.domain}
 |    volumes:
@@ -38,7 +40,7 @@ object Deploy extends App {
 |      image: gessfred/pyparsa:nccl
 |      imagePullPolicy: Always
 |      command: [ "python" ]
-|      args: [ "/pyparsa/lib/mnist.py", "--lr", "0.01", "--dtype", "32bit", "--backend", "nccl" ]
+|      args: [ "/pyparsa/lib/test_allgather.py" ]
 |      resources:
 |        limits:
 |          nvidia.com/gpu: 1
