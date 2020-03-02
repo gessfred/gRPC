@@ -7,14 +7,16 @@ RUN python3 -m virtualenv --python=/usr/bin/python3 $VIRTUAL_ENV
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 RUN wget https://download.open-mpi.org/release/open-mpi/v4.0/openmpi-4.0.2.tar.gz
 RUN gunzip -c openmpi-4.0.2.tar.gz | tar xf -
-RUN cd openmpi-4.0.2 && ./configure --prefix=/home/$USER/.openmpi --with-cuda && make all install
+RUN mkdir /usr/local/include/cuda
+RUN ln -s /usr/include/cuda /usr/local/include/cuda
+RUN cd openmpi-4.0.2 && ./configure --prefix=/home/$USER/.openmpi --with-cuda && make -j all install
 ENV PATH="$PATH:/home/$USER/.openmpi/bin"
 ENV LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/home/$USER/.openmpi/lib/"
 RUN pip install numpy torch torchvision pymongo mpi4py
 RUN mkdir /usr/local/cuda/bin
 RUN ln -s /usr/bin/nvcc /usr/local/cuda/bin/nvcc
 ADD /lib ${LIB}/lib
-RUN make -C ${LIB}/lib/nccl src.build
+RUN make -j -C ${LIB}/lib/nccl src.build
 RUN cd ${LIB}/lib/nccl && python setup.py install
 RUN cd ${LIB}/lib/q_cpp_extension/ && python setup.py install
 RUN cd ${LIB}/lib/q_par_cpp_extension/ && python setup.py install
