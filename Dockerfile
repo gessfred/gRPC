@@ -7,8 +7,8 @@ RUN python3 -m virtualenv --python=/usr/bin/python3 $VIRTUAL_ENV
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 RUN wget https://download.open-mpi.org/release/open-mpi/v4.0/openmpi-4.0.2.tar.gz
 RUN gunzip -c openmpi-4.0.2.tar.gz | tar xf -
-RUN mkdir /usr/local/include/cuda
-RUN ln -s /usr/include/cuda /usr/local/include/cuda
+RUN mkdir /usr/local/include
+RUN ln -s /usr/include/cuda.h /usr/local/cuda/include/cuda.h
 RUN cd openmpi-4.0.2 && ./configure --prefix=/home/$USER/.openmpi --with-cuda && make -j all install
 ENV PATH="$PATH:/home/$USER/.openmpi/bin"
 ENV LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/home/$USER/.openmpi/lib/"
