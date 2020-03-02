@@ -39,8 +39,8 @@ object Deploy extends App {
 |    - name: ${node.name}
 |      image: gessfred/pyparsa:nccl
 |      imagePullPolicy: Always
-|      command: [ "python" ]
-|      args: [ "/pyparsa/lib/test_allgather.py" ]
+|      command: [ "mpirun" ]
+|      args: [ "--allow-run-as-root", "-n", "2", "python", "/pyparsa/lib/test_allgather.py" ]
 |      resources:
 |        limits:
 |          nvidia.com/gpu: 1
