@@ -7,7 +7,7 @@ import datetime
 import random
 import time
 from q_cpp import quantize_shrink, unquantize_shrink
-from all_reduce import allreduce_quant
+from .all_reduce import allreduce_quant
 import subprocess
 
 class DistributedSGD(SGD):
