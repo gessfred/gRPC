@@ -7,7 +7,10 @@ object Deploy extends App {
     case class Node(domain: String, rank: Int) {
         val name = if(rank == 0) "master" else s"slave${rank}"
     }
-    case class Command(bin: String, args: List[String])
+    case class Command(bin: String, args: List[String]) {
+
+    }
+    //"/pyparsa/lib/mnist.py", "--lr", "0.01", "--dtype", "32bit", "--backend", "nccl"
     //192.168.0.4
     def pod(node: Node): String = s"""apiVersion: v1
 |kind: Pod

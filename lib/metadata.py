@@ -15,10 +15,13 @@ class Metadata():
                 client = MongoClient('mongodb://iccluster095.iccluster.epfl.ch:32396', username=usr.read(), password=pwd.read())
                 self.db = client['admin']['benchmarks']
         path = '/pyparsa/.git'
-        self.data = {
-            '_id': uuid.uuid4().hex,
+        """
+
             'branch': check_output(['git', '--git-dir', path, 'branch']).decode('utf-8').split(' ')[1].split('\n')[0],
             'commit': check_output(['git', '--git-dir', path, 'show', '--summary']).decode("utf-8").split(' ')[1].split('\n')[0],
+        """
+        self.data = {
+            '_id': uuid.uuid4().hex,
             'model': model,
             'dataset': dataset,
             'description': description,
