@@ -32,11 +32,11 @@ RUN apt-get install -y --no-install-recommends nvidia-cuda-toolkit
 RUN pip install pymongo mpi4py
 RUN mkdir /usr/local/cuda/bin
 RUN ln -s /usr/bin/nvcc /usr/local/cuda/bin/nvcc
-ADD /pyparsa ${LIB}/pyparsa
-RUN make -j -C ${LIB}/pyparsa/nccl src.build
-RUN cd ${LIB}/pyparsa/nccl && python setup.py install
-RUN cd ${LIB}/pyparsa/q_cpp_extension/ && python setup.py install
-RUN cd ${LIB}/pyparsa/q_par_cpp_extension/ && python setup.py install
-RUN cd ${LIB}/pyparsa/q_general_cpp_extension/ && python setup.py install
+ADD /pyparsa ${LIB}/lib
+RUN make -j -C ${LIB}/lib/nccl src.build
+RUN cd ${LIB}/lib/nccl && python setup.py install
+RUN cd ${LIB}/lib/q_cpp_extension/ && python setup.py install
+RUN cd ${LIB}/lib/q_par_cpp_extension/ && python setup.py install
+RUN cd ${LIB}/lib/q_general_cpp_extension/ && python setup.py install
 EXPOSE 29500
 EXPOSE 60000
