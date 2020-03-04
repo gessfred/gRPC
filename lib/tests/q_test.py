@@ -108,9 +108,14 @@ def check_parallelisation(q,uq, max_threads = 32, size = 10, iters=100):
             print('threads: {:2}, time: {:6.6} / time: {:6.6}'.format(threads, str(exec_time_q), str(exec_time_uq)))
         print()
 
+def check_cuda(q,uq):
+    assert torch.cuda.is_available()
+    cuda_device = torch.device("cuda")
+
 if __name__ == '__main__':
     q, uq = quantizy('general')
-    check_quantize(q)
-    check_unquantize(q,uq)
-    check_equality(q,uq)
-    check_parallelisation(q,uq, 32, 18, 5000)
+    # check_quantize(q)
+    # check_unquantize(q,uq)
+    # check_equality(q,uq)
+    check_parallelisation(q,uq, 24, 22, 1000)
+    # check_cuda(q,uq)
