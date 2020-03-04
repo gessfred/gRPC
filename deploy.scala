@@ -65,9 +65,11 @@ object Deploy extends App {
 |      - name: MASTER_PORT
 |        value: "29500"
 |      - name: NCCL_SOCKET_IFNAME
-|        value: ^docker0
+|        value: eth0
 |      - name: NCCL_DEBUG_SUBSYS
 |        value: NET
+|      - name: NCCL_COMM_ID
+|        value: 192.168.0.6:29500
 |      - name: GLOO_SOCKET_IFNAME
 |        value: eth0
 |      - name: DATAPATH
