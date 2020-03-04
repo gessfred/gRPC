@@ -37,6 +37,6 @@ def check_cuda():
     return cuda_device
 
 if __name__ == '__main__':
-    q_cpy, uq_cpu = quantizy('ext_par')
+    q, uq = quantizy('ext_par')
     cuda = check_cuda()
     check_quantize(q, cuda)
