@@ -39,8 +39,8 @@ object Deploy extends App {
 |    - name: ${node.name}
 |      image: gessfred/pyparsa:nccl
 |      imagePullPolicy: Always
-|      command: [ "mpirun" ]
-|      args: [ "--allow-run-as-root", "-n", "2", "python", "/pyparsa/lib/test_allgather.py" ]
+|      command: [ "python" ]
+|      args: [ "/pyparsa/lib/test_allgather.py", "--uuid", "hello_world" ]
 |      resources:
 |        limits:
 |          nvidia.com/gpu: 1
@@ -58,10 +58,16 @@ object Deploy extends App {
 |        value: /etc/mdb-creds/admin/username
 |      - name: MONGO_PWD
 |        value: /etc/mdb-creds/admin/password
+|      - name: NCCL_DEBUG
+|        value: INFO
 |      - name: MASTER_ADDR
 |        value: 192.168.0.6
 |      - name: MASTER_PORT
 |        value: "29500"
+|      - name: NCCL_SOCKET_IFNAME
+|        value: ^docker0
+|      - name: NCCL_DEBUG_SUBSYS
+|        value: NET
 |      - name: GLOO_SOCKET_IFNAME
 |        value: eth0
 |      - name: DATAPATH
