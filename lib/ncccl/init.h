@@ -798,7 +798,7 @@ ncclResult_t ncclCommInitRankSync(ncclComm_t* newcomm, int nranks, ncclUniqueId 
   return ncclSuccess;
 cleanup:
   if ((newcomm) && (newcomm)->bootstrap) bootstrapAbort((newcomm)->bootstrap);
-  *newcomm = NULL;
+  //*newcomm = NULL;
   sched_setaffinity(0, sizeof(cpu_set_t), &affinitySave);
   return res;
 }
@@ -823,14 +823,13 @@ static ncclResult_t ncclCommInitRankDev(ncclComm_t* newcomm, int nranks, ncclUni
     goto end;
   }
 
-  if (ncclAsyncMode()) {
-    NCCLCHECKGOTO(ncclAsyncInit(ncclCommInitRankSync, newcomm, nranks, commId, myrank, cudaDev), res, end);
+  if (false/*ncclAsyncMode()*/) {
+    //NCCLCHECKGOTO(ncclAsyncInit(ncclCommInitRankSync, newcomm, nranks, commId, myrank, cudaDev), res, end);
   } else {
     NCCLCHECKGOTO(ncclCommInitRankSync(newcomm, nranks, commId, myrank, cudaDev), res, end);
   }
 end:
-  if (ncclAsyncMode()) return ncclAsyncErrCheck(res);
-  else return res;
+  return res;
 }
 
 ncclResult_t ncclCommInitRank(ncclComm_t* newcomm, int nranks, ncclUniqueId commId, int myrank) {
@@ -858,7 +857,7 @@ ncclResult_t ncclCommInitAll(ncclComm_t* comms, int ndev, const int* devlist) {
   return ncclSuccess;
 }
 
-static ncclResult_t commDestroy(ncclComm_t comm) {
+static ncclResult_t commDestroy(ncclComm_t* comm) {
   int savedDevice;
 #ifdef ENABLE_TRACE
   int rank = comm->rank;
