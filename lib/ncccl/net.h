@@ -40,21 +40,21 @@ static ncclResult_t ncclNetPtrSupport(int dev, int* supportedTypes) {
     void* gpuPtr = NULL;
     void* mHandle = NULL;
     ncclResult_t res;
-    NCCLCHECKGOTO(ncclNetListen(dev, &handle, &lComm), res, cleanup);
-    NCCLCHECKGOTO(ncclNetConnect(dev, &handle, &sComm), res, cleanup);
-    NCCLCHECKGOTO(ncclNetAccept(lComm, &rComm), res, cleanup);
+    NCCLCHECKGOTO(ncclNetListen(NULL, dev, &handle, &lComm), res, cleanup);
+    NCCLCHECKGOTO(ncclNetConnect(NULL, dev, &handle, &sComm), res, cleanup);
+    NCCLCHECKGOTO(ncclNetAccept(NULL, lComm, &rComm), res, cleanup);
     CUDACHECKGOTO(cudaMalloc(&gpuPtr, GPU_BUF_SIZE), res, cleanup);
-    NOWARN(ncclNetRegMr(sComm, gpuPtr, GPU_BUF_SIZE, NCCL_PTR_CUDA, &mHandle), res);
+    NOWARN(ncclNetRegMr(NULL, sComm, gpuPtr, GPU_BUF_SIZE, NCCL_PTR_CUDA, &mHandle), res);
     if (res != ncclSuccess) goto cleanup;
-    NCCLCHECKGOTO(ncclNetDeregMr(sComm, mHandle), res, cleanup);
-    NCCLCHECKGOTO(ncclNetRegMr(rComm, gpuPtr, GPU_BUF_SIZE, NCCL_PTR_CUDA, &mHandle), res, cleanup);
-    NCCLCHECKGOTO(ncclNetDeregMr(rComm, mHandle), res, cleanup);
+    NCCLCHECKGOTO(ncclNetDeregMr(NULL, sComm, mHandle), res, cleanup);
+    NCCLCHECKGOTO(ncclNetRegMr(NULL, rComm, gpuPtr, GPU_BUF_SIZE, NCCL_PTR_CUDA, &mHandle), res, cleanup);
+    NCCLCHECKGOTO(ncclNetDeregMr(NULL, rComm, mHandle), res, cleanup);
     *supportedTypes |= NCCL_PTR_CUDA;
 cleanup:
     if (gpuPtr) cudaFree(gpuPtr);
-    if (rComm) ncclNetCloseRecv(rComm);
-    if (sComm) ncclNetCloseSend(sComm);
-    if (lComm) ncclNetCloseListen(lComm);
+    if (rComm) ncclNetCloseRecv(NULL, rComm);
+    if (sComm) ncclNetCloseSend(NULL, sComm);
+    if (lComm) ncclNetCloseListen(NULL, lComm);
   }
   return ncclSuccess;
 }
