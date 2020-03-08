@@ -538,14 +538,14 @@ static ncclResult_t initTransportsRank(struct ncclComm_t* comm, ncclUniqueId* co
 
   // Get rings and trees
   struct ncclTopoGraph treeGraph;
-  treeGraph.pattern = NCCL_TOPO_PATTERN_SPLIT_TREE;
-  treeGraph.crossNic = ncclParamCrossNic();
+  //treeGraph.pattern = NCCL_TOPO_PATTERN_SPLIT_TREE;
+  //treeGraph.crossNic = ncclParamCrossNic();
   // We communicate only half the data between node with trees on 2 nodes.
   //NCCLCHECK(ncclTopoCompute(comm->topo, &treeGraph));
   //NCCLCHECK(ncclTopoPrintGraph(comm->topo, &treeGraph));
   struct ncclTopoGraph ringGraph;
-  ringGraph.pattern = NCCL_TOPO_PATTERN_RING;
-  ringGraph.crossNic = ncclParamCrossNic();
+  //ringGraph.pattern = NCCL_TOPO_PATTERN_RING;
+  //ringGraph.crossNic = ncclParamCrossNic();
   ////NCCLCHECK(ncclTopoCompute(comm->topo, &ringGraph));
   //NCCLCHECK(ncclTopoPrintGraph(comm->topo, &ringGraph));
 
@@ -641,7 +641,7 @@ static ncclResult_t initTransportsRank(struct ncclComm_t* comm, ncclUniqueId* co
   int *rings;
   NCCLCHECK(ncclCalloc(&rings, nranks*MAXCHANNELS));
 
-  NCCLCHECK(ncclTopoPostset(comm, nodesFirstRank, allTopoRanks, rings));
+  //NCCLCHECK(ncclTopoPostset(comm, nodesFirstRank, allTopoRanks, rings));
 
   free(allTopoRanks);
   free(nodesFirstRank);
