@@ -41,7 +41,7 @@ std::chrono::high_resolution_clock::time_point ncclEpoch;
 #define NCCL_GROUP_CUDA_STREAM 1 // CGMD: CUDA 9.0,9.1 Need to use an internal CUDA stream
 #endif
 
-ncclResult_t initChannel(struct ncclComm* comm, int channelid) {
+ncclResult_t initChannel(struct ncclComm_t* comm, int channelid) {
   struct ncclChannel* channel = comm->channels+channelid;
   channel->id = channelid;
 
