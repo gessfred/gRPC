@@ -8,6 +8,7 @@
 #include "nvmlwrap.h"
 #include "topo.h"
 #include "argcheck.h"
+#include "transport.h"
 /*#include "channel.h"
 
 #include "bootstrap.h"
