@@ -953,21 +953,21 @@ ncclResult_t ncclCommGetAsyncError(ncclComm_t* comm, ncclResult_t *asyncError) {
 }
 
 ncclResult_t ncclCommCount(const ncclComm_t* comm, int* count) {
-  NCCLCHECK(PtrCheck(comm, "CommCount", "comm"));
+  //NCCLCHECK(PtrCheck(comm, "CommCount", "comm"));
   NCCLCHECK(PtrCheck(count, "CommCount", "count"));
   *count = comm->nRanks;
   return ncclSuccess;
 }
 
 ncclResult_t ncclCommCuDevice(const ncclComm_t* comm, int* devid) {
-  NCCLCHECK(PtrCheck(comm, "CommCuDevice", "comm"));
+  //NCCLCHECK(PtrCheck(comm, "CommCuDevice", "comm"));
   NCCLCHECK(PtrCheck(devid, "CommCuDevice", "devid"));
   *devid = comm->cudaDev;
   return ncclSuccess;
 }
 
 ncclResult_t ncclCommUserRank(const ncclComm_t* comm, int* rank) {
-  NCCLCHECK(PtrCheck(comm, "CommUserRank", "comm"));
+  //NCCLCHECK(PtrCheck(comm, "CommUserRank", "comm"));
   NCCLCHECK(PtrCheck(rank, "CommUserRank", "rank"));
   *rank = comm->rank;
   return ncclSuccess;
