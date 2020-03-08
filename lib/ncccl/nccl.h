@@ -43,7 +43,23 @@
     goto label; \
   } \
 } while (0);
+// Check CUDA calls
+#define CUDACHECK(cmd) do {                                 \
+    cudaError_t e = cmd;                                    \
+    if( e != cudaSuccess ) {                                \
+        WARN("Cuda failure '%s'", cudaGetErrorString(e));   \
+        return ncclUnhandledCudaError;                      \
+    }                                                       \
+} while(false)
 
+#define CUDACHECKGOTO(cmd, res, label) do {                 \
+    cudaError_t e = cmd;                                    \
+    if( e != cudaSuccess ) {                                \
+        WARN("Cuda failure '%s'", cudaGetErrorString(e));   \
+        res = ncclUnhandledCudaError;                       \
+        goto label;                                         \
+    }                                                       \
+} while(false)
 #define NCCL_NET_HANDLE_MAXSIZE 64
 #define NCCL_UNIQUE_ID_BYTES 128
 #define MAXCHANNELS 32

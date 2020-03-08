@@ -5,6 +5,8 @@
 #include <sys/syscall.h>
 #include <limits.h>
 #include <string.h>
+#include <stdlib.h>
+#include <stdarg.h>
 
 
 typedef enum {NCCL_LOG_NONE=0, NCCL_LOG_VERSION=1, NCCL_LOG_WARN=2, NCCL_LOG_INFO=3, NCCL_LOG_ABORT=4, NCCL_LOG_TRACE=5} ncclDebugLogLevel;
@@ -170,21 +172,3 @@ void ncclDebugLog(ncclDebugLogLevel level, unsigned long flags, const char *file
     abort();
   }
 }
-
-// Check CUDA calls
-#define CUDACHECK(cmd) do {                                 \
-    cudaError_t e = cmd;                                    \
-    if( e != cudaSuccess ) {                                \
-        WARN("Cuda failure '%s'", cudaGetErrorString(e));   \
-        return ncclUnhandledCudaError;                      \
-    }                                                       \
-} while(false)
-
-#define CUDACHECKGOTO(cmd, res, label) do {                 \
-    cudaError_t e = cmd;                                    \
-    if( e != cudaSuccess ) {                                \
-        WARN("Cuda failure '%s'", cudaGetErrorString(e));   \
-        res = ncclUnhandledCudaError;                       \
-        goto label;                                         \
-    }                                                       \
-} while(false)
