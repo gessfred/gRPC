@@ -847,12 +847,12 @@ ncclResult_t ncclCommInitAll(ncclComm_t* comms, int ndev, const int* devlist) {
   ncclNet_t* net;
   ncclUniqueId uniqueId;
   NCCLCHECK(ncclGetUniqueId(net, &uniqueId));
-  NCCLCHECK(ncclGroupStart());
+  //NCCLCHECK(ncclGroupStart());
   for (int i=0; i<ndev; i++) {
     // Ignore return codes .. we need to call ncclGroupEnd to clean up anyway
     ncclCommInitRankDev(comms+i, ndev, uniqueId, i, devlist ? devlist[i] : i);
   }
-  NCCLCHECK(ncclGroupEnd());
+  //NCCLCHECK(ncclGroupEnd());
   return ncclSuccess;
 }
 
