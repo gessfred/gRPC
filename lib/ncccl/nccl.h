@@ -13,7 +13,7 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <unistd.h>
-
+#define TRACE(...)
 /* Error type */
 typedef enum { ncclSuccess                 =  0,
                ncclUnhandledCudaError      =  1,
