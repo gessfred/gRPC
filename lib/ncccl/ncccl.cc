@@ -14,8 +14,8 @@ void init(int rank, int nRanks, std::array<char, 128> uuid, int dst)  {
   //calculating localRank based on hostname which is used in selecting a GPU
   uint64_t hostHashs[nRanks];
   char hostname[1024];
-  getHostName(hostname, 1024);
-  hostHashs[myRank] = getHostHash(hostname);
+  getHostName(hostname, 1024, ':');
+  hostHashs[myRank] = getHostHash();
   ncclUniqueId id;
   ncclComm_t comm;
   float *sendbuff, *recvbuff;
