@@ -9,19 +9,12 @@
 //#include "utils.h"
 //#include "bootstrap.h"
 //#include "net.h"
-//#include "socket.h"
+//
 //#include <unistd.h>
 #include "nccl.h"
 #include <sys/types.h>
 
-#include <sys/socket.h>
-#include <arpa/inet.h>
-#include <netinet/tcp.h>
-#include <unistd.h>
-#include <netdb.h>
-#include <ifaddrs.h>
-#include <net/if.h>
-
+#include "socket.h"
 /* Common socket address storage structure for IPv4/IPv6 */
 union socketAddress {
   struct sockaddr sa;
