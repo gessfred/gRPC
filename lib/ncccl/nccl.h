@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <cuda_runtime.h>
 #include <errno.h>
+#include <unistd.h>
 // Check system calls
 #define SYSCHECK(call, name) do { \
   int retval; \
@@ -60,6 +61,8 @@
         goto label;                                         \
     }                                                       \
 } while(false)
+
+
 #define NCCL_NET_HANDLE_MAXSIZE 64
 #define NCCL_UNIQUE_ID_BYTES 128
 #define MAXCHANNELS 32

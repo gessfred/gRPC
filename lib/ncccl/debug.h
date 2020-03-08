@@ -7,7 +7,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdarg.h>
-
+#include <unistd.h>
 
 typedef enum {NCCL_LOG_NONE=0, NCCL_LOG_VERSION=1, NCCL_LOG_WARN=2, NCCL_LOG_INFO=3, NCCL_LOG_ABORT=4, NCCL_LOG_TRACE=5} ncclDebugLogLevel;
 typedef enum {NCCL_INIT=1, NCCL_COLL=2, NCCL_P2P=4, NCCL_SHM=8, NCCL_NET=16, NCCL_GRAPH=32, NCCL_TUNING=64, NCCL_ALL=~0} ncclDebugLogSubSys;
@@ -19,6 +19,18 @@ thread_local int ncclDebugNoWarn = 0;
 uint64_t ncclDebugMask = NCCL_INIT; // Default debug sub-system mask is INIT
 FILE *ncclDebugFile = stdout;
 pthread_mutex_t ncclDebugLock = PTHREAD_MUTEX_INITIALIZER;
+
+ncclResult_t getHostName(char* hostname, int maxlen, const char delim) {
+  if (gethostname(hostname, maxlen) != 0) {
+    strncpy(hostname, "unknown", maxlen);
+    return ncclSystemError;
+  }
+  int i = 0;
+  while ((hostname[i] != delim) && (hostname[i] != '\0') && (i < maxlen-1)) i++;
+  hostname[i] = '\0';
+  return ncclSuccess;
+}
+
 
 void ncclDebugInit() {
   pthread_mutex_lock(&ncclDebugLock);
