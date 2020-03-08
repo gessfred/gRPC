@@ -316,7 +316,7 @@ struct ncclConnector {
   struct ncclTransportComm* transportComm;
   void* transportResources; // Host-side resources
   struct ncclConnInfo conn;
-  struct ncclComm *comm;
+  struct ncclComm_t *comm;
 };
 
 struct ncclPeer {
