@@ -1,5 +1,6 @@
 #include "nccl.h"
-static ncclResult_t CudaPtrCheck(const void* pointer, struct ncclComm* comm, const char* ptrname, const char* opname) {
+
+static ncclResult_t CudaPtrCheck(const void* pointer, struct ncclComm_t* comm, const char* ptrname, const char* opname) {
   cudaPointerAttributes attr;
   cudaError_t err = cudaPointerGetAttributes(&attr, pointer);
   if (err != cudaSuccess || attr.devicePointer == NULL) {
