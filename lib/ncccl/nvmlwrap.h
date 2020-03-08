@@ -8,6 +8,26 @@
 #include <dlfcn.h>
 #include "nccl.h"
 
+#include <pthread.h>
+extern pthread_mutex_t nvmlLock;
+#define NVMLLOCK() pthread_mutex_lock(&nvmlLock)
+#define NVMLUNLOCK() pthread_mutex_unlock(&nvmlLock)
+
+#define NVMLLOCKCALL(cmd, ret) do {                      \
+    NVMLLOCK();                                          \
+    ret = cmd;                                           \
+    NVMLUNLOCK();                                        \
+} while(false)
+
+#define NVMLCHECK(cmd) do {                              \
+    nvmlReturn_t e;                                      \
+    NVMLLOCKCALL(cmd, e);                                \
+    if( e != NVML_SUCCESS ) {                            \
+      WARN("NVML failure '%s'", nvmlErrorString(e));     \
+      return ncclSystemError;                            \
+    }                                                    \
+} while(false)
+
 /* Extracted from nvml.h */
 typedef struct nvmlDevice_st* nvmlDevice_t;
 #define NVML_DEVICE_PCI_BUS_ID_BUFFER_SIZE   16
