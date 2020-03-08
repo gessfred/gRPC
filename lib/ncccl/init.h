@@ -39,11 +39,13 @@ std::chrono::high_resolution_clock::time_point ncclEpoch;
 #define NCCL_GROUP_CUDA_STREAM 1 // CGMD: CUDA 9.0,9.1 Need to use an internal CUDA stream
 #endif
 
+
+
+ncclNet_t* ncclNet = NULL;
+
 NCCL_PARAM(GroupCudaStream, "GROUP_CUDA_STREAM", NCCL_GROUP_CUDA_STREAM);
 
 NCCL_PARAM(CheckPointers, "CHECK_POINTERS", 0);
-
-ncclNet_t* ncclNet = NULL;
 
 // Returns ncclInternalError if anything fails, causing that network to be ignored.
 ncclResult_t initNet(ncclNet_t* net) {
@@ -81,18 +83,19 @@ cleanup:
   return ncclSuccess;
 }
 
-ncclResult_t initNet() {
+ncclResult_t initNet(ncclNet_t* ncclNet) {
   // Always initialize bootstrap network
   NCCLCHECK(bootstrapNetInit());
 
   NCCLCHECK(initNetPlugin(&ncclNet));
-  if (ncclNet != NULL) return ncclSuccess;
+  if(ncclNet == NULL) return ncclSystemError;
+  /*if (ncclNet != NULL) return ncclSuccess;
   if (initNet(&ncclNetIb) == ncclSuccess) {
     ncclNet = &ncclNetIb;
   } else {
     NCCLCHECK(initNet(&ncclNetSocket));
     ncclNet = &ncclNetSocket;
-  }
+  }*/
   return ncclSuccess;
 }
 
