@@ -6,6 +6,7 @@
 
 #include "nccl.h"
 #include "utils.h"
+#include "net.h"
 #include <sys/stat.h>
 #include <fcntl.h>
 
@@ -569,7 +570,7 @@ ncclResult_t ncclTopoConnectPCI(struct ncclTopoSystem* system) {
 
   // Connect the NICs
   int netDevCount;
-  NCCLCHECK(ncclNetDevices(&netDevCount));
+  NCCLCHECK(ncclNetDevices(NULL, &netDevCount));
   int netWidth;
   NCCLCHECK(ncclTopoGetNetWidth(&netWidth));
 
