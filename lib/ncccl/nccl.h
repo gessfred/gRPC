@@ -99,6 +99,48 @@ union ncclLLFifoLine {
   int4 i4;
 };
 
+struct ncclProxyState {
+  pthread_cond_t cond;
+  pthread_mutex_t mutex;
+  bool stop;
+  struct ncclProxyArgs* ops;
+  struct ncclProxyArgs* pool;
+  struct ncclProxyPool* pools;
+};
+
+struct ncclProxyArgs;
+typedef ncclResult_t (*proxyProgressFunc_t)(struct ncclProxyArgs*);
+
+struct ncclProxyArgs {
+  proxyProgressFunc_t progress;
+  struct ncclChannel* channel;
+  struct ncclConnector* connector;
+  int sliceSteps;
+  int chunkSteps;
+  int nsteps;
+  uint64_t opCount;
+  int protocol;
+  int state;   // add component before this line -- it is left out during initialization
+
+  // Internal state
+  uint64_t head;
+  uint64_t tail;
+  uint64_t end;
+  void* requests[NCCL_STEPS];
+  int idle;
+
+  // Element linking
+  pthread_mutex_t mutex;
+  struct ncclProxyArgs* next;
+  struct ncclProxyArgs* nextPeer;
+};
+
+struct ncclProxyPool {
+  struct ncclProxyPool *next;
+  struct ncclProxyArgs elems[PROXYARGS_ALLOCATE_SIZE];
+};
+
+
 struct ncclTransportComm {
   //ncclResult_t (*setup)(struct ncclTopoSystem* topo, struct ncclTopoGraph* graph, struct ncclPeerInfo*, struct ncclPeerInfo*, struct ncclConnect*, struct ncclConnector*, int buffSize, int channelId);
   ncclResult_t (*connect)(struct ncclConnect*, struct ncclConnector*);
