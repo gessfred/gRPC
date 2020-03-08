@@ -656,11 +656,11 @@ static ncclResult_t initTransportsRank(struct ncclComm_t* comm, ncclUniqueId* co
   char line[1024];
   line[0]='\0';
   for (int c=0; c<comm->nChannels; c++) {
-    struct ncclTree* treeUp = &comm->channels[c].treeUp;
+/*    struct ncclTree* treeUp = &comm->channels[c].treeUp;
     struct ncclTree* treeDn = &comm->channels[c].treeDn;
     snprintf(line+strlen(line), 1023-strlen(line), " [%d] %d/%d/%d->%d->%d|%d->%d->%d/%d/%d",
         c, treeUp->down[0], treeUp->down[1], treeUp->down[2], rank, treeUp->up,
-        treeDn->up, rank, treeDn->down[0], treeDn->down[1], treeDn->down[2]);
+        treeDn->up, rank, treeDn->down[0], treeDn->down[1], treeDn->down[2]);*/
   }
   line[1023] = '\0';
   INFO(NCCL_INIT, "Trees%s", line);
