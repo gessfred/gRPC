@@ -48,7 +48,7 @@ ncclNet_t* ncclNet = NULL;
 // Returns ncclInternalError if anything fails, causing that network to be ignored.
 ncclResult_t initNet(ncclNet_t* net) {
   int ndev;
-  if (net->init(ncclDebugLog) != ncclSuccess) return ncclInternalError;
+  if (net->init() != ncclSuccess) return ncclInternalError;
   if (net->devices(&ndev) != ncclSuccess) return ncclInternalError;
   if (ndev <= 0) return ncclSystemError;
   return ncclSuccess;

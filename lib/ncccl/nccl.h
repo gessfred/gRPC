@@ -121,7 +121,7 @@ typedef struct {
   // Name of the network (mainly for logs)
   const char* name;
   // Initialize the network.
-  ncclResult_t (*init)(ncclDebugLogger_t logFunction);
+  ncclResult_t (*init)();
   // Return the number of adapters.
   ncclResult_t (*devices)(int* ndev);
   // Return the device path in /sys. NCCL will call free on this path.
