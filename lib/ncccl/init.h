@@ -651,7 +651,7 @@ static ncclResult_t initTransportsRank(struct ncclComm_t* comm, ncclUniqueId* co
 
   TRACE(NCCL_INIT, "rank %d nranks %d - BUILT %d TREES/RINGS", rank, nranks, comm->nChannels);
 
-  NCCLCHECK(ncclSetThresholds(comm, minCompCap, maxCompCap, &treeGraph, &ringGraph));
+  //NCCLCHECK(ncclSetThresholds(comm, minCompCap, maxCompCap, &treeGraph, &ringGraph));
 
   char line[1024];
   line[0]='\0';
@@ -729,7 +729,7 @@ static ncclResult_t getCpuGpuAffinity(int cudaDev, cpu_set_t* mask) {
   return ncclSuccess;
 }
 
-NCCL_PARAM(IgnoreCpuAffinity, "IGNORE_CPU_AFFINITY", 0);
+//NCCL_PARAM(IgnoreCpuAffinity, "IGNORE_CPU_AFFINITY", 0);
 
 static ncclResult_t setCpuAffinity(int cudaDev) {
   // Query the CPU affinity set we were provided
@@ -757,7 +757,7 @@ static ncclResult_t setCpuAffinity(int cudaDev) {
 #endif
 
   cpu_set_t finalMask;
-  if (ncclParamIgnoreCpuAffinity())
+  if (true/*ncclParamIgnoreCpuAffinity()*/)
     // Ignore the CPU affinity set and use the GPU one instead
     finalMask = gpuMask;
   else
@@ -787,8 +787,8 @@ ncclResult_t ncclCommInitRankSync(ncclComm_t* newcomm, int nranks, ncclUniqueId 
   ncclResult_t res;
 
   NCCLCHECKGOTO(commAlloc(newcomm, nranks, myrank), res, cleanup);
-  NCCLCHECKGOTO(initTransportsRank(*newcomm, &commId), res, cleanup);
-  NCCLCHECKGOTO(devCommSetup(*newcomm), res, cleanup);
+  NCCLCHECKGOTO(initTransportsRank(newcomm, &commId), res, cleanup);
+  NCCLCHECKGOTO(devCommSetup(newcomm), res, cleanup);
 
   sched_setaffinity(0, sizeof(cpu_set_t), &affinitySave);
   NCCLCHECKGOTO(wrapNvmlShutdown(), res, cleanup);
@@ -797,7 +797,7 @@ ncclResult_t ncclCommInitRankSync(ncclComm_t* newcomm, int nranks, ncclUniqueId 
 
   return ncclSuccess;
 cleanup:
-  if ((*newcomm) && (*newcomm)->bootstrap) bootstrapAbort((*newcomm)->bootstrap);
+  if ((newcomm) && (newcomm)->bootstrap) bootstrapAbort((newcomm)->bootstrap);
   *newcomm = NULL;
   sched_setaffinity(0, sizeof(cpu_set_t), &affinitySave);
   return res;
