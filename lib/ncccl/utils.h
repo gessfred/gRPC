@@ -54,12 +54,12 @@ ncclResult_t getHostName(char* hostname, int maxlen, const char delim) {
 //uint64_t getHostHash();
 //uint64_t getPidHash();
 
-/*struct netIf {
+struct netIf {
   char prefix[64];
   int port;
 };
 
-int parseStringList(const char* string, struct netIf* ifList, int maxList);
+/*int parseStringList(const char* string, struct netIf* ifList, int maxList);
 bool matchIfList(const char* string, int port, struct netIf* ifList, int listSize, bool matchExact);
 
 static long log2i(long n) {
