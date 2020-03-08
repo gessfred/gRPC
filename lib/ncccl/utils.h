@@ -90,6 +90,18 @@ int parseStringList(const char* string, struct netIf* ifList, int maxList) {
   } while (ifNum < maxList && c);
   return ifNum;
 }
+bool matchIfList(const char* string, int port, struct netIf* ifList, int listSize, bool matchExact) {
+  // Make an exception for the case where no user list is defined
+  if (listSize == 0) return true;
+
+  for (int i=0; i<listSize; i++) {
+    if (matchIf(string, ifList[i].prefix, matchExact)
+        && matchPort(port, ifList[i].port)) {
+      return true;
+    }
+  }
+  return false;
+}
 
 /*int parseStringList(const char* string, struct netIf* ifList, int maxList);
 bool matchIfList(const char* string, int port, struct netIf* ifList, int listSize, bool matchExact);
