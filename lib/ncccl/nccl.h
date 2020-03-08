@@ -111,13 +111,7 @@ pthread_mutex_t ncclDebugLock = PTHREAD_MUTEX_INITIALIZER;
   } \
 } while (0);
 // Check CUDA calls
-#define CUDACHECK(cmd) do {                                 \
-    cudaError_t e = cmd;                                    \
-    if( e != cudaSuccess ) {                                \
-        WARN("Cuda failure '%s'", cudaGetErrorString(e));   \
-        return ncclUnhandledCudaError;                      \
-    }                                                       \
-} while(false)
+#define CUDACHECK(cmd) 
 
 #define CUDACHECKGOTO(cmd, res, label) do {                 \
     cudaError_t e = cmd;                                    \
