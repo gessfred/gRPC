@@ -44,9 +44,9 @@ std::chrono::high_resolution_clock::time_point ncclEpoch;
 
 ncclNet_t* ncclNet = NULL;
 
-NCCL_PARAM(GroupCudaStream, "GROUP_CUDA_STREAM", NCCL_GROUP_CUDA_STREAM);
+//NCCL_PARAM(GroupCudaStream, "GROUP_CUDA_STREAM", NCCL_GROUP_CUDA_STREAM);
 
-NCCL_PARAM(CheckPointers, "CHECK_POINTERS", 0);
+//NCCL_PARAM(CheckPointers, "CHECK_POINTERS", 0);
 
 // Returns ncclInternalError if anything fails, causing that network to be ignored.
 ncclResult_t initNet(ncclNet_t* net) {
@@ -115,7 +115,7 @@ static ncclResult_t ncclInit(ncclNet_t* net) {
 
 ncclResult_t ncclGetVersion(int* version) {
   if (version == NULL) return ncclInvalidArgument;
-  *version = NCCL_VERSION_CODE;
+  //*version = NCCL_VERSION_CODE;
   return ncclSuccess;
 }
 
