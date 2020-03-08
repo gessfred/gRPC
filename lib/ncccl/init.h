@@ -70,8 +70,8 @@ ncclResult_t freeChannel(struct ncclChannel* channel, int nRanks) {
   NCCLCHECK(ncclCudaHostFree(channel->collectives));
 
   // Free Ring index to rank tables
-  free(channel->ring.userRanks);
-  CUDACHECK(cudaFree(channel->ring.devUserRanks));
+  //free(channel->ring.userRanks);
+  //CUDACHECK(cudaFree(channel->ring.devUserRanks));
 
   // Free transport proxy resources
   for (int r=0; r<nRanks; r++) {
@@ -252,7 +252,7 @@ static ncclResult_t commAlloc(ncclComm_t* comret, int ndev, int rank) {
   TRACE(NCCL_INIT,"comm %p rank %d nranks %d cudaDev %d busId %x", comm, rank, ndev, comm->cudaDev, comm->busId);
 
   comm->doneEvent = doneEvent;
-  comm->checkPointers = ncclParamCheckPointers() == 1 ? true : false;
+  //comm->checkPointers = ncclParamCheckPointers() == 1 ? true : false;
 #if CUDART_VERSION >= 9020
   comm->groupCudaStream = ncclParamGroupCudaStream();
 #else
@@ -670,9 +670,9 @@ static ncclResult_t initTransportsRank(struct ncclComm_t* comm, ncclUniqueId* co
     struct ncclChannel* channel = comm->channels+c;
     NCCLCHECK(setupChannel(comm, c, rank, nranks, rings+c*nranks));
     if (comm->nRanks == 1) continue;
-    NCCLCHECK(p2pSetup(comm, &ringGraph, channel, 1, &channel->ring.prev, 1, &channel->ring.next));
-    NCCLCHECK(p2pSetup(comm, &treeGraph, channel, NCCL_MAX_TREE_ARITY, channel->treeUp.down, 1, &channel->treeUp.up));
-    NCCLCHECK(p2pSetup(comm, &treeGraph, channel, 1, &channel->treeDn.up, NCCL_MAX_TREE_ARITY, channel->treeDn.down));
+    //NCCLCHECK(p2pSetup(comm, &ringGraph, channel, 1, &channel->ring.prev, 1, &channel->ring.next));
+    //NCCLCHECK(p2pSetup(comm, &treeGraph, channel, NCCL_MAX_TREE_ARITY, channel->treeUp.down, 1, &channel->treeUp.up));
+    //NCCLCHECK(p2pSetup(comm, &treeGraph, channel, 1, &channel->treeDn.up, NCCL_MAX_TREE_ARITY, channel->treeDn.down));
   }
   TRACE(NCCL_INIT, "rank %d nranks %d - CONNECTED %d RINGS AND TREES", rank, nranks, comm->nChannels);
   free(connect);
