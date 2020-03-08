@@ -198,6 +198,8 @@ void ncclDebugLog(ncclDebugLogLevel level, unsigned long flags, const char *file
   }
 }
 
+#define WARN(...) ncclDebugLog(NCCL_LOG_WARN, NCCL_ALL, __FILE__, __LINE__, __VA_ARGS__)
+#define INFO(FLAGS, ...) ncclDebugLog(NCCL_LOG_INFO, (FLAGS), __func__, __LINE__, __VA_ARGS__)
 // Check system calls
 #define SYSCHECK(call, name) do { \
   int retval; \
@@ -270,8 +272,6 @@ void ncclDebugLog(ncclDebugLogLevel level, unsigned long flags, const char *file
 #define RETRY_REFUSED_TIMES   2e4 // connection refused retry times before reporting a timeout (20 sec)
 #define RETRY_TIMEDOUT_TIMES    3 // connection timed out retry times (each one can take 20s)
 
-#define WARN(...) ncclDebugLog(NCCL_LOG_WARN, NCCL_ALL, __FILE__, __LINE__, __VA_ARGS__)
-#define INFO(FLAGS, ...) ncclDebugLog(NCCL_LOG_INFO, (FLAGS), __func__, __LINE__, __VA_ARGS__)
 typedef struct { char internal[NCCL_UNIQUE_ID_BYTES]; } ncclUniqueId;
 
 
