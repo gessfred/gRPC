@@ -291,14 +291,14 @@ static ncclResult_t devCommSetup(ncclComm_t* comm) {
 }
 
 // Pre-process the string so that running "strings" on the lib can quickly reveal the version.
-#define VERSION_STRING "NCCL version " STR(NCCL_MAJOR) "." STR(NCCL_MINOR) "." STR(NCCL_PATCH) NCCL_SUFFIX "+cuda" STR(CUDA_MAJOR) "." STR(CUDA_MINOR)
+//#define VERSION_STRING "NCCL version " STR(NCCL_MAJOR) "." STR(NCCL_MINOR) "." STR(NCCL_PATCH) NCCL_SUFFIX "+cuda" STR(CUDA_MAJOR) "." STR(CUDA_MINOR)
 static void showVersion() {
   static int shown = 0;
   if (shown == 0 && ncclDebugLevel >= NCCL_LOG_VERSION) {
-    printf("%s\n", VERSION_STRING);
+    //printf("%s\n", VERSION_STRING);
     fflush(stdout);
-    if (ncclDebugFile != stdout)
-      INFO(NCCL_ALL,"%s", VERSION_STRING); // Also log NCCL version in one of the files
+    //if (ncclDebugFile != stdout)
+    //  INFO(NCCL_ALL,"%s", VERSION_STRING); // Also log NCCL version in one of the files
     shown = 1;
   }
 }
@@ -312,6 +312,7 @@ static ncclResult_t fillInfo(struct ncclComm_t* comm, struct ncclPeerInfo* info,
   // Get the device MAJOR:MINOR of /dev/shm so we can use that
   // information to decide whether we can use SHM for inter-process
   // communication in a container environment
+  ncclNet_t* net;
   struct stat statbuf;
   SYSCHECK(stat("/dev/shm", &statbuf), "stat");
   info->shmDev = statbuf.st_dev;
@@ -319,10 +320,10 @@ static ncclResult_t fillInfo(struct ncclComm_t* comm, struct ncclPeerInfo* info,
   info->busId = comm->busId;
   int netDevs;
 
-  NCCLCHECK(ncclNetDevices(&netDevs));
+  NCCLCHECK(ncclNetDevices(net, &netDevs));
   for (int n=0; n<netDevs; n++) {
     int ptrSupport;
-    NCCLCHECK(ncclNetPtrSupport(n, &ptrSupport));
+    NCCLCHECK(ncclNetPtrSupport(net, n, &ptrSupport));
     if (ptrSupport & NCCL_PTR_CUDA) info->gdrSupport |= (1 << n);
   }
   return ncclSuccess;
