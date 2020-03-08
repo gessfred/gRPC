@@ -70,7 +70,16 @@ enum ncclPathDist {
   PATH_SYS  = 4,
   PATH_ARRAY_SIZE = 5
 };
-
+struct ncclTopoRanks {
+  int ringRecv[MAXCHANNELS];
+  int ringSend[MAXCHANNELS];
+  int ringPrev[MAXCHANNELS];
+  int ringNext[MAXCHANNELS];
+  int treeUpRecv[MAXCHANNELS];
+  int treeUpSend[MAXCHANNELS];
+  int treeDnRecv[MAXCHANNELS];
+  int treeDnSend[MAXCHANNELS];
+};
 
 struct ncclTopoNode;
 struct ncclTopoLink {

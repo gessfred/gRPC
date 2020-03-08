@@ -339,7 +339,7 @@ static ncclResult_t selectTransport(struct ncclTopoSystem* topo, struct ncclTopo
     NCCLCHECK(transport->canConnect(&ret, topo, graph, myInfo, peerInfo));
     if (ret) {
       connector->transportComm = transportComm;
-      NCCLCHECK(transportComm->setup(topo, graph, myInfo, peerInfo, connect, connector, buffSize, channelId));
+//      NCCLCHECK(transportComm->setup(topo, graph, myInfo, peerInfo, connect, connector, buffSize, channelId));
       return ncclSuccess;
     }
   }
@@ -486,7 +486,7 @@ static ncclResult_t p2pSetup(struct ncclComm_t* comm, struct ncclTopoGraph* grap
   return ncclSuccess;
 }
 
-NCCL_PARAM(CrossNic, "CROSS_NIC", 2);
+//NCCL_PARAM(CrossNic, "CROSS_NIC", 2);
 
 static ncclResult_t initTransportsRank(struct ncclComm_t* comm, ncclUniqueId* commId) {
   // We use 3 AllGathers
@@ -524,30 +524,30 @@ static ncclResult_t initTransportsRank(struct ncclComm_t* comm, ncclUniqueId* co
   // AllGather1 - end
 
   // Topo detection / System graph creation
-  NCCLCHECK(ncclTopoGetSystem(comm, &comm->topo));
+  //NCCLCHECK(ncclTopoGetSystem(comm, &comm->topo));
   // Compute paths between GPUs and NICs
-  NCCLCHECK(ncclTopoComputePaths(comm->topo, comm->peerInfo));
+  //NCCLCHECK(ncclTopoComputePaths(comm->topo, comm->peerInfo));
   // Remove inaccessible GPUs and unused NICs
-  NCCLCHECK(ncclTopoTrimSystem(comm->topo, comm));
+  //NCCLCHECK(ncclTopoTrimSystem(comm->topo, comm));
   // Recompute paths after trimming
-  NCCLCHECK(ncclTopoComputePaths(comm->topo, comm->peerInfo));
+  //NCCLCHECK(ncclTopoComputePaths(comm->topo, comm->peerInfo));
   // Compute max speed to accelerate search
-  NCCLCHECK(ncclTopoGetMaxSpeed(comm->topo));
+  //NCCLCHECK(ncclTopoGetMaxSpeed(comm->topo));
   // Print final topology
-  NCCLCHECK(ncclTopoPrint(comm->topo));
+  //NCCLCHECK(ncclTopoPrint(comm->topo));
 
   // Get rings and trees
   struct ncclTopoGraph treeGraph;
   treeGraph.pattern = NCCL_TOPO_PATTERN_SPLIT_TREE;
   treeGraph.crossNic = ncclParamCrossNic();
   // We communicate only half the data between node with trees on 2 nodes.
-  NCCLCHECK(ncclTopoCompute(comm->topo, &treeGraph));
-  NCCLCHECK(ncclTopoPrintGraph(comm->topo, &treeGraph));
+  //NCCLCHECK(ncclTopoCompute(comm->topo, &treeGraph));
+  //NCCLCHECK(ncclTopoPrintGraph(comm->topo, &treeGraph));
   struct ncclTopoGraph ringGraph;
   ringGraph.pattern = NCCL_TOPO_PATTERN_RING;
   ringGraph.crossNic = ncclParamCrossNic();
-  NCCLCHECK(ncclTopoCompute(comm->topo, &ringGraph));
-  NCCLCHECK(ncclTopoPrintGraph(comm->topo, &ringGraph));
+  ////NCCLCHECK(ncclTopoCompute(comm->topo, &ringGraph));
+  //NCCLCHECK(ncclTopoPrintGraph(comm->topo, &ringGraph));
 
   // AllGather3 - begin
 
@@ -584,7 +584,7 @@ static ncclResult_t initTransportsRank(struct ncclComm_t* comm, ncclUniqueId* co
   allGather3Data[rank].ring.speedInter = ringGraph.speedInter;
   allGather3Data[rank].ring.nvlink = ringGraph.nvlink;
 
-  NCCLCHECK(ncclTopoPreset(comm, &treeGraph, &ringGraph, &allGather3Data[rank].topoRanks));
+//  NCCLCHECK(ncclTopoPreset(comm, &treeGraph, &ringGraph, &allGather3Data[rank].topoRanks));
 
   NCCLCHECK(bootstrapAllGather(comm->bootstrap, allGather3Data, sizeof(*allGather3Data)));
 
