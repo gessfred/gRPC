@@ -33,17 +33,6 @@ uint64_t ncclDebugMask = NCCL_INIT; // Default debug sub-system mask is INIT
 FILE *ncclDebugFile = stdout;
 pthread_mutex_t ncclDebugLock = PTHREAD_MUTEX_INITIALIZER;
 
-ncclResult_t getHostName(char* hostname, int maxlen, const char delim) {
-  if (gethostname(hostname, maxlen) != 0) {
-    strncpy(hostname, "unknown", maxlen);
-    return ncclSystemError;
-  }
-  int i = 0;
-  while ((hostname[i] != delim) && (hostname[i] != '\0') && (i < maxlen-1)) i++;
-  hostname[i] = '\0';
-  return ncclSuccess;
-}
-
 
 #define WARN(...) printf("[WARN] stub")//ncclDebugLog(NCCL_LOG_WARN, NCCL_ALL, __FILE__, __LINE__, __VA_ARGS__)
 #define INFO(FLAGS, ...) printf("[INFO] stub")//ncclDebugLog(NCCL_LOG_INFO, (FLAGS), __func__, __LINE__, __VA_ARGS__)
@@ -458,33 +447,3 @@ static inline ncclResult_t ncclCudaHostAlloc(void** ptr, void** devPtr, size_t s
   return ncclSuccess;
 }
 
-ncclResult_t busIdToInt64(char* busId, int64_t* id) {
-  const int size = strlen(busId);
-  char* hexStr;
-  ncclCalloc(&hexStr, size);
-  int hexOffset = 0;
-  for (int i=0; i<size; i++) {
-    char c = busId[i];
-    if (c == '.' || c == ':') continue;
-    if ((c >= '0' && c <= '9') ||
-        (c >= 'A' && c <= 'F') ||
-        (c >= 'a' && c <= 'f')) {
-      hexStr[hexOffset++] = busId[i];
-    } else break;
-  }
-  hexStr[hexOffset] = '\0';
-  *id = strtol(hexStr, NULL, 16);
-  free(hexStr);
-  return ncclSuccess;
-}
-
-// Convert a logical cudaDev index to the NVML device minor number
-ncclResult_t getBusId(int cudaDev, int64_t *busId) {
-  // On most systems, the PCI bus ID comes back as in the 0000:00:00.0
-  // format. Still need to allocate proper space in case PCI domain goes
-  // higher.
-  char busIdStr[] = "00000000:00:00.0";
-  cudaDeviceGetPCIBusId(busIdStr, sizeof(busIdStr), cudaDev);
-  busIdToInt64(busIdStr, busId);
-  return ncclSuccess;
-}
