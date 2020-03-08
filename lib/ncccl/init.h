@@ -360,7 +360,7 @@ static ncclResult_t setupChannel(struct ncclComm_t* comm, int channelId, int ran
     }
   }
   for (int i=0; i<nranks; i++) {
-    ring->userRanks[i] = ringRanks[(i+shift)%nranks];
+    //ring->userRanks[i] = ringRanks[(i+shift)%nranks];
   }
   return ncclSuccess;
 }

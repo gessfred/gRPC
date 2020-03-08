@@ -654,3 +654,12 @@ ncclResult_t ncclCpuBarrierOut(struct ncclComm_t* comm) {
   comm->intraPhase ^= 1;
   return ncclSuccess;
 }
+
+int ncclCudaCompCap() {
+  int cudaDev;
+  if (cudaGetDevice(&cudaDev) != cudaSuccess) return 0;
+  int ccMajor, ccMinor;
+  if (cudaDeviceGetAttribute(&ccMajor, cudaDevAttrComputeCapabilityMajor, cudaDev) != cudaSuccess) return 0;
+  if (cudaDeviceGetAttribute(&ccMinor, cudaDevAttrComputeCapabilityMinor, cudaDev) != cudaSuccess) return 0;
+  return ccMajor*10+ccMinor;
+}
