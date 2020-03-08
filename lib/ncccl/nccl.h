@@ -93,14 +93,7 @@ pthread_mutex_t ncclDebugLock = PTHREAD_MUTEX_INITIALIZER;
   } \
 } while(true)
 // Propagate errors up
-#define NCCLCHECK(call) do { \
-  ncclResult_t res = call; \
-  if (res != ncclSuccess) { \
-    /* Print the back trace*/ \
-    INFO(NCCL_ALL,"%s:%d -> %d", __FILE__, __LINE__, res);    \
-    return res; \
-  } \
-} while (0);
+#define NCCLCHECK(call) 
 
 #define NCCLCHECKGOTO(call, res, label) do { \
   res = call; \
