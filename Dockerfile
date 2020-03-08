@@ -12,5 +12,6 @@ RUN mkdir /usr/local/cuda/bin
 RUN ln -s /usr/bin/nvcc /usr/local/cuda/bin/nvcc
 ADD /lib/ncccl ${LIB}/lib/ncccl
 RUN cd ${LIB}/lib/ncccl && python setup.py install
+ADD /lib/test_allgather.py ${LIB}/lib/test_allgather.py
 EXPOSE 29500
 EXPOSE 60000
