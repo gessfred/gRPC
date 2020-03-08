@@ -59,6 +59,38 @@ struct netIf {
   int port;
 };
 
+int parseStringList(const char* string, struct netIf* ifList, int maxList) {
+  if (!string) return 0;
+
+  const char* ptr = string;
+
+  int ifNum = 0;
+  int ifC = 0;
+  char c;
+  do {
+    c = *ptr;
+    if (c == ':') {
+      if (ifC > 0) {
+        ifList[ifNum].prefix[ifC] = '\0';
+        ifList[ifNum].port = atoi(ptr+1);
+        ifNum++; ifC = 0;
+      }
+      while (c != ',' && c != '\0') c = *(++ptr);
+    } else if (c == ',' || c == '\0') {
+      if (ifC > 0) {
+        ifList[ifNum].prefix[ifC] = '\0';
+        ifList[ifNum].port = -1;
+        ifNum++; ifC = 0;
+      }
+    } else {
+      ifList[ifNum].prefix[ifC] = c;
+      ifC++;
+    }
+    ptr++;
+  } while (ifNum < maxList && c);
+  return ifNum;
+}
+
 /*int parseStringList(const char* string, struct netIf* ifList, int maxList);
 bool matchIfList(const char* string, int port, struct netIf* ifList, int listSize, bool matchExact);
 
