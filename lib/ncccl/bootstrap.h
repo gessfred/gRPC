@@ -14,6 +14,22 @@
 #include "nccl.h"
 #include <sys/types.h>
 
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <netinet/tcp.h>
+#include <unistd.h>
+#include <netdb.h>
+#include <ifaddrs.h>
+#include <net/if.h>
+
+/* Common socket address storage structure for IPv4/IPv6 */
+union socketAddress {
+  struct sockaddr sa;
+  struct sockaddr_in sin;
+  struct sockaddr_in6 sin6;
+};
+
+
 /* Init functions */
 static char bootstrapNetIfNames[MAX_IF_NAME_SIZE*MAX_IFS];
 static union socketAddress bootstrapNetIfAddrs[MAX_IFS];
