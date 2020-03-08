@@ -616,7 +616,7 @@ struct ncclInfo {
   int nchunksPerLoop;
 };
 
-ncclResult_t ncclCpuBarrierIn(struct ncclComm* comm, int* isLast) {
+ncclResult_t ncclCpuBarrierIn(struct ncclComm_t* comm, int* isLast) {
   volatile int* ptr = (volatile int*)(comm->intraBarrier+comm->intraPhase);
   int val = *ptr;
   bool done = false;
@@ -638,7 +638,7 @@ ncclResult_t ncclCpuBarrierIn(struct ncclComm* comm, int* isLast) {
   return ncclSuccess;
 }
 
-ncclResult_t ncclCpuBarrierLast(struct ncclComm* comm) {
+ncclResult_t ncclCpuBarrierLast(struct ncclComm_t* comm) {
   volatile int* ptr = (volatile int*)(comm->intraBarrier+comm->intraPhase);
   int val = *ptr;
   if (__sync_bool_compare_and_swap(ptr, val, val+1) != true) {
@@ -648,7 +648,7 @@ ncclResult_t ncclCpuBarrierLast(struct ncclComm* comm) {
   return ncclSuccess;
 }
 
-ncclResult_t ncclCpuBarrierOut(struct ncclComm* comm) {
+ncclResult_t ncclCpuBarrierOut(struct ncclComm_t* comm) {
   volatile int* ptr = (volatile int*)(comm->intraBarrier+comm->intraPhase);
   while (*ptr < comm->intraRanks) pthread_yield();
   comm->intraPhase ^= 1;
