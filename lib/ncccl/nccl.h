@@ -717,6 +717,7 @@ ncclResult_t ncclCpusetToStr(cpu_set_t* mask, char* str) {
   str[c] = '\0';
   return ncclSuccess;
 }
+enum ncclProxyOpState { ncclProxyOpNone, ncclProxyOpReady, ncclProxyOpProgress };
 struct ncclRing {
   // Shortcuts for userRanks[1] and userRanks[n-1]
   int prev;
@@ -827,13 +828,13 @@ static ncclResult_t SaveProxy(int peer, struct ncclProxyArgs* args) {
   op->connector = connector;
   /**************IMpORTANT****************/
   op->progress = connector->transportComm->proxy;
-  op->state = ncclProxyOpReady;
+  //op->state = ncclProxyOpReady;
   ProxyAppend(connector, op);
   return ncclSuccess;
 }
 
 ncclResult_t transportSaveProxies(struct ncclProxyArgs* args, int pattern, int root, int nranks) {
-  if (pattern == ncclPatternRing || pattern == ncclPatternRingTwice || pattern == ncclPatternPipelineFrom || pattern == ncclPatternPipelineTo) {
+  /*if (pattern == ncclPatternRing || pattern == ncclPatternRingTwice || pattern == ncclPatternPipelineFrom || pattern == ncclPatternPipelineTo) {
     struct ncclRing* ring = &args->channel->ring;
     if (NeedProxy(RECV, pattern, root, ring, nranks)) NCCLCHECK(SaveProxy<proxyRecv>(ring->prev, args));
     if (NeedProxy(SEND, pattern, root, ring, nranks)) NCCLCHECK(SaveProxy<proxySend>(ring->next, args));
@@ -850,7 +851,7 @@ ncclResult_t transportSaveProxies(struct ncclProxyArgs* args, int pattern, int r
     for (int i=0; i< NCCL_MAX_TREE_ARITY; i++) NCCLCHECK(SaveProxy<proxySend>(tree->down[i], args));
     NCCLCHECK(SaveProxy<proxyRecv>(tree->up, args));
   }
-  return ncclSuccess;
+  return ncclSuccess;*/
 }
 
 /**
