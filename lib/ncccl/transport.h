@@ -16,20 +16,8 @@
 
 extern struct ncclTransport ncclTransports[];
 
-// Forward declarations
-struct ncclRing;
-struct ncclConnector;
-struct ncclComm;
 
-struct ncclPeerInfo {
-  int rank;
-  int cudaDev;
-  int gdrSupport;
-  uint64_t hostHash;
-  uint64_t pidHash;
-  dev_t shmDev;
-  int64_t busId;
-};
+
 
 #define CONNECT_SIZE 128
 struct ncclConnect {
@@ -38,32 +26,6 @@ struct ncclConnect {
 
 enum ncclProxyOpState { ncclProxyOpNone, ncclProxyOpReady, ncclProxyOpProgress };
 
-struct ncclProxyArgs;
-typedef ncclResult_t (*proxyProgressFunc_t)(struct ncclProxyArgs*);
-
-struct ncclProxyArgs {
-  proxyProgressFunc_t progress;
-  struct ncclChannel* channel;
-  struct ncclConnector* connector;
-  int sliceSteps;
-  int chunkSteps;
-  int nsteps;
-  uint64_t opCount;
-  int protocol;
-  int state;   // add component before this line -- it is left out during initialization
-
-  // Internal state
-  uint64_t head;
-  uint64_t tail;
-  uint64_t end;
-  void* requests[NCCL_STEPS];
-  int idle;
-
-  // Element linking
-  pthread_mutex_t mutex;
-  struct ncclProxyArgs* next;
-  struct ncclProxyArgs* nextPeer;
-};
 
 struct ncclProxyPool;
 struct ncclProxyState {
@@ -98,12 +60,13 @@ enum proxyMode {
   proxyFrom = 1,
   proxyTo = 2
 };
-
+/*
 ncclResult_t transportAllocateProxyArgs(struct ncclComm* comm, struct ncclProxyArgs** argsptr);
 ncclResult_t transportSaveProxies(struct ncclProxyArgs* args, int pattern, int root, int nranks);
 ncclResult_t transportStartProxy(struct ncclComm* comm);
 ncclResult_t transportCreateProxy(struct ncclComm* comm);
 ncclResult_t transportDestroyProxy(struct ncclComm* comm);
+*/
 
 #include <unistd.h>
 
