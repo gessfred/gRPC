@@ -712,6 +712,17 @@ ncclResult_t ncclCpusetToStr(cpu_set_t* mask, char* str) {
   str[c] = '\0';
   return ncclSuccess;
 }
+struct ncclRing {
+  // Shortcuts for userRanks[1] and userRanks[n-1]
+  int prev;
+  int next;
+
+  // Maps an internal nccl index to user-specified rank order. This is necessary
+  // since we need to know how the user expects data to be ordered across
+  // devices. Ordered from current device.
+  int* userRanks;
+  int* devUserRanks;
+};
 
 extern struct ncclTransport p2pTransport;
 extern struct ncclTransport shmTransport;
@@ -743,10 +754,7 @@ static bool NeedProxy(int type, int pattern, int root, struct ncclRing* ring, in
 enum { proxyRecv=0, proxySend=1 };
 
 #define PROXYARGS_ALLOCATE_SIZE 32
-struct ncclProxyPool {
-  struct ncclProxyPool *next;
-  struct ncclProxyArgs elems[PROXYARGS_ALLOCATE_SIZE];
-};
+
 
 ncclResult_t transportAllocateProxyArgs(struct ncclComm* comm, struct ncclProxyArgs** argsptr) {
   struct ncclProxyState* state = &comm->proxyState;
