@@ -559,6 +559,48 @@ ncclResult_t ncclTopoComputeNetInfo(struct netInfo* netInfos, int ndev) {
   return ncclSuccess;
 }
 
+static void printNodePaths(struct ncclTopoSystem* system, struct ncclTopoNode* node) {
+  char line[1024];
+#ifdef ENABLE_TRACE
+  INFO(NCCL_GRAPH, "Paths from %s/%lX :", topoNodeTypeStr[node->type], node->id);
+#else
+  sprintf(line, "%s/%lX :", topoNodeTypeStr[node->type], node->id);
+  int offset = strlen(line);
+#endif
+  for (int t=0; t<NCCL_TOPO_NODE_TYPES; t++) {
+    if (node->paths[t] == NULL) continue;
+    for (int n = 0; n<system->nodes[t].count; n++) {
+#ifdef ENABLE_TRACE
+      line[0] = 0;
+      int offset = 0;
+      for (int i=0; i<node->paths[t][n].count; i++) {
+        struct ncclTopoLink* link = node->paths[t][n].list[i];
+        struct ncclTopoNode* remNode = link->remNode;
+        sprintf(line+offset, "--%s->%s/%lX", topoLinkTypeStr[link->type], topoNodeTypeStr[remNode->type], remNode->id);
+        offset = strlen(line);
+      }
+      INFO(NCCL_GRAPH, "%s (%d)", line, node->paths[t][n].width);
+#else
+      sprintf(line+offset, "%s/%lX (%d/%d/%d) ", topoNodeTypeStr[t], system->nodes[t].nodes[n].id, node->paths[t][n].count, node->paths[t][n].width, node->paths[t][n].type);
+      offset = strlen(line);
+#endif
+    }
+  }
+#ifndef ENABLE_TRACE
+  INFO(NCCL_GRAPH, "%s", line);
+#endif
+}
+
+ncclResult_t ncclTopoPrintPaths(struct ncclTopoSystem* system) {
+  for (int i=0; i<system->nodes[GPU].count; i++) {
+    printNodePaths(system, system->nodes[GPU].nodes+i);
+  }
+  for (int i=0; i<system->nodes[NET].count; i++) {
+    printNodePaths(system, system->nodes[NET].nodes+i);
+  }
+  return ncclSuccess;
+}
+
 ncclResult_t ncclTopoConnectPCI(struct ncclTopoSystem* system) {
   for (int g=0; g<system->nodes[GPU].count; g++) {
     struct ncclTopoNode* gpu = system->nodes[GPU].nodes+g;
@@ -578,7 +620,7 @@ ncclResult_t ncclTopoConnectPCI(struct ncclTopoSystem* system) {
   NCCLCHECK(ncclCalloc(&netInfos, netDevCount));
 
   for (int n=0; n<netDevCount; n++) {
-    ncclResult_t res = ncclNetPciPath(n, &netInfos[n].path);
+    ncclResult_t res = ncclNetPciPath(NULL, n, &netInfos[n].path);
     if (res != ncclSuccess) netInfos[n].path = NULL;
   }
 
@@ -703,7 +745,7 @@ ncclResult_t ncclTopoSortSystem(struct ncclTopoSystem* system) {
   return ncclSuccess;
 }
 
-ncclResult_t ncclTopoGetSystem(struct ncclComm* comm, struct ncclTopoSystem** system) {
+ncclResult_t ncclTopoGetSystem(ncclComm_t* comm, struct ncclTopoSystem** system) {
   struct ncclTopoSystem* s;
   NCCLCHECK(ncclCalloc(&s, 1));
   nvmlDevice_t* nvmlDevs;
