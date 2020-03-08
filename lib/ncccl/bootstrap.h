@@ -1,3 +1,4 @@
+#pragma once
 /*************************************************************************
  * Copyright (c) 2016-2019, NVIDIA CORPORATION. All rights reserved.
  *
@@ -13,8 +14,6 @@
 #include "nccl.h"
 #include <sys/types.h>
 
-#define WARN(s) printf("[WARN] %s", s)
-#define INFO(s) printf("[INFO] %s", s)
 /* Init functions */
 static char bootstrapNetIfNames[MAX_IF_NAME_SIZE*MAX_IFS];
 static union socketAddress bootstrapNetIfAddrs[MAX_IFS];

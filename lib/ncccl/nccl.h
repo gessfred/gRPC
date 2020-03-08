@@ -1,4 +1,5 @@
 #pragma once
+#include "debug.h"
 #include <stdint.h>
 #include <cuda_runtime.h>
 #include <errno.h>
@@ -24,22 +25,40 @@
     break; \
   } \
 } while(true)
+// Propagate errors up
+#define NCCLCHECK(call) do { \
+  ncclResult_t res = call; \
+  if (res != ncclSuccess) { \
+    /* Print the back trace*/ \
+    INFO(NCCL_ALL,"%s:%d -> %d", __FILE__, __LINE__, res);    \
+    return res; \
+  } \
+} while (0);
+
+#define NCCLCHECKGOTO(call, res, label) do { \
+  res = call; \
+  if (res != ncclSuccess) { \
+    /* Print the back trace*/ \
+    INFO(NCCL_ALL,"%s:%d -> %d", __FILE__, __LINE__, res);    \
+    goto label; \
+  } \
+} while (0);
+
 #define NCCL_NET_HANDLE_MAXSIZE 64
 #define NCCL_UNIQUE_ID_BYTES 128
 #define MAXCHANNELS 32
 #define int4 int
 #define NCCL_STEPS 8
 #define PROXYARGS_ALLOCATE_SIZE 32
-#define NCCLCHECK(cmd) ncclResult_r res = cmd;\
-                        if(res != ncclSuccess) return res;
+
 #define MAX_IFS 16
 #define MAX_IF_NAME_SIZE 16
 #define SLEEP_INT            1000 // connection retry sleep interval in usec
 #define RETRY_REFUSED_TIMES   2e4 // connection refused retry times before reporting a timeout (20 sec)
 #define RETRY_TIMEDOUT_TIMES    3 // connection timed out retry times (each one can take 20s)
 
-//#define WARN(...) ncclDebugLog(NCCL_LOG_WARN, NCCL_ALL, __FILE__, __LINE__, __VA_ARGS__)
-//#define INFO(FLAGS, ...) ncclDebugLog(NCCL_LOG_INFO, (FLAGS), __func__, __LINE__, __VA_ARGS__)
+#define WARN(...) ncclDebugLog(NCCL_LOG_WARN, NCCL_ALL, __FILE__, __LINE__, __VA_ARGS__)
+#define INFO(FLAGS, ...) ncclDebugLog(NCCL_LOG_INFO, (FLAGS), __func__, __LINE__, __VA_ARGS__)
 typedef struct { char internal[NCCL_UNIQUE_ID_BYTES]; } ncclUniqueId;
 
 /* Error type */
@@ -51,9 +70,6 @@ typedef enum { ncclSuccess                 =  0,
                ncclInvalidUsage            =  5,
                ncclNumResults              =  6 } ncclResult_t;
 
-typedef enum {NCCL_LOG_NONE=0, NCCL_LOG_VERSION=1, NCCL_LOG_WARN=2, NCCL_LOG_INFO=3, NCCL_LOG_ABORT=4, NCCL_LOG_TRACE=5} ncclDebugLogLevel;
-
-typedef void (*ncclDebugLogger_t)(ncclDebugLogLevel level, unsigned long flags, const char *file, int line, const char *fmt, ...);
 
 struct bootstrapNetComm {
   int fd;
