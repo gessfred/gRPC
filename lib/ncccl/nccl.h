@@ -728,17 +728,17 @@ struct ncclRing {
   int* userRanks;
   int* devUserRanks;
 };
-
-extern struct ncclTransport p2pTransport;
-extern struct ncclTransport shmTransport;
-extern struct ncclTransport netTransport;
+/*
+struct ncclTransport p2pTransport;
+struct ncclTransport shmTransport;
+struct ncclTransport netTransport;
 
 struct ncclTransport ncclTransports[NTRANSPORTS] = {
   p2pTransport,
   shmTransport,
   netTransport,
 };
-
+*/
 #define RECV 0
 #define SEND 1
 
