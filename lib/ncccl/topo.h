@@ -5,6 +5,7 @@
  ************************************************************************/
 
 #include "nccl.h"
+#include "utils.h"
 #include <sys/stat.h>
 #include <fcntl.h>
 
