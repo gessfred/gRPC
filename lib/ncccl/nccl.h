@@ -5,6 +5,8 @@
 #define NCCL_UNIQUE_ID_BYTES 128
 #define MAXCHANNELS 32
 #define int4 int
+#define NCCL_STEPS 8
+#define PROXYARGS_ALLOCATE_SIZE 32
 
 //#define WARN(...) ncclDebugLog(NCCL_LOG_WARN, NCCL_ALL, __FILE__, __LINE__, __VA_ARGS__)
 //#define INFO(FLAGS, ...) ncclDebugLog(NCCL_LOG_INFO, (FLAGS), __func__, __LINE__, __VA_ARGS__)
