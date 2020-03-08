@@ -935,7 +935,7 @@ void* persistentThread(void *comm_) {
   }
 }
 
-ncclResult_t transportStartProxy(struct ncclComm* comm) {
+ncclResult_t transportStartProxy(struct ncclComm_t* comm) {
   pthread_mutex_lock(&comm->proxyState.mutex);
   if (comm->proxyState.ops != NULL)
     pthread_cond_signal(&comm->proxyState.cond);
