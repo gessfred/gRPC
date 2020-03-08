@@ -428,11 +428,23 @@ struct ncclComm_t {
   struct ncclProxyState proxyState;
 };
 
+static inline ncclResult_t ncclCudaHostAlloc(void** ptr, void** devPtr, size_t size) {
+  CUDACHECK(cudaHostAlloc(ptr, size, cudaHostAllocMapped));
+  memset(*ptr, 0, size);
+  *devPtr = *ptr;
+  return ncclSuccess;
+}
+
+static inline ncclResult_t ncclCudaHostFree(void* ptr) {
+  CUDACHECK(cudaFreeHost(ptr));
+  return ncclSuccess;
+}
+
 template <typename T>
 static ncclResult_t ncclCalloc(T** ptr, size_t nelem) {
   void* p = malloc(nelem*sizeof(T));
   if (p == NULL) {
-    //WARN("Failed to malloc %ld bytes", nelem*sizeof(T));
+    WARN("Failed to malloc %ld bytes", nelem*sizeof(T));
     return ncclSystemError;
   }
   memset(p, 0, nelem*sizeof(T));
@@ -440,10 +452,64 @@ static ncclResult_t ncclCalloc(T** ptr, size_t nelem) {
   return ncclSuccess;
 }
 
-static inline ncclResult_t ncclCudaHostAlloc(void** ptr, void** devPtr, size_t size) {
-  cudaHostAlloc(ptr, size, cudaHostAllocMapped);
-  memset(*ptr, 0, size);
-  *devPtr = *ptr;
+template <typename T>
+static ncclResult_t ncclCudaCalloc(T** ptr, size_t nelem) {
+  CUDACHECK(cudaMalloc(ptr, nelem*sizeof(T)));
+  CUDACHECK(cudaMemset(*ptr, 0, nelem*sizeof(T)));
   return ncclSuccess;
 }
+
+template <typename T>
+static ncclResult_t ncclCudaMemcpy(T* dst, T* src, size_t nelem) {
+  CUDACHECK(cudaMemcpy(dst, src, nelem*sizeof(T), cudaMemcpyDefault));
+  return ncclSuccess;
+}
+
+#ifdef PROFAPI
+#define NCCL_API(ret, func, args...)        \
+    __attribute__ ((visibility("default"))) \
+    __attribute__ ((alias(#func)))          \
+    ret p##func (args);                     \
+    extern "C"                              \
+    __attribute__ ((visibility("default"))) \
+    __attribute__ ((weak))                  \
+    ret func(args)
+#else
+#define NCCL_API(ret, func, args...)        \
+    extern "C"                              \
+    __attribute__ ((visibility("default"))) \
+    ret func(args)
+#endif // end PROFAPI
+
+static __inline__ int ncclTypeSize(ncclDataType_t type) {
+  switch (type) {
+    case ncclInt8:
+    case ncclUint8:
+      return 1;
+    case ncclFloat16:
+      return 2;
+    case ncclInt32:
+    case ncclUint32:
+    case ncclFloat32:
+      return 4;
+    case ncclInt64:
+    case ncclUint64:
+    case ncclFloat64:
+      return 8;
+    default:
+      return -1;
+  }
+}
+
+#define NCCL_NUM_FUNCTIONS 5
+typedef enum { ncclCollBroadcast, ncclCollReduce, ncclCollAllGather, ncclCollReduceScatter, ncclCollAllReduce, ncclCollSend, ncclCollRecv } ncclFunc_t;
+
+#define NCCL_NUM_ALGORITHMS 2 // Tree/Ring
+#define NCCL_ALGO_TREE 0
+#define NCCL_ALGO_RING 1
+
+#define NCCL_NUM_PROTOCOLS 3 // Simple/LL/LL128
+#define NCCL_PROTO_LL 0
+#define NCCL_PROTO_LL128 1
+#define NCCL_PROTO_SIMPLE 2
 
