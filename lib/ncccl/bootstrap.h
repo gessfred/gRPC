@@ -15,14 +15,6 @@
 #include <sys/types.h>
 
 #include "socket.h"
-/* Common socket address storage structure for IPv4/IPv6 */
-union socketAddress {
-  struct sockaddr sa;
-  struct sockaddr_in sin;
-  struct sockaddr_in6 sin6;
-};
-
-
 /* Init functions */
 static char bootstrapNetIfNames[MAX_IF_NAME_SIZE*MAX_IFS];
 static union socketAddress bootstrapNetIfAddrs[MAX_IFS];

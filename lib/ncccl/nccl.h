@@ -109,7 +109,7 @@ pthread_mutex_t ncclDebugLock = PTHREAD_MUTEX_INITIALIZER;
 #define RETRY_TIMEDOUT_TIMES    3 // connection timed out retry times (each one can take 20s)
 
 typedef struct { char internal[NCCL_UNIQUE_ID_BYTES]; } ncclUniqueId;
-
+typedef char ncclNetHandle_t[NCCL_NET_HANDLE_MAXSIZE];
 
 
 struct bootstrapNetComm {
