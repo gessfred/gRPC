@@ -266,6 +266,33 @@ struct extState {
   int dev;
 };
 
+ncclResult_t bootstrapAllGather(void* commState, void* allData, int size) {
+  struct extState* state = (struct extState*)commState;
+  char* data = (char*)allData;
+  int rank = state->rank;
+  int nranks = state->nranks;
+
+  TRACE(NCCL_INIT, "rank %d nranks %d size %d", rank, nranks, size);
+
+  /* Simple ring based AllGather
+   * At each step i receive data from (rank-i-1) from left
+   * and send previous step's data from (rank-i) to right
+   */
+  for (int i=0; i<nranks-1; i++) {
+    size_t rslice = (rank - i - 1 + nranks) % nranks;
+    size_t sslice = (rank - i + nranks) % nranks;
+
+    // Send slice to the right
+    NCCLCHECK(bootstrapNetSend(state->extBstrapRingSendComm, data+sslice*size, size));
+    // Recv slice from the left
+    NCCLCHECK(bootstrapNetRecv(state->extBstrapRingRecvComm, data+rslice*size, size));
+  }
+
+  TRACE(NCCL_INIT, "rank %d nranks %d size %d - DONE", rank, nranks, size);
+  return ncclSuccess;
+}
+
+
 ncclResult_t bootstrapInit(ncclUniqueId * id, int rank, int nranks, void** commState) {
   ncclNetHandle_t* netHandle = (ncclNetHandle_t*) id;
   bool idFromEnv = getenv("NCCL_COMM_ID") != NULL;
@@ -328,31 +355,6 @@ ncclResult_t bootstrapInit(ncclUniqueId * id, int rank, int nranks, void** commS
   return ncclSuccess;
 }
 
-ncclResult_t bootstrapAllGather(void* commState, void* allData, int size) {
-  struct extState* state = (struct extState*)commState;
-  char* data = (char*)allData;
-  int rank = state->rank;
-  int nranks = state->nranks;
-
-  TRACE(NCCL_INIT, "rank %d nranks %d size %d", rank, nranks, size);
-
-  /* Simple ring based AllGather
-   * At each step i receive data from (rank-i-1) from left
-   * and send previous step's data from (rank-i) to right
-   */
-  for (int i=0; i<nranks-1; i++) {
-    size_t rslice = (rank - i - 1 + nranks) % nranks;
-    size_t sslice = (rank - i + nranks) % nranks;
-
-    // Send slice to the right
-    NCCLCHECK(bootstrapNetSend(state->extBstrapRingSendComm, data+sslice*size, size));
-    // Recv slice from the left
-    NCCLCHECK(bootstrapNetRecv(state->extBstrapRingRecvComm, data+rslice*size, size));
-  }
-
-  TRACE(NCCL_INIT, "rank %d nranks %d size %d - DONE", rank, nranks, size);
-  return ncclSuccess;
-}
 
 ncclResult_t bootstrapSend(void* commState, int peer, void* data, int size) {
   struct extState* state = (struct extState*)commState;
