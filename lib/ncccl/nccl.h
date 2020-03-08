@@ -1,5 +1,6 @@
 #pragma once
 #include <stdint.h>
+#include <cuda_runtime.h>
 #define NCCL_NET_HANDLE_MAXSIZE 64
 #define NCCL_UNIQUE_ID_BYTES 128
 #define MAXCHANNELS 32
@@ -181,6 +182,37 @@ struct ncclDevComm {
   struct ncclChannel* channels;
 };
 
+/* CollectiveArgs + ncclColl are to be a power of two, currently 64 bytes, */
+/* to make sure reads to host from the CUDA kernel are aligned. */
+/* Make sure to adjust padding at the end of ncclColl. */
+struct CollectiveArgs {
+  struct ncclDevComm* comm;
+  uint64_t opCount;
+
+  // local and remote input, output, and buffer
+  const void * ThisInput;
+  void * ThisOutput;
+
+  // general parameters
+  size_t N;
+  uint32_t root;
+  uint8_t bid;
+  uint8_t nChannels;
+  uint16_t nThreads;
+
+  int lastChunkSize;
+};
+struct ncclColl {
+  union {
+    struct {
+      struct CollectiveArgs args;
+      uint16_t funcIndex;
+      uint16_t nextIndex;
+      uint8_t  active;
+    };
+    int data[0x10];
+  };
+};
 
 struct ncclComm_t {
   struct ncclChannel channels[MAXCHANNELS];
@@ -217,10 +249,10 @@ struct ncclComm_t {
   int nvlink;
 
   // Algorithm/Protocols thresholds
-  ssize_t threadThresholds[NCCL_NUM_ALGORITHMS][NCCL_NUM_PROTOCOLS];
-  float latencies[NCCL_NUM_FUNCTIONS][NCCL_NUM_ALGORITHMS][NCCL_NUM_PROTOCOLS];
-  float bandwidths[NCCL_NUM_FUNCTIONS][NCCL_NUM_ALGORITHMS][NCCL_NUM_PROTOCOLS];
-  int maxThreads[NCCL_NUM_PROTOCOLS];
+  //ssize_t threadThresholds[NCCL_NUM_ALGORITHMS][NCCL_NUM_PROTOCOLS];
+  //float latencies[NCCL_NUM_FUNCTIONS][NCCL_NUM_ALGORITHMS][NCCL_NUM_PROTOCOLS];
+  //float bandwidths[NCCL_NUM_FUNCTIONS][NCCL_NUM_ALGORITHMS][NCCL_NUM_PROTOCOLS];
+  //int maxThreads[NCCL_NUM_PROTOCOLS];
 
   // An internal CUDA stream for NCCL kernel CGMD launches
   int groupCudaStream;
