@@ -128,6 +128,11 @@ pthread_mutex_t ncclDebugLock = PTHREAD_MUTEX_INITIALIZER;
     }                                                       \
 } while(false)
 
+#define NTRANSPORTS 3
+#define TRANSPORT_P2P 0
+#define TRANSPORT_SHM 1
+#define TRANSPORT_NET 2
+
 static void initEnv() {
   char confFilePath[1024];
   const char * userDir = userHomeDir();
@@ -756,7 +761,7 @@ enum { proxyRecv=0, proxySend=1 };
 #define PROXYARGS_ALLOCATE_SIZE 32
 
 
-ncclResult_t transportAllocateProxyArgs(struct ncclComm* comm, struct ncclProxyArgs** argsptr) {
+ncclResult_t transportAllocateProxyArgs(struct ncclComm_t* comm, struct ncclProxyArgs** argsptr) {
   struct ncclProxyState* state = &comm->proxyState;
   struct ncclProxyArgs* elem;
   pthread_mutex_lock(&state->mutex);
@@ -784,7 +789,7 @@ ncclResult_t transportAllocateProxyArgs(struct ncclComm* comm, struct ncclProxyA
 }
 
 static void ProxyAppend(struct ncclConnector* connector, struct ncclProxyArgs* args) {
-  struct ncclComm* comm = connector->comm;
+  struct ncclComm_t* comm = connector->comm;
   struct ncclProxyState* state = &comm->proxyState;
   pthread_mutex_lock(&state->mutex);
   if (connector->proxyAppend == NULL) {
@@ -854,7 +859,7 @@ ncclResult_t transportSaveProxies(struct ncclProxyArgs* args, int pattern, int r
  * 
  */ 
 void* persistentThread(void *comm_) {
-  struct ncclComm* comm = (struct ncclComm*)comm_;
+  struct ncclComm_t* comm = (struct ncclComm_t*)comm_;
   struct ncclProxyState* state = &comm->proxyState;
   struct ncclProxyArgs* op = NULL;
   ncclResult_t ret = ncclSuccess;
@@ -940,7 +945,7 @@ ncclResult_t transportStartProxy(struct ncclComm* comm) {
 /***
  *  transportCreateProxy spawns a new "persistent" thread running with arg comm
  */ 
-ncclResult_t transportCreateProxy(struct ncclComm* comm) {
+ncclResult_t transportCreateProxy(struct ncclComm_t* comm) {
   if (!comm->proxyThread) {
     comm->proxyState.cond = PTHREAD_COND_INITIALIZER;
     comm->proxyState.mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -950,7 +955,7 @@ ncclResult_t transportCreateProxy(struct ncclComm* comm) {
   return ncclSuccess;
 }
 
-ncclResult_t transportDestroyProxy(struct ncclComm* comm) {
+ncclResult_t transportDestroyProxy(struct ncclComm_t* comm) {
   struct ncclProxyState* state = &comm->proxyState;
 
   // Request the proxy to stop and then wake it
