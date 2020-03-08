@@ -7,6 +7,7 @@
 #include "bootstrap.h"
 #include "nvmlwrap.h"
 #include "topo.h"
+#include "argcheck.h"
 /*#include "channel.h"
 
 #include "bootstrap.h"
@@ -40,6 +41,51 @@ std::chrono::high_resolution_clock::time_point ncclEpoch;
 #define NCCL_GROUP_CUDA_STREAM 1 // CGMD: CUDA 9.0,9.1 Need to use an internal CUDA stream
 #endif
 
+ncclResult_t initChannel(struct ncclComm* comm, int channelid) {
+  struct ncclChannel* channel = comm->channels+channelid;
+  channel->id = channelid;
+
+  // Setup intermediate buffering
+  channel->buffSize = ncclParamBuffsize();
+
+  // Ring index to user rank table.
+  NCCLCHECK(ncclCudaCalloc(&channel->ring.devUserRanks, comm->nRanks));
+  NCCLCHECK(ncclCalloc(&channel->ring.userRanks, comm->nRanks));
+
+  // Communication structures with peers.
+  NCCLCHECK(ncclCudaCalloc(&channel->devPeers, comm->nRanks));
+  NCCLCHECK(ncclCalloc(&channel->peers, comm->nRanks));
+  for (size_t i=0; i<comm->nRanks; ++i) {
+    channel->peers[i].send.comm = comm;
+    channel->peers[i].recv.comm = comm;
+  }
+
+  // Per-channel operation list.
+  NCCLCHECK(ncclCudaHostAlloc((void**)&channel->collectives, (void**)&channel->devCollectives, sizeof(struct ncclColl)*NCCL_MAX_OPS));
+  return ncclSuccess;
+}
+
+ncclResult_t freeChannel(struct ncclChannel* channel, int nRanks) {
+  // Operation list
+  NCCLCHECK(ncclCudaHostFree(channel->collectives));
+
+  // Free Ring index to rank tables
+  free(channel->ring.userRanks);
+  CUDACHECK(cudaFree(channel->ring.devUserRanks));
+
+  // Free transport proxy resources
+  for (int r=0; r<nRanks; r++) {
+    struct ncclPeer* peer = channel->peers+r;
+    if (peer->send.transportResources) NCCLCHECK(peer->send.transportComm->free(peer->send.transportResources));
+    if (peer->recv.transportResources) NCCLCHECK(peer->recv.transportComm->free(peer->recv.transportResources));
+  }
+
+  // Free the peer structures.
+  CUDACHECK(cudaFree(channel->devPeers));
+  free(channel->peers);
+
+  return ncclSuccess;
+}
 
 
 ncclNet_t* ncclNet = NULL;
@@ -120,7 +166,6 @@ ncclResult_t ncclGetVersion(int* version) {
 }
 
 ncclResult_t ncclGetUniqueId(ncclNet_t* net, ncclUniqueId* out) {
-  ncclNet_t* net;
   NCCLCHECK(ncclInit(net));
   NCCLCHECK(PtrCheck(out, "GetUniqueId", "out"));
   return bootstrapGetUniqueId(out);

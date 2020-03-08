@@ -492,6 +492,8 @@ struct ncclComm_t {
   struct ncclProxyState proxyState;
 };
 
+
+
 static inline ncclResult_t ncclCudaHostAlloc(void** ptr, void** devPtr, size_t size) {
   CUDACHECK(cudaHostAlloc(ptr, size, cudaHostAllocMapped));
   memset(*ptr, 0, size);
