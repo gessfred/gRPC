@@ -6,7 +6,7 @@
 
 #ifndef NVML_DIRECT
 #include <dlfcn.h>
-#include "core.h"
+#include "nccl.h"
 
 static enum { nvmlUninitialized, nvmlInitializing, nvmlInitialized, nvmlError } nvmlState = nvmlUninitialized;
 
