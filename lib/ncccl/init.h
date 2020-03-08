@@ -154,7 +154,7 @@ static ncclResult_t commFree(ncclComm_t comm) {
   if (comm->doneEvent != NULL)
     CUDACHECK(cudaEventDestroy(comm->doneEvent));
 
-  if (comm->launchMode == ncclComm::GROUP) {
+  if (comm->launchMode == ncclComm_t::GROUP) {
     CUDACHECK(cudaStreamDestroy(comm->groupStream));
   }
 
@@ -193,7 +193,7 @@ static ncclResult_t commAlloc(ncclComm_t* comret, int ndev, int rank) {
   cudaEvent_t doneEvent;
   CUDACHECK(cudaEventCreateWithFlags(&doneEvent, cudaEventDisableTiming));
 
-  struct ncclComm* comm;
+  struct ncclComm_t* comm;
   NCCLCHECK(ncclCalloc(&comm, 1));
 
   comm->rank = comm->hostDevComm.rank =rank;
@@ -254,7 +254,7 @@ static void showVersion() {
   }
 }
 
-static ncclResult_t fillInfo(struct ncclComm* comm, struct ncclPeerInfo* info, uint64_t commHash) {
+static ncclResult_t fillInfo(struct ncclComm_t* comm, struct ncclPeerInfo* info, uint64_t commHash) {
   info->rank = comm->rank;
   CUDACHECK(cudaGetDevice(&info->cudaDev));
   info->hostHash=getHostHash()+commHash;
@@ -296,7 +296,7 @@ static ncclResult_t selectTransport(struct ncclTopoSystem* topo, struct ncclTopo
   return ncclInternalError;
 }
 
-static ncclResult_t setupChannel(struct ncclComm* comm, int channelId, int rank, int nranks, int* ringRanks) {
+static ncclResult_t setupChannel(struct ncclComm_t* comm, int channelId, int rank, int nranks, int* ringRanks) {
   TRACE(NCCL_INIT, "rank %d nranks %d", rank, nranks);
   NCCLCHECK(initChannel(comm, channelId));
 
@@ -320,7 +320,7 @@ void* waitForNonNullPtr(void* p) {
   return (void*)*ptr;
 }
 
-ncclResult_t initParams(struct ncclComm* comm) {
+ncclResult_t initParams(struct ncclComm_t* comm) {
   struct cudaLaunchParams* params = comm->myParams = comm->intraParams+comm->intraRank;
   params->args = &comm->argsptr;
   params->stream = NULL;
@@ -331,7 +331,7 @@ ncclResult_t initParams(struct ncclComm* comm) {
 }
 
 // Allocate/Set Intra Process Structures and set CG options
-ncclResult_t ncclCommSetIntra(struct ncclComm* comm, int rank, int ranks, struct ncclComm* comm0) {
+ncclResult_t ncclCommSetIntra(struct ncclComm_t* comm, int rank, int ranks, struct ncclComm_t* comm0) {
   comm->intraRank = rank;
   comm->intraRanks = ranks;
   comm->intraPhase = 0;
@@ -366,12 +366,12 @@ ncclResult_t ncclCommSetIntra(struct ncclComm* comm, int rank, int ranks, struct
   int cgMdLaunch = 0;
 
   // Set CG Mode
-  comm->launchMode = ncclComm::GROUP;
+  comm->launchMode = ncclComm_t::GROUP;
   char* str = getenv("NCCL_LAUNCH_MODE");
   if (comm->intraRanks == 1 || (str && strcmp(str, "PARALLEL") == 0)) {
-    comm->launchMode = ncclComm::PARALLEL;
+    comm->launchMode = ncclComm_t::PARALLEL;
   }
-  if (comm->launchMode == ncclComm::GROUP) {
+  if (comm->launchMode == ncclComm_t::GROUP) {
     CUDACHECK(cudaStreamCreateWithFlags(&comm->groupStream, cudaStreamNonBlocking));
 #if CUDART_VERSION >= 9000
     if (*comm->intraCC && (ncclCudaCompCap() == *comm->intraCC)) {
@@ -388,7 +388,7 @@ ncclResult_t ncclCommSetIntra(struct ncclComm* comm, int rank, int ranks, struct
   return ncclSuccess;
 }
 
-static ncclResult_t p2pSetup(struct ncclComm* comm, struct ncclTopoGraph* graph, struct ncclChannel* channel, int nrecv, int* peerRecv, int nsend, int* peerSend) {
+static ncclResult_t p2pSetup(struct ncclComm_t* comm, struct ncclTopoGraph* graph, struct ncclChannel* channel, int nrecv, int* peerRecv, int nsend, int* peerSend) {
   TRACE(NCCL_INIT, "nsend %d nrecv %d", nsend, nrecv);
   uint32_t nSkippedSend = 0, nSkippedRecv = 0; /* for tracing */
   struct ncclConnect connect;
@@ -437,7 +437,7 @@ static ncclResult_t p2pSetup(struct ncclComm* comm, struct ncclTopoGraph* graph,
 
 NCCL_PARAM(CrossNic, "CROSS_NIC", 2);
 
-static ncclResult_t initTransportsRank(struct ncclComm* comm, ncclUniqueId* commId) {
+static ncclResult_t initTransportsRank(struct ncclComm_t* comm, ncclUniqueId* commId) {
   // We use 3 AllGathers
   // 1. { peerInfo, comm }
   // 2. ConnectTransport[nranks], ConnectValue[nranks]
@@ -452,7 +452,7 @@ static ncclResult_t initTransportsRank(struct ncclComm* comm, ncclUniqueId* comm
   // AllGather1 - begin
   struct {
     struct ncclPeerInfo peerInfo;
-    struct ncclComm* comm;
+    struct ncclComm_t* comm;
   } *allGather1Data;
 
   NCCLCHECK(ncclCalloc(&allGather1Data, nranks));
