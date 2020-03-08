@@ -41,7 +41,8 @@ void init(int rank, int nRanks, std::array<char, 128> uuid, int dst)  {
 std::array<char, 128> get_local_id() {
   std::array<char, 128> res;
   ncclUniqueId id;
-  ncclGetUniqueId(&id);
+  ncclNet_t* net;
+  ncclGetUniqueId(net, &id);
   std::copy_n(std::begin(id.internal), 128, res.begin());
   return res;
   //return reinterpret_cast<std::array<char, 128>&>(id.internal);
