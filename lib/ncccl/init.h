@@ -46,11 +46,11 @@ ncclResult_t initChannel(struct ncclComm_t* comm, int channelid) {
   channel->id = channelid;
 
   // Setup intermediate buffering
-  channel->buffSize = ncclParamBuffsize();
+  //channel->buffSize = ncclParamBuffsize();
 
   // Ring index to user rank table.
-  NCCLCHECK(ncclCudaCalloc(&channel->ring.devUserRanks, comm->nRanks));
-  NCCLCHECK(ncclCalloc(&channel->ring.userRanks, comm->nRanks));
+  //NCCLCHECK(ncclCudaCalloc(&channel->ring.devUserRanks, comm->nRanks));
+  //NCCLCHECK(ncclCalloc(&channel->ring.userRanks, comm->nRanks));
 
   // Communication structures with peers.
   NCCLCHECK(ncclCudaCalloc(&channel->devPeers, comm->nRanks));
