@@ -615,3 +615,42 @@ struct ncclInfo {
   int nstepsPerLoop;
   int nchunksPerLoop;
 };
+
+ncclResult_t ncclCpuBarrierIn(struct ncclComm* comm, int* isLast) {
+  volatile int* ptr = (volatile int*)(comm->intraBarrier+comm->intraPhase);
+  int val = *ptr;
+  bool done = false;
+  while (done == false) {
+    if (val >= comm->intraRanks) {
+      WARN("Trying to launch too many collectives");
+      return ncclInvalidUsage;
+    }
+    if (val+1 == comm->intraRanks) {
+      // Reset the barrier.
+      comm->intraBarrier[comm->intraPhase^1] = 0;
+      *isLast = 1;
+      return ncclSuccess;
+    }
+    done = __sync_bool_compare_and_swap(ptr, val, val+1);
+    val++;
+  }
+  *isLast = 0;
+  return ncclSuccess;
+}
+
+ncclResult_t ncclCpuBarrierLast(struct ncclComm* comm) {
+  volatile int* ptr = (volatile int*)(comm->intraBarrier+comm->intraPhase);
+  int val = *ptr;
+  if (__sync_bool_compare_and_swap(ptr, val, val+1) != true) {
+    WARN("Trying to launch too many collectives");
+    return ncclInternalError;
+  }
+  return ncclSuccess;
+}
+
+ncclResult_t ncclCpuBarrierOut(struct ncclComm* comm) {
+  volatile int* ptr = (volatile int*)(comm->intraBarrier+comm->intraPhase);
+  while (*ptr < comm->intraRanks) pthread_yield();
+  comm->intraPhase ^= 1;
+  return ncclSuccess;
+}

@@ -67,7 +67,7 @@ ncclResult_t initChannel(struct ncclComm_t* comm, int channelid) {
 
 ncclResult_t freeChannel(struct ncclChannel* channel, int nRanks) {
   // Operation list
-  NCCLCHECK(ncclCudaHostFree(channel->collectives));
+  //NCCLCHECK(ncclCudaHostFree(channel->collectives));
 
   // Free Ring index to rank tables
   //free(channel->ring.userRanks);
@@ -269,7 +269,7 @@ static ncclResult_t commAlloc(ncclComm_t* comret, int ndev, int rank) {
 
   comm->argsptr = &comm->args;
 
-  *comret = comm;
+  comret = comm;
   return ncclSuccess;
 }
 
@@ -280,7 +280,7 @@ static ncclResult_t devCommSetup(ncclComm_t* comm) {
 
   // Copy userRanks and peers
   for (int r=0; r<comm->nChannels; r++) {
-    NCCLCHECK(ncclCudaMemcpy(comm->channels[r].ring.devUserRanks, comm->channels[r].ring.userRanks, comm->nRanks));
+    //NCCLCHECK(ncclCudaMemcpy(comm->channels[r].ring.devUserRanks, comm->channels[r].ring.userRanks, comm->nRanks));
     NCCLCHECK(ncclCudaMemcpy(comm->channels[r].devPeers, comm->channels[r].peers, comm->nRanks));
   }
 
@@ -349,7 +349,7 @@ static ncclResult_t setupChannel(struct ncclComm_t* comm, int channelId, int ran
   TRACE(NCCL_INIT, "rank %d nranks %d", rank, nranks);
   NCCLCHECK(initChannel(comm, channelId));
 
-  struct ncclRing* ring = &comm->channels[channelId].ring;
+  //struct ncclRing* ring = &comm->channels[channelId].ring;
   // Reorganize ranks to start with rank.
   int shift;
   for (shift = 0; shift<nranks; shift++) {

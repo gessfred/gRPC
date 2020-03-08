@@ -42,6 +42,8 @@ ncclResult_t getBusId(int cudaDev, int64_t *busId) {
   return ncclSuccess;
 }
 
+
+
 ncclResult_t getHostName(char* hostname, int maxlen, const char delim) {
   if (gethostname(hostname, maxlen) != 0) {
     strncpy(hostname, "unknown", maxlen);
@@ -53,6 +55,74 @@ ncclResult_t getHostName(char* hostname, int maxlen, const char delim) {
   return ncclSuccess;
 }
 
+
+uint64_t getHash(const char* string, int n) {
+  // Based on DJB2, result = result * 33 + char
+  uint64_t result = 5381;
+  for (int c = 0; c < n; c++) {
+    result = ((result << 5) + result) + string[c];
+  }
+  return result;
+}
+
+/* Generate a hash of the unique identifying string for this host
+ * that will be unique for both bare-metal and container instances
+ * Equivalent of a hash of;
+ *
+ * $(hostname)$(cat /proc/sys/kernel/random/boot_id)
+ *
+ * This string can be overridden by using the NCCL_HOSTID env var.
+ */
+#define HOSTID_FILE "/proc/sys/kernel/random/boot_id"
+uint64_t getHostHash(void) {
+  char hostHash[1024];
+  char *hostId;
+
+  // Fall back is the full hostname if something fails
+  (void) getHostName(hostHash, sizeof(hostHash), '\0');
+  int offset = strlen(hostHash);
+
+  if ((hostId = getenv("NCCL_HOSTID")) != NULL) {
+    strncpy(hostHash, hostId, sizeof(hostHash));
+  } else {
+    FILE *file = fopen(HOSTID_FILE, "r");
+    if (file != NULL) {
+      char *p;
+      if (fscanf(file, "%ms", &p) == 1) {
+        strncpy(hostHash+offset, p, sizeof(hostHash)-offset-1);
+        free(p);
+      }
+    }
+    fclose(file);
+  }
+
+  // Make sure the string is terminated
+  hostHash[sizeof(hostHash)-1]='\0';
+
+  TRACE(NCCL_INIT,"unique hostname '%s'", hostHash);
+
+  return getHash(hostHash, strlen(hostHash));
+}
+
+/* Generate a hash of the unique identifying string for this process
+ * that will be unique for both bare-metal and container instances
+ * Equivalent of a hash of;
+ *
+ * $$ $(readlink /proc/self/ns/pid)
+ */
+uint64_t getPidHash(void) {
+  char pname[1024];
+  // Start off with our pid ($$)
+  sprintf(pname, "%ld", (long) getpid());
+  int plen = strlen(pname);
+  int len = readlink("/proc/self/ns/pid", pname+plen, sizeof(pname)-1-plen);
+  if (len < 0) len = 0;
+
+  pname[plen+len]='\0';
+  TRACE(NCCL_INIT,"unique PID '%s'", pname);
+
+  return getHash(pname, strlen(pname));
+}
 //uint64_t getHash(const char* string, int n);
 //uint64_t getHostHash();
 //uint64_t getPidHash();
