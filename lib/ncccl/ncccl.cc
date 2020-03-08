@@ -1,5 +1,5 @@
 #include <torch/extension.h>
-#include "bootstrap.h"
+#include "init.h"
 
 ncclNet_t* net;
 
