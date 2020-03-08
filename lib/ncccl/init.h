@@ -129,18 +129,18 @@ ncclResult_t ncclGetUniqueId(ncclUniqueId* out) {
 #define NCCL_NO_OPTIMIZE __attribute__((optimize("O0")))
 #endif
 
-void NCCL_NO_OPTIMIZE commPoison(ncclComm_t comm) {
+void NCCL_NO_OPTIMIZE commPoison(ncclComm_t* comm) {
   comm->rank = comm->cudaDev = comm->busId = comm->nRanks = -1;
 }
 
 #undef NCCL_NO_OPTIMIZE
 
-static ncclResult_t commFree(ncclComm_t comm) {
+static ncclResult_t commFree(ncclComm_t* comm) {
   if (comm == NULL)
     return ncclSuccess;
 
   free(comm->peerInfo);
-  ncclTopoFree(comm->topo);
+  //ncclTopoFree(comm->topo);
 
   if (comm->bootstrap)
     NCCLCHECK(bootstrapClose(comm->bootstrap));
@@ -224,7 +224,7 @@ static ncclResult_t commAlloc(ncclComm_t* comret, int ndev, int rank) {
   return ncclSuccess;
 }
 
-static ncclResult_t devCommSetup(ncclComm_t comm) {
+static ncclResult_t devCommSetup(ncclComm_t* comm) {
   // Duplicate the channels on the device
   NCCLCHECK(ncclCudaCalloc(&comm->hostDevComm.channels, comm->nChannels));
   NCCLCHECK(ncclCudaMemcpy(comm->hostDevComm.channels, comm->channels, comm->nChannels));
@@ -833,7 +833,7 @@ static ncclResult_t commDestroy(ncclComm_t comm) {
   return ncclSuccess;
 }
 
-ncclResult_t ncclCommDestroy(ncclComm_t comm) {
+ncclResult_t ncclCommDestroy(ncclComm_t* comm) {
   if (comm == NULL)
     return ncclSuccess;
 
@@ -848,7 +848,7 @@ ncclResult_t ncclCommDestroy(ncclComm_t comm) {
   return commDestroy(comm);
 }
 
-ncclResult_t ncclCommAbort(ncclComm_t comm) {
+ncclResult_t ncclCommAbort(ncclComm_t* comm) {
   if (comm == NULL)
     return ncclSuccess;
 
@@ -870,7 +870,7 @@ const char* ncclGetErrorString(ncclResult_t code) {
   }
 }
 
-ncclResult_t ncclCommGetAsyncError(ncclComm_t comm, ncclResult_t *asyncError) {
+ncclResult_t ncclCommGetAsyncError(ncclComm_t* comm, ncclResult_t *asyncError) {
   NCCLCHECK(PtrCheck(comm, "ncclGetAsyncError", "comm"));
   NCCLCHECK(PtrCheck(asyncError, "ncclGetAsyncError", "asyncError"));
 
@@ -902,21 +902,21 @@ ncclResult_t ncclCommGetAsyncError(ncclComm_t comm, ncclResult_t *asyncError) {
   return ncclSuccess;
 }
 
-ncclResult_t ncclCommCount(const ncclComm_t comm, int* count) {
+ncclResult_t ncclCommCount(const ncclComm_t* comm, int* count) {
   NCCLCHECK(PtrCheck(comm, "CommCount", "comm"));
   NCCLCHECK(PtrCheck(count, "CommCount", "count"));
   *count = comm->nRanks;
   return ncclSuccess;
 }
 
-ncclResult_t ncclCommCuDevice(const ncclComm_t comm, int* devid) {
+ncclResult_t ncclCommCuDevice(const ncclComm_t* comm, int* devid) {
   NCCLCHECK(PtrCheck(comm, "CommCuDevice", "comm"));
   NCCLCHECK(PtrCheck(devid, "CommCuDevice", "devid"));
   *devid = comm->cudaDev;
   return ncclSuccess;
 }
 
-ncclResult_t ncclCommUserRank(const ncclComm_t comm, int* rank) {
+ncclResult_t ncclCommUserRank(const ncclComm_t* comm, int* rank) {
   NCCLCHECK(PtrCheck(comm, "CommUserRank", "comm"));
   NCCLCHECK(PtrCheck(rank, "CommUserRank", "rank"));
   *rank = comm->rank;
