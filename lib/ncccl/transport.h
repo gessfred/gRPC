@@ -27,16 +27,6 @@ struct ncclConnect {
 enum ncclProxyOpState { ncclProxyOpNone, ncclProxyOpReady, ncclProxyOpProgress };
 
 
-struct ncclProxyPool;
-struct ncclProxyState {
-  pthread_cond_t cond;
-  pthread_mutex_t mutex;
-  bool stop;
-  struct ncclProxyArgs* ops;
-  struct ncclProxyArgs* pool;
-  struct ncclProxyPool* pools;
-};
-
 struct ncclTransportComm {
   ncclResult_t (*setup)(struct ncclTopoSystem* topo, struct ncclTopoGraph* graph, struct ncclPeerInfo*, struct ncclPeerInfo*, struct ncclConnect*, struct ncclConnector*, int buffSize, int channelId);
   ncclResult_t (*connect)(struct ncclConnect*, struct ncclConnector*);
