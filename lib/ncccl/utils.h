@@ -102,6 +102,18 @@ bool matchIfList(const char* string, int port, struct netIf* ifList, int listSiz
   }
   return false;
 }
+static bool matchIf(const char* string, const char* ref, bool matchExact) {
+  // Make sure to include '\0' in the exact case
+  int matchLen = matchExact ? strlen(string) + 1 : strlen(ref);
+  return strncmp(string, ref, matchLen) == 0;
+}
+
+static bool matchPort(const int port1, const int port2) {
+  if (port1 == -1) return true;
+  if (port2 == -1) return true;
+  if (port1 == port2) return true;
+  return false;
+}
 
 /*int parseStringList(const char* string, struct netIf* ifList, int maxList);
 bool matchIfList(const char* string, int port, struct netIf* ifList, int listSize, bool matchExact);
