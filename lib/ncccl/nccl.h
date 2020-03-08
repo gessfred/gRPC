@@ -97,6 +97,17 @@ pthread_mutex_t ncclDebugLock = PTHREAD_MUTEX_INITIALIZER;
     }                                                       \
 } while(false)
 
+static void initEnv() {
+  char confFilePath[1024];
+  const char * userDir = userHomeDir();
+  if (userDir) {
+    sprintf(confFilePath, "%s/.nccl.conf", userDir);
+    setEnvFile(confFilePath);
+  }
+  sprintf(confFilePath, "/etc/nccl.conf");
+  setEnvFile(confFilePath);
+}
+
 
 #define NCCL_NET_HANDLE_MAXSIZE 64
 #define NCCL_UNIQUE_ID_BYTES 128

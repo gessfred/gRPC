@@ -62,6 +62,16 @@ struct ncclTopoGraph {
   int inter[MAXCHANNELS*2];
 };
 
+enum ncclPathDist {
+  PATH_PIX  = 0,
+  PATH_PXB  = 1,
+  PATH_PHB  = 2,
+  PATH_NODE = 3,
+  PATH_SYS  = 4,
+  PATH_ARRAY_SIZE = 5
+};
+
+
 struct ncclTopoNode;
 struct ncclTopoLink {
   int type;

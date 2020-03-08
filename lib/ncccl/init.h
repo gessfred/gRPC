@@ -101,12 +101,12 @@ ncclResult_t initNet(ncclNet_t* ncclNet) {
 */
 pthread_mutex_t initLock = PTHREAD_MUTEX_INITIALIZER;
 static bool initialized = false;
-static ncclResult_t ncclInit() {
+static ncclResult_t ncclInit(ncclNet_t* net) {
   if (initialized) return ncclSuccess;
   pthread_mutex_lock(&initLock);
   if (!initialized) {
     initEnv();
-    initNet();
+    initNet(net);
     initialized = true;
   }
   pthread_mutex_unlock(&initLock);
@@ -119,8 +119,9 @@ ncclResult_t ncclGetVersion(int* version) {
   return ncclSuccess;
 }
 
-ncclResult_t ncclGetUniqueId(ncclUniqueId* out) {
-  NCCLCHECK(ncclInit());
+ncclResult_t ncclGetUniqueId(ncclNet_t* net, ncclUniqueId* out) {
+  ncclNet_t* net;
+  NCCLCHECK(ncclInit(net));
   NCCLCHECK(PtrCheck(out, "GetUniqueId", "out"));
   return bootstrapGetUniqueId(out);
 }
@@ -761,8 +762,8 @@ static ncclResult_t ncclCommInitRankDev(ncclComm_t* newcomm, int nranks, ncclUni
   if (env && myrank == 0) {
     NCCLCHECKGOTO(bootstrapCreateRoot(&commId, true), res, end);
   }
-
-  NCCLCHECKGOTO(ncclInit(), res, end);
+  ncclNet_t* net;
+  NCCLCHECKGOTO(ncclInit(net), res, end);
   if (myrank == 0) showVersion();
 
   // Make sure the CUDA runtime is initialized.
@@ -798,9 +799,9 @@ ncclResult_t ncclCommInitAll(ncclComm_t* comms, int ndev, const int* devlist) {
     WARN("Invalid device count requested : %d", ndev);
     return ncclInvalidArgument;
   }
-
+  ncclNet_t* net;
   ncclUniqueId uniqueId;
-  NCCLCHECK(ncclGetUniqueId(&uniqueId));
+  NCCLCHECK(ncclGetUniqueId(net, &uniqueId));
   NCCLCHECK(ncclGroupStart());
   for (int i=0; i<ndev; i++) {
     // Ignore return codes .. we need to call ncclGroupEnd to clean up anyway
