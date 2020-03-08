@@ -38,6 +38,28 @@ extern const char* topoNodeTypeStr[];
 #define LINK_NET 4
 extern const char* topoLinkTypeStr[];
 
+#define NCCL_TOPO_MAX_NODES 256
+
+#define NCCL_TOPO_PATTERN_SPLIT_TREE_LOOP 1 // Split tree (send/recv from different ranks) always flowing in the same direction
+#define NCCL_TOPO_PATTERN_SPLIT_TREE 2      // Split tree (send/recv from different ranks) flowing in both directions
+#define NCCL_TOPO_PATTERN_TREE 3            // Simple tree (send/recv from same rank) flowing in both directions
+#define NCCL_TOPO_PATTERN_RING 4            // Ring
+struct ncclTopoGraph {
+  // Input / output
+  int pattern;
+  int crossNic;
+  // Output
+  int nChannels;
+  int speedIntra;
+  int speedInter;
+  int type;
+  int nvlink;
+  int sameChannels;
+  int nHops;
+  int intra[MAXCHANNELS*NCCL_TOPO_MAX_NODES];
+  int inter[MAXCHANNELS*2];
+};
+
 struct ncclTopoNode;
 struct ncclTopoLink {
   int type;
