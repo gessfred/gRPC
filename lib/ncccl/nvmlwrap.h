@@ -74,7 +74,7 @@ typedef struct nvmlPciInfo_st
 } nvmlPciInfo_t;
 static enum { nvmlUninitialized, nvmlInitializing, nvmlInitialized, nvmlError } nvmlState = nvmlUninitialized;
 
-/*static nvmlReturn_t (*nvmlInternalInit)(void);
+static nvmlReturn_t (*nvmlInternalInit)(void);
 static nvmlReturn_t (*nvmlInternalShutdown)(void);
 static nvmlReturn_t (*nvmlInternalDeviceGetHandleByPciBusId)(const char* pciBusId, nvmlDevice_t* device);
 static nvmlReturn_t (*nvmlInternalDeviceGetIndex)(nvmlDevice_t device, unsigned* index);
@@ -86,7 +86,7 @@ static nvmlReturn_t (*nvmlInternalDeviceGetNvLinkRemotePciInfo)(nvmlDevice_t dev
 static nvmlReturn_t (*nvmlInternalDeviceGetNvLinkCapability)(nvmlDevice_t device, unsigned int link,
     nvmlNvLinkCapability_t capability, unsigned int *capResult);
 static nvmlReturn_t (*nvmlInternalDeviceGetMinorNumber)(nvmlDevice_t device, unsigned int* minorNumber);
-static nvmlReturn_t (*nvmlInternalDeviceGetCudaComputeCapability)(nvmlDevice_t device, int* major, int* minor);*/
+static nvmlReturn_t (*nvmlInternalDeviceGetCudaComputeCapability)(nvmlDevice_t device, int* major, int* minor);
 
 // Used to make the NVML library calls thread safe
 pthread_mutex_t nvmlLock = PTHREAD_MUTEX_INITIALIZER;
