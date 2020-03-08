@@ -6,6 +6,7 @@
 
 #include "bootstrap.h"
 #include "nvmlwrap.h"
+#include "topo.h"
 /*#include "channel.h"
 
 #include "bootstrap.h"
@@ -82,23 +83,22 @@ cleanup:
   if (netPluginLib != NULL) dlclose(netPluginLib);
   return ncclSuccess;
 }
-
+/*
 ncclResult_t initNet(ncclNet_t* ncclNet) {
   // Always initialize bootstrap network
   NCCLCHECK(bootstrapNetInit());
 
   NCCLCHECK(initNetPlugin(&ncclNet));
-  if(ncclNet == NULL) return ncclSystemError;
-  /*if (ncclNet != NULL) return ncclSuccess;
+  if (ncclNet != NULL) return ncclSuccess;
   if (initNet(&ncclNetIb) == ncclSuccess) {
     ncclNet = &ncclNetIb;
   } else {
     NCCLCHECK(initNet(&ncclNetSocket));
     ncclNet = &ncclNetSocket;
-  }*/
+  }
   return ncclSuccess;
 }
-
+*/
 pthread_mutex_t initLock = PTHREAD_MUTEX_INITIALIZER;
 static bool initialized = false;
 static ncclResult_t ncclInit() {
