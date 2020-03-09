@@ -8,6 +8,7 @@ import numpy as np
 
 
 def allreduce(tensor, group):
+    torch.cuda.synchronize()
     rank = dist.get_rank()
     start = torch.cuda.Event(enable_timing=True)
     end = torch.cuda.Event(enable_timing=True)
@@ -22,6 +23,7 @@ def allreduce(tensor, group):
     start1.record()
     dist.all_gather(chunks, chunk, group=group)
     end1.record()
+    torch.cuda.synchronize()
     print('{} | {}'.format(start.elapsed_time(end), start1.elapsed_time(end1)))
 
 def rendezvous(rank, world_size):
