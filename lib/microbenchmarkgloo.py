@@ -28,7 +28,7 @@ def main():
     runs = 3
     size = 2**30
     for function in functions:
-        microbenchmark(function, function.__name__)
+        microbenchmark(function, function.__name__, group)
     
 if __name__ == '__main__':
     main()
