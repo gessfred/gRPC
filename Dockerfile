@@ -7,7 +7,7 @@ RUN apt-get install -y --no-install-recommends python3 python3-virtualenv build-
 ENV VIRTUAL_ENV=/opt/venv
 RUN python3 -m virtualenv --python=/usr/bin/python3 $VIRTUAL_ENV
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
-RUN pip install numpy torch torchvision pymongo mpi4py
+RUN pip install numpy torch torchvision pymongo mpi4py yaml
 RUN mkdir /usr/local/cuda/bin
 RUN ln -s /usr/bin/nvcc /usr/local/cuda/bin/nvcc
 ADD lib/microbenchmarkgloo.py ${LIB}/lib/microbenchmarkgloo.py
