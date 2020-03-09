@@ -10,7 +10,7 @@ void init(int rank, int nRanks, std::array<char, 128> uuid, int dst)  {
   int size = 32*1024*1024;
 
   int myRank = rank;
-  
+  int localRank = 0;
   //calculating localRank based on hostname which is used in selecting a GPU
   uint64_t hostHashs[nRanks];
   char hostname[1024];
