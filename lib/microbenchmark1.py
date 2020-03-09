@@ -44,7 +44,6 @@ class Timer(object):
         self.elapsed_time = time.time() - self.start
 
 def allreduce_(timer, tensor, group):
-    torch.cuda.synchronize()
     with timer('reduce'):
         rank = dist.get_rank()
         chunks = list(tensor.view(dist.get_world_size(), -1))
@@ -53,10 +52,8 @@ def allreduce_(timer, tensor, group):
     with timer('all_gather'):
         chunk = chunks[rank]
         dist.all_gather(chunks, chunk, group=group)
-    torch.cuda.synchronize()
 
 def allreduce__(timer, tensor, group):
-    torch.cuda.synchronize()
     with timer('reduce'):
         rank = dist.get_rank()
         chunks = list(tensor.view(dist.get_world_size(), -1))
@@ -65,17 +62,14 @@ def allreduce__(timer, tensor, group):
     with timer('all_gather'):
         chunk = chunks[rank]
         dist.all_gather(chunks, chunk, group=group)
-    torch.cuda.synchronize()
 
 def allreduce(tensor, group):
-    torch.cuda.synchronize()
     rank = dist.get_rank()
     chunks = list(tensor.view(dist.get_world_size(), -1))
     for i, chunk in enumerate(chunks):
         dist.reduce(chunk, i, op=dist.ReduceOp.SUM, group=group)
     chunk = chunks[rank]
     dist.all_gather(chunks, chunk, group=group)
-    torch.cuda.synchronize()
 
 def rendezvous(rank, world_size):
     dist.init_process_group('nccl', rank=rank, timeout=datetime.timedelta(seconds=10), world_size=world_size, init_method='tcp://{}:60000'.format(os.environ['MASTER_ADDR']))
@@ -86,17 +80,24 @@ def main():
     rank = int(os.environ['RANK'])
     group = rendezvous(rank, 2)
     t1 = Timer()
-    with t1('all_reduce'):
+    with t1('all_reduce_bare'):
         allreduce(tensor, group)
     t1.dump()
+    tensor = torch.ones(2**20).cuda()
     t2 = Timer()
-    with t2('all_reduce'):
+    with t2('all_reduce_precise'):
         allreduce_(t2, tensor, group)
     t2.dump()
+    tensor = torch.ones(2**20).cuda()
     t3 = Timer()
-    with t3('all_reduce'):
+    with t3('all_reduce_compressed'):
         allreduce__(t3, tensor, group)
     t3.dump()
+    tensor = torch.ones(2**20).cuda()
+    t4 = Timer()
+    with t4('all_reduce_baseline'):
+        dist.all_reduce(tensor, op=dist.ReduceOp.SUM, group)
+    t4.dump()
     print(tensor)
 
 if __name__ == '__main__':
