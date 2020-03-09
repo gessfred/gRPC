@@ -2,6 +2,7 @@
 #include "init.h"
 #include <iostream>
 #include "net_socket.h"
+#include "prims_ll128.h"
 
 ncclNet_t* net;
 
@@ -35,6 +36,7 @@ void init(int rank, int nRanks, std::array<char, 128> uuid, int dst)  {
   std::cout << "init..." << std::endl;
   //initializing NCCL
   (ncclCommInitRank(net, &comm, nRanks, id, myRank));
+  net->
   //std::cout << "net& (init) "<< net << std::endl;
   free((void*)net);
 }
