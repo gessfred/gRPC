@@ -3,6 +3,7 @@ from contextlib import contextmanager
 import datetime
 import time
 from pymongo import MongoClient
+import uuid
 import os
 
 class Timer(object):
