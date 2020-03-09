@@ -49,7 +49,7 @@ class Timer(object):
         torch.cuda.synchronize()
         self.closed = True
         self.elapsed_time = time.time() - self.start
-        self.events_durations = {k: v[0].elapsed_time(v[1]) for k, v in self.events}
+        self.events_durations = {k: v[0].elapsed_time(v[1]) for k, v in self.events.items()}
 
     def upload(self):
         self.close()
