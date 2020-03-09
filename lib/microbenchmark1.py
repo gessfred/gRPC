@@ -91,11 +91,11 @@ def main():
     t1.dump()
     t2 = Timer()
     with t2('all_reduce'):
-        allreduce(t2, tensor, group)
+        allreduce_(t2, tensor, group)
     t2.dump()
     t3 = Timer()
     with t3('all_reduce'):
-        allreduce(t3, tensor, group)
+        allreduce__(t3, tensor, group)
     t3.dump()
     print(tensor)
 
