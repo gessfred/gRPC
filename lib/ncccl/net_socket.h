@@ -502,7 +502,7 @@ ncclResult_t ncclSocketClose(void* opaqueComm) {
 
 
 ncclNet_t* ncclNetSocket() {
-    ncclNet_t* net = malloc(sizeof(ncclNet_t));
+    ncclNet_t* net = (ncclNet_t*)malloc(sizeof(ncclNet_t));
     net->name = "Socket";
     net->init=ncclSocketInit;
     net->devices=ncclSocketDevices;
