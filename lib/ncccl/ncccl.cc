@@ -2,7 +2,7 @@
 #include "init.h"
 #include <iostream>
 #include "net_socket.h"
-#include "prims_ll128.h"
+#include "primitives.h"
 
 ncclNet_t* net;
 
