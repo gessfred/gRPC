@@ -15,9 +15,9 @@ class Timer(object):
 
     @contextmanager
     def __call__(self, label):
-        start = self.record(label+'_start')
+        start = self.record_cuda(label+'_start')
         yield
-        end = self.record(label+'_end')
+        end = self.record_cuda(label+'_end')
         self.events[label] = [start, end]
 
     def record_cuda(self, label):
