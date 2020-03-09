@@ -2,7 +2,7 @@ import torch
 from contextlib import contextmanager
 import datetime
 import time
-import pymongo
+from pymongo import MongoClient
 import os
 
 class Timer(object):
