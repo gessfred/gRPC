@@ -87,21 +87,21 @@ def main():
     group = rendezvous(rank, 2)
     #allreduce(tensor, group)
     runs = 3
+    size = 2**30
     for i in range(runs):
-        tensor = torch.ones(2**26).cuda()
+        tensor = torch.ones(size).cuda()
         t = Timer()
         with t('all_reduce_bare'):
             allreduce(tensor, group)
         t.dump()
     for i in range(runs):
-        tensor = torch.ones(2**26).cuda()
+        tensor = torch.ones(size).cuda()
         t = Timer()
         with t('all_reduce_bare'):
             allreduce_(t, tensor, group)
         t.dump()
-        tensor = torch.ones(2**20).cuda()
     for i in range(runs):
-        tensor = torch.ones(2**26).cuda()
+        tensor = torch.ones(size).cuda()
         t4 = Timer()
         with t4('all_reduce_baseline'):
             dist.all_reduce(tensor, op=dist.ReduceOp.SUM, group=group)
