@@ -17,8 +17,8 @@ class Timer(object):
         start.record()
         yield
         end.record()
-        self.profile[label] = start.elapsed_time(end)
         torch.cuda.synchronize()
+        self.profile[label] = start.elapsed_time(end)
     def dump():
         print(self.profile)
 
