@@ -25,7 +25,7 @@ def allreduce_uninstrumented(timer, tensor, group):
     chunk = chunks[rank]
     dist.all_gather(chunks, chunk, group=group)
 
-def allreducebaseline(timer, tensor, group):
+def allreduce_baseline(timer, tensor, group):
     dist.all_reduce(tensor, op=dist.ReduceOp.SUM, group=group)
 
 functions = [allreduce_baseline, allreduce_instrumented, allreduce_uninstrumented]
