@@ -162,23 +162,23 @@ class ncclPrimitives {
     return DIRECTSEND && sendDirectBuff[i] ? directInc : sliceInc;
   }
 
-  template <int DIRECTRECV, int DIRECTSEND, int RECV, int SEND, int SRC, int DST>
+  template <int DIRECTRECV, int DIRECTSEND, int REC, int SEN, int SRC, int DST>
   inline __device__ void
   GenericOp(const T* srcPtr, T* dstPtr, int nelem, ssize_t directOffset) {
     int offset = 0;
     int sliceSize = stepSize*SLICESTEPS;
     int dataSize = max(DIVUP(nelem, 16*SLICESPERCHUNK)*16, sliceSize/32);
 
-    const T* srcs[RECV*NRECV+SRC];
+    const T* srcs[REC*NRECV+SRC];
     srcs[0] = SRC ? srcPtr : directRecvPtr<DIRECTRECV>(0, directOffset);
-    if (RECV) {
+    if (REC) {
       if (SRC) srcs[1] = recvPtr(0);
       for (int i=1; i<NRECV && i<nrecv; i++) srcs[SRC+i] = recvPtr(i);
     }
 
-    T* dsts[SEND*NSEND+DST];
+    T* dsts[SEN*NSEND+DST];
     dsts[0] = DST ? dstPtr : directSendPtr<DIRECTSEND>(0, directOffset);
-    if (SEND) {
+    if (SEN) {
       if (DST) dsts[1] = directSendPtr<DIRECTSEND>(0, directOffset);
       for (int i=1; i<NSEND && i<nsend; i++) dsts[DST+i] = directSendPtr<DIRECTSEND>(i, directOffset);
     }
@@ -189,17 +189,17 @@ class ncclPrimitives {
     for (int slice=0; slice<SLICESPERCHUNK; ++slice) {
       int realSize = max(0, min(dataSize, nelem-offset));
       if (!syncThread) {
-        if (SEND) waitSend(realSize*sizeof(T));
-        if (RECV) waitRecv();
+        if (SEN) waitSend(realSize*sizeof(T));
+        if (REC) waitRecv();
         if (realSize > 0) {
           subBarrier();
           if (DIRECTRECV && recvDirectBuff[0]) {
             // We can only have one direct receive. Since srcs[0] == dstPtr+offset, skip one copy
-            if (SEND) {
+            if (SEN) {
               ReduceOrCopyMulti<UNROLL, FUNC, T, 1, 1, 1, NSEND>(tid, nthreads-WARP_SIZE, 1, srcs, nsend, dsts+1, realSize);
             }
           } else {
-            ReduceOrCopyMulti<UNROLL, FUNC, T, RECV+SRC, RECV*NRECV+SRC, SEND+DST, SEND*NSEND+DST>(tid, nthreads-WARP_SIZE, RECV*nrecv+SRC, srcs, SEND*nsend+DST, dsts, realSize);
+            ReduceOrCopyMulti<UNROLL, FUNC, T, RECV+SRC, RECV*NRECV+SRC, SEN+DST, SEN*NSEND+DST>(tid, nthreads-WARP_SIZE, REC*nrecv+SRC, srcs, SEN*nsend+DST, dsts, realSize);
           }
         }
       }
@@ -207,17 +207,17 @@ class ncclPrimitives {
       FOR_SEND(incSend);
       FOR_RECV(incRecv);
       if (syncThread) {
-        if (SEND) {
+        if (SEN) {
           if (realSize > 0 && wid == 0) __threadfence_system();
           __syncwarp();
           postSend();
         }
-        if (RECV) postRecv();
+        if (REC) postRecv();
       }
       srcs[0] += SRC ? realSize : directRecvInc<DIRECTRECV>(0, realSize, sliceSize);
-      for (int i=1-SRC; i<RECV*NRECV; i++) srcs[SRC+i] += sliceSize;
+      for (int i=1-SRC; i<REC*NRECV; i++) srcs[SRC+i] += sliceSize;
       dsts[0] += DST ? realSize : directSendInc<DIRECTSEND>(0, realSize, sliceSize);
-      for (int i=1-DST; i<SEND*NSEND; i++) dsts[DST+i] += directSendInc<DIRECTSEND>(i, realSize, sliceSize);
+      for (int i=1-DST; i<SEN*NSEND; i++) dsts[DST+i] += directSendInc<DIRECTSEND>(i, realSize, sliceSize);
       offset += realSize;
     }
   }
