@@ -201,7 +201,7 @@ static int getNumaId(char *path) {
 }
 
 static ncclResult_t getPciPath(char* busId, char** path) {
-  for (int i=0; i<BUSID_SIZE; i++) busId[i] = tolower(busId[i]);
+  for (unsigned int i=0; i<BUSID_SIZE; i++) busId[i] = tolower(busId[i]);
   char busPath[] = "/sys/class/pci_bus/0000:00/../../0000:00:00.0";
   memcpy(busPath+sizeof("/sys/class/pci_bus/")-1, busId, BUSID_REDUCED_SIZE-1);
   memcpy(busPath+sizeof("/sys/class/pci_bus/0000:00/../../")-1, busId, BUSID_SIZE-1);

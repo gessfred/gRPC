@@ -5,14 +5,11 @@
 
 ncclNet_t* net;
 
-void init(int rank, int nRanks, std::array<char, 128> uuid, int dst)  {
+ncclResult_t init(int rank, int nRanks, std::array<char, 128> uuid, int dst)  {
   INFO();
   int size = 32*1024*1024;
 
   int myRank = rank;
-  int localRank = 0;
-  int argc = 1;
-  char** argv;
   
   //calculating localRank based on hostname which is used in selecting a GPU
   uint64_t hostHashs[nRanks];

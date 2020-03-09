@@ -153,7 +153,7 @@ static void initEnv() {
 #define ALIGN_SIZE(size, align) \
   size = ((size + (align) - 1) / (align)) * (align);
 
-  
+
 typedef struct { char internal[NCCL_UNIQUE_ID_BYTES]; } ncclUniqueId;
 typedef char ncclNetHandle_t[NCCL_NET_HANDLE_MAXSIZE];
 
@@ -692,7 +692,7 @@ ncclResult_t ncclStrToCpuset(char* str, cpu_set_t* mask) {
     }
   }
   // Copy cpumasks to mask
-  for (int a=0; m<CPU_SET_N_U32; a++,m++) {
+  for (unsigned int a=0; m<CPU_SET_N_U32; a++,m++) {
     memcpy(((uint32_t*)mask)+a, cpumasks+m, sizeof(uint32_t));
   }
   return ncclSuccess;
