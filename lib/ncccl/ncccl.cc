@@ -5,13 +5,14 @@
 ncclNet_t* net;
 
 void init(int rank, int nRanks, std::array<char, 128> uuid, int dst)  {
-    int size = 32*1024*1024;
+  INFO();
+  int size = 32*1024*1024;
 
   int myRank = rank;
   int localRank = 0;
-    int argc = 1;
-     char** argv;
-
+  int argc = 1;
+  char** argv;
+  
   //calculating localRank based on hostname which is used in selecting a GPU
   uint64_t hostHashs[nRanks];
   char hostname[1024];
@@ -33,10 +34,10 @@ void init(int rank, int nRanks, std::array<char, 128> uuid, int dst)  {
   CUDACHECK(cudaMalloc(&recvbuff, size * sizeof(float)));
   CUDACHECK(cudaStreamCreate(&s));
 
-
+  std::cout << "init..." << std::endl;
   //initializing NCCL
   NCCLCHECK(ncclCommInitRank(net, &comm, nRanks, id, myRank));
-  std::cout << net << std::endl;
+  std::cout << "net& (init) "<< net << std::endl;
 }
 
 std::array<char, 128> get_local_id() {
@@ -44,6 +45,7 @@ std::array<char, 128> get_local_id() {
   ncclUniqueId id;
   ncclNet_t* net;
   ncclGetUniqueId(net, &id);
+  std::cout << "net& " << net << std::endl; 
   std::copy_n(std::begin(id.internal), 128, res.begin());
   return res;
   //return reinterpret_cast<std::array<char, 128>&>(id.internal);
