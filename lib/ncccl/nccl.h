@@ -93,7 +93,7 @@ pthread_mutex_t ncclDebugLock = PTHREAD_MUTEX_INITIALIZER;
   } \
 } while(true)
 // Propagate errors up
-#define NCCLCHECK(call) 
+#define NCCLCHECK(call) if(call != ncclSuccess) return ncclSystemError;
 
 #define NCCLCHECKGOTO(call, res, label) do { \
   res = call; \
@@ -670,7 +670,7 @@ ncclResult_t ncclStrToCpuset(char* str, cpu_set_t* mask) {
   uint32_t cpumasks[CPU_SET_N_U32];
   int m = CPU_SET_N_U32-1;
   cpumasks[m] = 0;
-  for (int o=0; o<strlen(str); o++) {
+  for (unsigned int o=0; o<strlen(str); o++) {
     char c = str[o];
     if (c == ',') {
       m--;
@@ -683,7 +683,7 @@ ncclResult_t ncclStrToCpuset(char* str, cpu_set_t* mask) {
     }
   }
   // Copy cpumasks to mask
-  for (int a=0; m<CPU_SET_N_U32; a++,m++) {
+  for (unsigned int a=0; m<CPU_SET_N_U32; a++,m++) {
     memcpy(((uint32_t*)mask)+a, cpumasks+m, sizeof(uint32_t));
   }
   return ncclSuccess;
@@ -838,7 +838,8 @@ ncclResult_t transportSaveProxies(struct ncclProxyArgs* args, int pattern, int r
     for (int i=0; i< NCCL_MAX_TREE_ARITY; i++) NCCLCHECK(SaveProxy<proxySend>(tree->down[i], args));
     NCCLCHECK(SaveProxy<proxyRecv>(tree->up, args));
   }
-  return ncclSuccess;*/
+  */
+  return ncclSuccess;
 }
 
 /**

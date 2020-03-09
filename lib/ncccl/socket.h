@@ -167,7 +167,6 @@ static int findInterfaceMatchSubnet(char* ifNames, union socketAddress* localAdd
 #ifdef ENABLE_TRACE
   char line[1024];
 #endif
-  char line_a[1024];
   int found = 0;
   struct ifaddrs *interfaces, *interface;
   getifaddrs(&interfaces);
