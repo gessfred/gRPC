@@ -37,10 +37,10 @@ object Deploy extends App {
 |           mode: 0444
 |    containers:
 |    - name: ${node.name}
-|      image: gessfred/pyparsa:nccl
+|      image: gessfred/pyparsa:timeline
 |      imagePullPolicy: Always
 |      command: [ "python" ]
-|      args: [ "/pyparsa/lib/test_allgather.py", "--uuid", "hello_world" ]
+|      args: [ "/pyparsa/lib/microbenchmark1.py" ]
 |      resources:
 |        limits:
 |          nvidia.com/gpu: 1

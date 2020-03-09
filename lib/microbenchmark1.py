@@ -1,7 +1,7 @@
 import torch
 import torch.distributed as dist
 import os
-
+import datetime
 
 def allreduce(tensor, rank, group):
     #dist.reduce_multigpu()
