@@ -76,7 +76,7 @@ def rendezvous(rank, world_size):
     return dist.new_group(range(world_size))
 
 def main():
-    tensor = torch.ones(2**30).cuda()
+    tensor = torch.ones(2**26).cuda()
     rank = int(os.environ['RANK'])
     group = rendezvous(rank, 2)
     allreduce(tensor, group)
