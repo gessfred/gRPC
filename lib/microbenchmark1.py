@@ -5,7 +5,8 @@ import datetime
 
 def allreduce(tensor, rank, group):
     #dist.reduce_multigpu()
-    world = group.get_world_size()
+    rank = dist.get_rank()
+    world = dist.get_world_size()
     sizeOfTensor=list(tensor.size())[0]
     chunksize = sizeOfTensor // world
     for i in range(world):
