@@ -778,8 +778,8 @@ ncclResult_t ncclCommInitRankSync(ncclComm_t* newcomm, int nranks, ncclUniqueId 
   cpu_set_t affinitySave;
   sched_getaffinity(0, sizeof(cpu_set_t), &affinitySave);
 
-  NCCLCHECK(wrapNvmlSymbols());
-  NCCLCHECK(wrapNvmlInit());
+  //NCCLCHECK(wrapNvmlSymbols());
+  //NCCLCHECK(wrapNvmlInit());
 
   // Make sure all host memory allocation are close to the GPU
   CUDACHECK(cudaSetDevice(cudaDev));
@@ -791,7 +791,7 @@ ncclResult_t ncclCommInitRankSync(ncclComm_t* newcomm, int nranks, ncclUniqueId 
   NCCLCHECKGOTO(devCommSetup(newcomm), res, cleanup);
 
   sched_setaffinity(0, sizeof(cpu_set_t), &affinitySave);
-  NCCLCHECKGOTO(wrapNvmlShutdown(), res, cleanup);
+  //NCCLCHECKGOTO(wrapNvmlShutdown(), res, cleanup);
 
   INFO(NCCL_INIT,"comm %p rank %d nranks %d cudaDev %d busId %x - Init COMPLETE", *newcomm, myrank, nranks, (*newcomm)->cudaDev, (*newcomm)->busId);
 
