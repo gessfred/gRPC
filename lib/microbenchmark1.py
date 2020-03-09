@@ -5,7 +5,7 @@ import datetime
 import time
 from contextlib import contextmanager
 import numpy as np
-from .timer import Timer
+from timer import Timer
 
 def allreduce_(timer, tensor, group):
     with timer('reduce'):
