@@ -5,7 +5,7 @@ import datetime
 import time
 from contextlib import contextmanager
 import numpy as np
-
+    
 class Timer(object):
     def __init__(self):
         super().__init__()
@@ -38,6 +38,12 @@ class Timer(object):
         print('timeline: {}'.format(self.timestamps))
         print('elapsed_time: {}'.format(self.elapsed_time))
         print('------------------------------------------------')
+
+    def wait(self, event, handle):
+        pass
+        
+    def track(self, handle):
+        pass
 
     def close(self):
         torch.cuda.synchronize()
@@ -77,15 +83,16 @@ def rendezvous(rank, world_size):
     return dist.new_group(range(world_size))
 
 def main():
-    tensor = torch.ones(2**26).cuda()
     rank = int(os.environ['RANK'])
     group = rendezvous(rank, 2)
     allreduce(tensor, group)
-    t1 = Timer()
-    with t1('all_reduce_bare'):
-        allreduce(tensor, group)
-    t1.dump()
-    tensor = torch.ones(2**20).cuda()
+    for i in range(10):
+        tensor = torch.ones(2**26).cuda()
+        t1 = Timer()
+        with t1('all_reduce_bare'):
+            allreduce(tensor, group)
+        t1.dump()
+    """tensor = torch.ones(2**20).cuda()
     t2 = Timer()
     with t2('all_reduce_precise'):
         allreduce_(t2, tensor, group)
@@ -99,7 +106,7 @@ def main():
     t4 = Timer()
     with t4('all_reduce_baseline'):
         dist.all_reduce(tensor, op=dist.ReduceOp.SUM, group=group)
-    t4.dump()
+    t4.dump()"""
     print(tensor)
 
 if __name__ == '__main__':
