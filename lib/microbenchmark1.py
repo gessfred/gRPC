@@ -11,7 +11,7 @@ def allreduce(tensor, rank, group):
     chunksize = sizeOfTensor // world
     for i in range(world):
         chunk = tensor[i*chunksize:(i+1)*chunksize]
-        dist.reduce(chunk, i, op=ReduceOp.SUM, group=group)
+        dist.reduce(chunk, i, op=dist.reduce_op.SUM, group=group)
     chunk = tensor[rank*chunksize:(rank+1)*chunksize]
     tensor_list = [chunk]*world
     dist.all_gather(tensor_list, chunk, group=group)
