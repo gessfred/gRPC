@@ -40,6 +40,7 @@ class Timer(object):
         print('------------------------------------------------')
 
     def close(self):
+        torch.cuda.synchronize()
         self.closed = True
         self.elapsed_time = time.time() - self.start
 
