@@ -40,7 +40,7 @@ object Deploy extends App {
 |      image: gessfred/pyparsa:timeline
 |      imagePullPolicy: Always
 |      command: [ "python" ]
-|      args: [ "/pyparsa/lib/microbenchmarkgloo.py" ]
+|      args: [ "/pyparsa/lib/microbenchmarknccl.py" ]
 |      resources:
 |        limits:
 |          nvidia.com/gpu: 1

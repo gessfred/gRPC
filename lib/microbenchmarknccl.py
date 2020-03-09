@@ -12,10 +12,10 @@ def microbenchmark(fn, name, group, runs=10, size=2**20):
     elapsed_time = 0
     for _ in range(runs):
         tensor = torch.ones(size).cuda()
-        t = Timer()
+        t = Timer(name)
         with t(name):
             fn(t, tensor, group)
-        t.close()
+        t.upload()
         elapsed_time += (t.elapsed_time / runs)
     print('[{}]:elapsed_time: {}'.format(name, elapsed_time))
 

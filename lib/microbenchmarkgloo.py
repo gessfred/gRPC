@@ -12,7 +12,7 @@ def microbenchmark(fn, name, group, runs=10, size=2**26):
     elapsed_time = 0
     for _ in range(runs):
         tensor = torch.ones(size)
-        t = Timer()
+        t = Timer(name)
         with t(name):
             with t('cpu->cuda'):
                 tensor.to(torch.device('cpu'))
