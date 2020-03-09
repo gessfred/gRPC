@@ -145,6 +145,15 @@ static void initEnv() {
 #define RETRY_REFUSED_TIMES   2e4 // connection refused retry times before reporting a timeout (20 sec)
 #define RETRY_TIMEDOUT_TIMES    3 // connection timed out retry times (each one can take 20s)
 
+#define DIVUP(x, y) \
+    (((x)+(y)-1)/(y))
+#define ROUNDUP(x, y) \
+    (DIVUP((x), (y))*(y))
+
+#define ALIGN_SIZE(size, align) \
+  size = ((size + (align) - 1) / (align)) * (align);
+
+  
 typedef struct { char internal[NCCL_UNIQUE_ID_BYTES]; } ncclUniqueId;
 typedef char ncclNetHandle_t[NCCL_NET_HANDLE_MAXSIZE];
 
@@ -683,7 +692,7 @@ ncclResult_t ncclStrToCpuset(char* str, cpu_set_t* mask) {
     }
   }
   // Copy cpumasks to mask
-  for (unsigned int a=0; m<CPU_SET_N_U32; a++,m++) {
+  for (int a=0; m<CPU_SET_N_U32; a++,m++) {
     memcpy(((uint32_t*)mask)+a, cpumasks+m, sizeof(uint32_t));
   }
   return ncclSuccess;

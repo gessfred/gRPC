@@ -127,7 +127,7 @@ struct ncclTopoSystem {
 
 static ncclResult_t ncclTopoCreateNode(struct ncclTopoSystem* system, struct ncclTopoNode** node, int type, uint64_t id) {
   for (int i=0; i<system->nodes[type].count; i++) {
-    if (system->nodes[type].nodes[i].id == id) {
+    if ((uint64_t)system->nodes[type].nodes[i].id == id) {
       *node = system->nodes[type].nodes+i;
       return ncclSuccess;
     }
