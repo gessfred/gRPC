@@ -7,7 +7,7 @@ import pymongo
 class Timer(object):
     def __init__(self, name):
         super().__init__()
-        self.clock = time.monotonic_ns()
+        self.clock = time.monotonic()
         self.name = name
         self.timestamps = {} # for timeline synchronisation
         self.events = {}
