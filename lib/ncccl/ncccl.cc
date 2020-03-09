@@ -36,7 +36,7 @@ ncclResult_t init(int rank, int nRanks, std::array<char, 128> uuid, int dst)  {
   //initializing NCCL
   NCCLCHECK(ncclCommInitRank(&net, &comm, nRanks, id, myRank));
   //std::cout << "net& (init) "<< net << std::endl;
-  free(net);
+  free((void*)net);
 }
 
 std::array<char, 128> get_local_id() {
