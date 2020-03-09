@@ -19,7 +19,7 @@ class Timer(object):
         end.record()
         torch.cuda.synchronize()
         self.profile[label] = start.elapsed_time(end)
-    def dump():
+    def dump(self):
         print(self.profile)
 
 timer = Timer()
