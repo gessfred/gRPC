@@ -88,10 +88,16 @@ def main():
     #allreduce(tensor, group)
     for i in range(10):
         tensor = torch.ones(2**26).cuda()
-        t1 = Timer()
-        with t1('all_reduce_bare'):
+        t = Timer()
+        with t('all_reduce_bare'):
             allreduce(tensor, group)
-        t1.dump()
+        t.dump()
+    for i in range(10):
+        tensor = torch.ones(2**26).cuda()
+        t = Timer()
+        with t('all_reduce_bare'):
+            allreduce_(t, tensor, group)
+        t.dump()
     """tensor = torch.ones(2**20).cuda()
     t2 = Timer()
     with t2('all_reduce_precise'):
