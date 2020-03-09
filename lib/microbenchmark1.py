@@ -26,7 +26,7 @@ class Timer(object):
     def record(self, label):
         event = torch.cuda.Event(enable_timing=True)
         event.record()
-        self.timestamps[label] = time.monotonic()
+        #self.timestamps[label] = time.monotonic()
         return event
 
     def dump(self):
@@ -86,18 +86,25 @@ def main():
     rank = int(os.environ['RANK'])
     group = rendezvous(rank, 2)
     #allreduce(tensor, group)
-    for i in range(10):
+    runs = 3
+    for i in range(runs):
         tensor = torch.ones(2**26).cuda()
         t = Timer()
         with t('all_reduce_bare'):
             allreduce(tensor, group)
         t.dump()
-    for i in range(10):
+    for i in range(runs):
         tensor = torch.ones(2**26).cuda()
         t = Timer()
         with t('all_reduce_bare'):
             allreduce_(t, tensor, group)
         t.dump()
+        tensor = torch.ones(2**20).cuda()
+    for i in range(runs):
+        t4 = Timer()
+        with t4('all_reduce_baseline'):
+            dist.all_reduce(tensor, op=dist.ReduceOp.SUM, group=group)
+        t4.dump()
     """tensor = torch.ones(2**20).cuda()
     t2 = Timer()
     with t2('all_reduce_precise'):
