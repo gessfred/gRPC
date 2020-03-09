@@ -1,5 +1,6 @@
 import torch
 from contextlib import contextmanager
+import torch.distributed as dist
 import datetime
 import time
 from pymongo import MongoClient
@@ -9,7 +10,7 @@ import os
 class Timer(object):
     def __init__(self, name):
         super().__init__()
-        self.clock = time.monotonic()
+        self.clock = time.perf_counter()
         self.name = name
         self.timestamps = {} # for timeline synchronisation
         self.events = {}
@@ -29,7 +30,7 @@ class Timer(object):
     def record(self, label):
         event = torch.cuda.Event(enable_timing=True)
         event.record()
-        self.timestamps[label] = time.monotonic()
+        self.timestamps[label] = time.perf_counter()
         return event
 
     def dump(self):
@@ -54,6 +55,7 @@ class Timer(object):
         self.events_durations = {k: v[0].elapsed_time(v[1]) for k, v in self.events.items()}
 
     def upload(self):
+        path = '/pyparsa/.git'
         self.close()
         with open(os.environ['MONGO_USR']) as usr:
             with open(os.environ['MONGO_PWD']) as pwd:
@@ -65,5 +67,10 @@ class Timer(object):
                     'time_stamps': self.timestamps,
                     'events': self.events_durations,
                     'name': self.name,
+                    'world_size': dist.get_world_size(),
+                    'rank': dist.get_rank(),
+                    'backend': dist.get_backend(),
+                    'branch': check_output(['git', '--git-dir', path, 'branch']).decode('utf-8').split(' ')[1].split('\n')[0],
+                    'commit': check_output(['git', '--git-dir', path, 'show', '--summary']).decode("utf-8").split(' ')[1].split('\n')[0],
                 }
                 client['admin']['microbenchmarks'].insert_one(data)

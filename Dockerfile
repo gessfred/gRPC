@@ -13,6 +13,7 @@ RUN ln -s /usr/bin/nvcc /usr/local/cuda/bin/nvcc
 ADD lib/microbenchmarkgloo.py ${LIB}/lib/microbenchmarkgloo.py
 ADD lib/microbenchmarknccl.py ${LIB}/lib/microbenchmarknccl.py
 ADD lib/microbenchmarkcomm.py ${LIB}/lib/microbenchmarkcomm.py
+ADD .git ${LIB}/.git
 ADD lib/timer.py ${LIB}/lib/timer.py
 #ADD /lib/ncccl ${LIB}/lib/ncccl
 #RUN cd ${LIB}/lib/ncccl && python setup.py install
