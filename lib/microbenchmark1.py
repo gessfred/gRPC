@@ -85,7 +85,7 @@ def rendezvous(rank, world_size):
 def main():
     rank = int(os.environ['RANK'])
     group = rendezvous(rank, 2)
-    allreduce(tensor, group)
+    #allreduce(tensor, group)
     for i in range(10):
         tensor = torch.ones(2**26).cuda()
         t1 = Timer()
