@@ -19,6 +19,7 @@ def microbenchmark(fn, name, group, runs=10, size=2**20):
             fn(t, tensor, group)
             with t('cuda->cpu'):
                 tensor.to(torch.device('cuda'))
+        t.close()
         elapsed_time += t.elapsed_time
     print('[{}]:elapsed_time: {}'.format(name, elapsed_time))
 
