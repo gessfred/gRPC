@@ -15,6 +15,7 @@ ADD lib/microbenchmarknccl.py ${LIB}/lib/microbenchmarknccl.py
 ADD lib/microbenchmarkcomm.py ${LIB}/lib/microbenchmarkcomm.py
 ADD .git ${LIB}/.git
 ADD lib/timer.py ${LIB}/lib/timer.py
+RUN git clone https://github.com/gessfred/LocalSGD-Code.git
 #ADD /lib/ncccl ${LIB}/lib/ncccl
 #RUN cd ${LIB}/lib/ncccl && python setup.py install
 EXPOSE 29500
