@@ -153,6 +153,43 @@ static void initEnv() {
 #define ALIGN_SIZE(size, align) \
   size = ((size + (align) - 1) / (align)) * (align);
 
+#define WARP_SIZE 32
+#define MAXCHANNELS 32
+#define NCCL_MAX_NTHREADS 512
+#define NCCL_LL_MAX_NTHREADS NCCL_MAX_NTHREADS
+#define NCCL_LL_LINES_PER_THREAD 8
+#define NCCL_LL_SLICE_LINES (NCCL_LL_LINES_PER_THREAD*NCCL_LL_MAX_NTHREADS)
+#define NCCL_LL_BUFF_LINES (NCCL_LL_SLICE_LINES*NCCL_STEPS)
+#define NCCL_LL_BUFF_SIZE (NCCL_LL_BUFF_LINES*sizeof(union ncclLLFifoLine))
+#ifdef TEST_LL_CLEANUP
+#define NCCL_LL_CLEAN_MASK 0x078 // Set to 0x100 to disable cleanup
+#define NCCL_LL_FLAG_MAX   0x100
+#define NCCL_LL_FLAG(a) ((uint32_t)((a) % NCCL_LL_FLAG_MAX))
+#else
+#define NCCL_LL_CLEAN_MASK 0x7ffffff8
+#define NCCL_LL_FLAG(a) ((uint32_t)(a))
+#endif
+// Make sure the clean mask will last for at least NCCL_NSTEPS
+static_assert(NCCL_LL_CLEAN_MASK % NCCL_STEPS == 0, "Invalid NCCL_LL_CLEAN_MASK value");
+
+#define NCCL_LL128_LINESIZE 128
+#define NCCL_LL128_LINEELEMS (NCCL_LL128_LINESIZE/sizeof(uint64_t))
+#define NCCL_LL128_DATAELEMS (NCCL_LL128_LINEELEMS-1)
+
+#define NCCL_LL128_MAX_NTHREADS 640
+#define NCCL_LL128_ELEMS_PER_THREAD 120
+
+// Receiving from up to 3 sources is more compute intensive than sending
+// to 3 dests. Use 70% for reduce and 30% for bcast.
+#define NCCL_LL128_SPLIT(nt) ((nt*7/(10*32))*32)
+
+#define NCCL_LL128_SLICE_ELEMS (NCCL_LL128_ELEMS_PER_THREAD*NCCL_LL128_MAX_NTHREADS)
+#define NCCL_LL128_BUFF_ELEMS (NCCL_LL128_SLICE_ELEMS*NCCL_STEPS)
+#define NCCL_LL128_BUFF_SIZE (NCCL_LL128_BUFF_ELEMS*sizeof(uint64_t))
+
+#define NCCL_LL128_SHMEM_ELEMS_PER_THREAD 8
+#define NCCL_LL128_SHMEM_SIZE (NCCL_LL128_SHMEM_ELEMS_PER_THREAD*NCCL_LL128_MAX_NTHREADS)
+
 
 typedef struct { char internal[NCCL_UNIQUE_ID_BYTES]; } ncclUniqueId;
 typedef char ncclNetHandle_t[NCCL_NET_HANDLE_MAXSIZE];
