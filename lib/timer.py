@@ -6,6 +6,7 @@ import time
 from pymongo import MongoClient
 import uuid
 import os
+from subprocess import Popen, PIPE, check_output
 
 class Timer(object):
     def __init__(self, name):
