@@ -57,7 +57,7 @@ def main():
         tensor = torch.ones(size).cuda()
         t = Timer()
         with t('all_reduce_bare'):
-            allreduce(tensor, group)
+            allreduce(t, tensor, group)
         t.dump()
     for i in range(runs):
         tensor = torch.ones(size).cuda()
