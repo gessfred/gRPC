@@ -10,17 +10,21 @@ class Timer(object):
     def __init__(self):
         super().__init__()
         self.profile = {}
+        self.timeline = {}
     @contextmanager
     def __call__(self, label):
         start = torch.cuda.Event(enable_timing=True)
         end = torch.cuda.Event(enable_timing=True)
         start.record()
+        self.timeline[label+'_start'] = time.monotonic()
         yield
         end.record()
         torch.cuda.synchronize()
+        self.timeline[label+'end'] = time.monotonic()
         self.profile[label] = start.elapsed_time(end)
     def dump(self):
         print(self.profile)
+        print('timeline: {}'.format(self.timeline))
 
 timer = Timer()
 
