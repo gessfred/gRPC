@@ -8,7 +8,7 @@ import numpy as np
 from timer import Timer
 from microbenchmarkcomm import functions, rendezvous
 
-def microbenchmark(fn, name, group, runs=10, size=2**20):
+def microbenchmark(fn, name, group, runs=10, size=2**26):
     elapsed_time = 0
     for _ in range(runs):
         tensor = torch.ones(size)
@@ -20,7 +20,7 @@ def microbenchmark(fn, name, group, runs=10, size=2**20):
             with t('cuda->cpu'):
                 tensor.to(torch.device('cuda'))
         t.close()
-        elapsed_time += t.elapsed_time
+        elapsed_time += (t.elapsed_time / runs)
     print('[{}]:elapsed_time: {}'.format(name, elapsed_time))
 
 def main():

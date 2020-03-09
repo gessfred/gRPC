@@ -28,7 +28,7 @@ def allreduce_uninstrumented(timer, tensor, group):
 def allreducebaseline(timer, tensor, group):
     dist.all_reduce(tensor, op=dist.ReduceOp.SUM, group=group)
 
-functions = [allreducebaseline, allreduce_instrumented, allreduce_uninstrumented]
+functions = [allreduce_baseline, allreduce_instrumented, allreduce_uninstrumented]
 
 def rendezvous(backend, rank, world_size):
     dist.init_process_group(backend, rank=rank, timeout=datetime.timedelta(seconds=10), world_size=world_size, init_method='tcp://{}:60000'.format(os.environ['MASTER_ADDR']))

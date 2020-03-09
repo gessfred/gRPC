@@ -16,7 +16,7 @@ def microbenchmark(fn, name, group, runs=10, size=2**20):
         with t(name):
             fn(t, tensor, group)
         t.close()
-        elapsed_time += t.elapsed_time
+        elapsed_time += (t.elapsed_time / runs)
     print('[{}]:elapsed_time: {}'.format(name, elapsed_time))
 
 def main():
