@@ -73,4 +73,5 @@ class Timer(object):
                     'branch': check_output(['git', '--git-dir', path, 'branch']).decode('utf-8').split(' ')[1].split('\n')[0],
                     'commit': check_output(['git', '--git-dir', path, 'show', '--summary']).decode("utf-8").split(' ')[1].split('\n')[0],
                 }
+                print(data)
                 client['admin']['microbenchmarks'].insert_one(data)
