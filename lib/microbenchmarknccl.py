@@ -6,7 +6,7 @@ import time
 from contextlib import contextmanager
 import numpy as np
 from timer import Timer
-from microbenchmarkcomm import functions
+from microbenchmarkcomm import functions, rendezvous
 
 def microbenchmark(fn, name, group, runs=10, size=2**20):
     elapsed_time = 0
