@@ -3,6 +3,7 @@ from contextlib import contextmanager
 import datetime
 import time
 import pymongo
+import os
 
 class Timer(object):
     def __init__(self, name):
