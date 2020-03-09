@@ -15,6 +15,7 @@ class Timer(object):
         self.closed = False
         self.elapsed_times = []
         self.events_durations = {}
+        self.start = time.time()
 
     @contextmanager
     def __call__(self, label):
