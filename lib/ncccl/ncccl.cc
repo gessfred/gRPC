@@ -21,7 +21,7 @@ ncclResult_t init(int rank, int nRanks, std::array<char, 128> uuid, int dst)  {
   float *sendbuff, *recvbuff;
   cudaStream_t s;
   std::cout << hostname << std::endl;
-  ncclNet_t net = ncclNetSocket;
+  ncclNet_t net = ncclNetSocket();
   //get NCCL unique ID at rank 0 and broadcast it to all others
   std::copy_n(uuid.begin(), 128, std::begin(id.internal));  
 //if (myRank == 0) ncclGetUniqueId(&id);

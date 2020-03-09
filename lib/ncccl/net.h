@@ -60,6 +60,6 @@ cleanup:
 }
 
 extern ncclNet_t ncclNetIb;
-extern ncclNet_t ncclNetSocket;
+//extern ncclNet_t ncclNetSocket;
 
 #endif
