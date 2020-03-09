@@ -5,50 +5,7 @@ import datetime
 import time
 from contextlib import contextmanager
 import numpy as np
-    
-class Timer(object):
-    def __init__(self):
-        super().__init__()
-        self.profile = {}
-        self.timestamps = {}
-        self.events = {}
-        self.start = time.time()
-        self.elapsed_time = 0
-        self.closed = False
-
-    @contextmanager
-    def __call__(self, label):
-        start = self.record(label+'_start')
-        yield
-        end = self.record(label+'_end')
-        self.events['label'] = [start, end]
-
-    def record(self, label):
-        event = torch.cuda.Event(enable_timing=True)
-        event.record()
-        #self.timestamps[label] = time.monotonic()
-        return event
-
-    def dump(self):
-        if not self.closed:
-            self.close()
-        print('--------------------timeline--------------------')
-        print('profile: {}'.format(self.profile))
-        print('events: {}'.format(self.events))
-        print('timeline: {}'.format(self.timestamps))
-        print('elapsed_time: {}'.format(self.elapsed_time))
-        print('------------------------------------------------')
-
-    def wait(self, event, handle):
-        pass
-        
-    def track(self, handle):
-        pass
-
-    def close(self):
-        torch.cuda.synchronize()
-        self.closed = True
-        self.elapsed_time = time.time() - self.start
+from .timer import Timer
 
 def allreduce_(timer, tensor, group):
     with timer('reduce'):
@@ -60,7 +17,7 @@ def allreduce_(timer, tensor, group):
         chunk = chunks[rank]
         dist.all_gather(chunks, chunk, group=group)
 
-def allreduce__(timer, tensor, group):
+"""def allreduce__(timer, tensor, group):
     with timer('reduce'):
         rank = dist.get_rank()
         chunks = list(tensor.view(dist.get_world_size(), -1))
@@ -68,9 +25,9 @@ def allreduce__(timer, tensor, group):
             dist.reduce(chunk, i, op=dist.ReduceOp.SUM, group=group, async_op=True)
     with timer('all_gather'):
         chunk = chunks[rank]
-        dist.all_gather(chunks, chunk, group=group)
+        dist.all_gather(chunks, chunk, group=group)"""
 
-def allreduce(tensor, group):
+def allreduce(timer, tensor, group):
     rank = dist.get_rank()
     chunks = list(tensor.view(dist.get_world_size(), -1))
     for i, chunk in enumerate(chunks):
@@ -78,9 +35,17 @@ def allreduce(tensor, group):
     chunk = chunks[rank]
     dist.all_gather(chunks, chunk, group=group)
 
+def allreducebaseline(timer, tensor, group):
+    dist.all_reduce(tensor, op=dist.ReduceOp.SUM, group=group)
+
 def rendezvous(rank, world_size):
     dist.init_process_group('nccl', rank=rank, timeout=datetime.timedelta(seconds=10), world_size=world_size, init_method='tcp://{}:60000'.format(os.environ['MASTER_ADDR']))
     return dist.new_group(range(world_size))
+
+"""def measure(fn, name):
+    t = Timer()
+    with t(name):
+        fn()"""
 
 def main():
     rank = int(os.environ['RANK'])

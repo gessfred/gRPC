@@ -11,6 +11,7 @@ RUN pip install numpy torch torchvision pymongo mpi4py
 RUN mkdir /usr/local/cuda/bin
 RUN ln -s /usr/bin/nvcc /usr/local/cuda/bin/nvcc
 ADD lib/microbenchmark1.py ${LIB}/lib/microbenchmark1.py
+ADD lib/timer.py ${LIB}/lib/timer.py
 #ADD /lib/ncccl ${LIB}/lib/ncccl
 #RUN cd ${LIB}/lib/ncccl && python setup.py install
 EXPOSE 29500
