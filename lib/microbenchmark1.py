@@ -13,8 +13,10 @@ class Timer(object):
     @contextmanager
     def __call__(self, label):
         start = torch.cuda.Event(enable_timing=True)
-        yield
         end = torch.cuda.Event(enable_timing=True)
+        start.record()
+        yield
+        end.record()
         self.profile[label] = start.elapsed_time(end)
 
     def dump():
