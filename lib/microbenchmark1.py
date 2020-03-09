@@ -101,6 +101,7 @@ def main():
         t.dump()
         tensor = torch.ones(2**20).cuda()
     for i in range(runs):
+        tensor = torch.ones(2**26).cuda()
         t4 = Timer()
         with t4('all_reduce_baseline'):
             dist.all_reduce(tensor, op=dist.ReduceOp.SUM, group=group)
