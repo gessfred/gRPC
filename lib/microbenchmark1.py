@@ -35,7 +35,6 @@ def allreduce(tensor, group):
         chunk = chunks[rank]
         dist.all_gather(chunks, chunk, group=group)
     torch.cuda.synchronize()
-    print('{} | {}'.format(start.elapsed_time(end), start1.elapsed_time(end1)))
 
 def rendezvous(rank, world_size):
     dist.init_process_group('nccl', rank=rank, timeout=datetime.timedelta(seconds=10), world_size=world_size, init_method='tcp://{}:60000'.format(os.environ['MASTER_ADDR']))
