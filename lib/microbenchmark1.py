@@ -54,8 +54,8 @@ def allreduce_(timer, tensor, group):
     with timer('reduce'):
         rank = dist.get_rank()
         chunks = list(tensor.view(dist.get_world_size(), -1))
-        for i, chunk in enumerate(chunks):
-            dist.reduce(chunk, i, op=dist.ReduceOp.SUM, group=group)
+        reqs = [dist.reduce(chunk, i, op=dist.ReduceOp.SUM, group=group, async_op=True) for i, chunk in enumerate(chunks)]
+        [req.wait() for req in reqs]
     with timer('all_gather'):
         chunk = chunks[rank]
         dist.all_gather(chunks, chunk, group=group)
@@ -65,7 +65,7 @@ def allreduce__(timer, tensor, group):
         rank = dist.get_rank()
         chunks = list(tensor.view(dist.get_world_size(), -1))
         for i, chunk in enumerate(chunks):
-            dist.reduce(chunk, i, op=dist.ReduceOp.SUM, group=group)
+            dist.reduce(chunk, i, op=dist.ReduceOp.SUM, group=group, async_op=True)
     with timer('all_gather'):
         chunk = chunks[rank]
         dist.all_gather(chunks, chunk, group=group)
