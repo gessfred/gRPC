@@ -803,13 +803,12 @@ cleanup:
   return res;
 }
 
-static ncclResult_t ncclCommInitRankDev(ncclComm_t* newcomm, int nranks, ncclUniqueId commId, int myrank, int cudaDev) {
+static ncclResult_t ncclCommInitRankDev(ncclNet_t* net, ncclComm_t* newcomm, int nranks, ncclUniqueId commId, int myrank, int cudaDev) {
   ncclResult_t res;
   char* env = getenv("NCCL_COMM_ID");
   if (env && myrank == 0) {
     NCCLCHECKGOTO(bootstrapCreateRoot(&commId, true), res, end);
   }
-  ncclNet_t* net;
   NCCLCHECKGOTO(ncclInit(net), res, end);
   if (myrank == 0) showVersion();
 
@@ -832,10 +831,10 @@ end:
   return res;
 }
 
-ncclResult_t ncclCommInitRank(ncclComm_t* newcomm, int nranks, ncclUniqueId commId, int myrank) {
+ncclResult_t ncclCommInitRank(ncclNet_t* net, ncclComm_t* newcomm, int nranks, ncclUniqueId commId, int myrank) {
   int cudaDev;
   CUDACHECK(cudaGetDevice(&cudaDev));
-  NCCLCHECK(ncclCommInitRankDev(newcomm, nranks, commId, myrank, cudaDev));
+  NCCLCHECK(ncclCommInitRankDev(net, newcomm, nranks, commId, myrank, cudaDev));
   return ncclSuccess;
 }
 
@@ -851,7 +850,7 @@ ncclResult_t ncclCommInitAll(ncclComm_t* comms, int ndev, const int* devlist) {
   //NCCLCHECK(ncclGroupStart());
   for (int i=0; i<ndev; i++) {
     // Ignore return codes .. we need to call ncclGroupEnd to clean up anyway
-    ncclCommInitRankDev(comms+i, ndev, uniqueId, i, devlist ? devlist[i] : i);
+    ncclCommInitRankDev(net, comms+i, ndev, uniqueId, i, devlist ? devlist[i] : i);
   }
   //NCCLCHECK(ncclGroupEnd());
   return ncclSuccess;

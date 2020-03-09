@@ -1,5 +1,6 @@
 #include <torch/extension.h>
 #include "init.h"
+#include <iostream>
 
 ncclNet_t* net;
 
@@ -21,7 +22,7 @@ void init(int rank, int nRanks, std::array<char, 128> uuid, int dst)  {
   float *sendbuff, *recvbuff;
   cudaStream_t s;
   std::cout << hostname << std::endl;
-
+  ncclNet_t* net;
   //get NCCL unique ID at rank 0 and broadcast it to all others
   std::copy_n(uuid.begin(), 128, std::begin(id.internal));  
 //if (myRank == 0) ncclGetUniqueId(&id);
@@ -34,8 +35,8 @@ void init(int rank, int nRanks, std::array<char, 128> uuid, int dst)  {
 
 
   //initializing NCCL
-  NCCLCHECK(ncclCommInitRank(&comm, nRanks, id, myRank));
-
+  NCCLCHECK(ncclCommInitRank(net, &comm, nRanks, id, myRank));
+  std::cout << net << std::endl;
 }
 
 std::array<char, 128> get_local_id() {
