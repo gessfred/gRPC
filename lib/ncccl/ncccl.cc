@@ -5,7 +5,7 @@
 
 ncclNet_t* net;
 
-ncclResult_t init(int rank, int nRanks, std::array<char, 128> uuid, int dst)  {
+void init(int rank, int nRanks, std::array<char, 128> uuid, int dst)  {
   INFO();
   int size = 32*1024*1024;
 
@@ -27,14 +27,14 @@ ncclResult_t init(int rank, int nRanks, std::array<char, 128> uuid, int dst)  {
 //if (myRank == 0) ncclGetUniqueId(&id);
   //std::cout << std::string(id.internal) << std::endl;
   //picking a GPU based on localRank, allocate device buffers
-  CUDACHECK(cudaSetDevice(localRank));
-  CUDACHECK(cudaMalloc(&sendbuff, size * sizeof(float)));
-  CUDACHECK(cudaMalloc(&recvbuff, size * sizeof(float)));
-  CUDACHECK(cudaStreamCreate(&s));
+  (cudaSetDevice(localRank));
+  (cudaMalloc(&sendbuff, size * sizeof(float)));
+  (cudaMalloc(&recvbuff, size * sizeof(float)));
+  (cudaStreamCreate(&s));
 
   std::cout << "init..." << std::endl;
   //initializing NCCL
-  NCCLCHECK(ncclCommInitRank(net, &comm, nRanks, id, myRank));
+  (ncclCommInitRank(net, &comm, nRanks, id, myRank));
   //std::cout << "net& (init) "<< net << std::endl;
   free((void*)net);
 }
@@ -42,10 +42,11 @@ ncclResult_t init(int rank, int nRanks, std::array<char, 128> uuid, int dst)  {
 std::array<char, 128> get_local_id() {
   std::array<char, 128> res;
   ncclUniqueId id;
-  ncclNet_t* net;
+  ncclNet_t* net = ncclNetSocket();
   ncclGetUniqueId(net, &id);
   std::cout << "net& " << net << std::endl; 
   std::copy_n(std::begin(id.internal), 128, res.begin());
+  free((void*)net);
   return res;
   //return reinterpret_cast<std::array<char, 128>&>(id.internal);
 }
