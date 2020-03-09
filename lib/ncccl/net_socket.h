@@ -16,7 +16,7 @@ static union socketAddress ncclNetIfAddrs[MAX_IFS];
 static int ncclNetIfs = -1;
 pthread_mutex_t ncclSocketLock = PTHREAD_MUTEX_INITIALIZER;
 
-ncclResult_t ncclSocketInit(ncclDebugLogger_t logFunction) {
+ncclResult_t ncclSocketInit() {
   if (ncclNetIfs == -1) {
     pthread_mutex_lock(&ncclSocketLock);
     if (ncclNetIfs == -1) {
@@ -500,21 +500,21 @@ ncclResult_t ncclSocketClose(void* opaqueComm) {
 }
 
 ncclNet_t ncclNetSocket = {
-  "Socket",
-  ncclSocketInit,
-  ncclSocketDevices,
-  ncclSocketPciPath,
-  ncclSocketPtrSupport,
-  ncclSocketListen,
-  ncclSocketConnect,
-  ncclSocketAccept,
-  ncclSocketRegMr,
-  ncclSocketDeregMr,
-  ncclSocketIsend,
-  ncclSocketIrecv,
-  ncclSocketFlush,
-  ncclSocketTest,
-  ncclSocketClose,
-  ncclSocketClose,
-  ncclSocketCloseListen
+  name="Socket",
+  init=ncclSocketInit,
+  devices=ncclSocketDevices,
+  pciPath=ncclSocketPciPath,
+  ptrSupport=ncclSocketPtrSupport,
+  listen=ncclSocketListen,
+  connect=ncclSocketConnect,
+  accept=ncclSocketAccept,
+  regMr=ncclSocketRegMr,
+  deregMr=ncclSocketDeregMr,
+  isend=ncclSocketIsend,
+  irecv=ncclSocketIrecv,
+  flush=ncclSocketFlush,
+  test=ncclSocketTest,
+  closeSend=ncclSocketClose,
+  closeRecv=ncclSocketClose,
+  closeListen=ncclSocketCloseListen
 };
