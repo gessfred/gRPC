@@ -10,7 +10,8 @@ ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 RUN pip install numpy torch torchvision pymongo mpi4py
 RUN mkdir /usr/local/cuda/bin
 RUN ln -s /usr/bin/nvcc /usr/local/cuda/bin/nvcc
-ADD /lib/ncccl ${LIB}/lib/ncccl
-RUN cd ${LIB}/lib/ncccl && python setup.py install
+ADD lib/microbenchmark1.py ${LIB}/lib/microbenchmark1.py
+#ADD /lib/ncccl ${LIB}/lib/ncccl
+#RUN cd ${LIB}/lib/ncccl && python setup.py install
 EXPOSE 29500
 EXPOSE 60000
