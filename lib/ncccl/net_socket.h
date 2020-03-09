@@ -503,23 +503,23 @@ ncclResult_t ncclSocketClose(void* opaqueComm) {
 
 ncclNet_t ncclNetSocket() {
     ncclNet_t netSocket = {
-    name="Socket",
-    init=ncclSocketInit,
-    devices=ncclSocketDevices,
-    pciPath=ncclSocketPciPath,
-    ptrSupport=ncclSocketPtrSupport,
-    listen=ncclSocketListen,
-    connect=ncclSocketConnect,
-    accept=ncclSocketAccept,
-    regMr=ncclSocketRegMr,
-    deregMr=ncclSocketDeregMr,
-    isend=ncclSocketIsend,
-    irecv=ncclSocketIrecv,
-    flush=ncclSocketFlush,
-    test=ncclSocketTest,
-    closeSend=ncclSocketClose,
-    closeRecv=ncclSocketClose,
-    closeListen=ncclSocketCloseListen
+    .name="Socket",
+    .init=ncclSocketInit,
+    .devices=ncclSocketDevices,
+    .pciPath=ncclSocketPciPath,
+    .ptrSupport=ncclSocketPtrSupport,
+    .listen=ncclSocketListen,
+    .connect=ncclSocketConnect,
+    .accept=ncclSocketAccept,
+    .regMr=ncclSocketRegMr,
+    .deregMr=ncclSocketDeregMr,
+    .isend=ncclSocketIsend,
+    .irecv=ncclSocketIrecv,
+    .flush=ncclSocketFlush,
+    .test=ncclSocketTest,
+    .closeSend=ncclSocketClose,
+    .closeRecv=ncclSocketClose,
+    .closeListen=ncclSocketCloseListen
     };
     return netSocket;
 }
