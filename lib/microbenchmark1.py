@@ -5,9 +5,9 @@ import datetime
 
 def allreduce(tensor, rank, group):
     #dist.reduce_multigpu()
+    world = group.get_world_size()
     sizeOfTensor=list(tensor.size())[0]
     chunksize = sizeOfTensor // world
-    world = group.get_world_size()
     for i in range(world):
         chunk = tensor[i*chunksize:(i+1)*chunksize]
         dist.reduce(chunk, i, op=ReduceOp.SUM, group=group)
@@ -24,7 +24,8 @@ def rendezvous(rank, world_size):
     return dist.new_group(range(world_size))
 
 def main():
-    tensor = torch.ones(8)
+    tensor = torch.ones(8).cuda()
+
     rank = int(os.environ['RANK'])
     group = rendezvous(rank, 2)
     allreduce(tensor, rank, group)
