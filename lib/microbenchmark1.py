@@ -3,33 +3,24 @@ import torch.distributed as dist
 import os
 import datetime
 
-def allreduce(tensor, rank, group):
-    #dist.reduce_multigpu()
+def allreduce(tensor, group):
     rank = dist.get_rank()
-    world = dist.get_world_size()
-    sizeOfTensor=list(tensor.size())[0]
-    chunksize = sizeOfTensor // world
-    for i in range(world):
-        chunk = tensor[i*chunksize:(i+1)*chunksize]
-        dist.reduce(chunk, i, op=dist.reduce_op.SUM, group=group)
-    chunk = tensor[rank*chunksize:(rank+1)*chunksize]
-    tensor_list = [chunk]*world
-    dist.all_gather(tensor_list, chunk, group=group)
-    print(tensor_list)
-        
+    chunks = list(tensor.view(dist.get_world_size(), -1))
+    for i, chunk in enumerate(chunks):
+        dist.reduce(chunk, i, op=dist.ReduceOp.SUM, group=group)
+    chunk = chunks[rank]
+    dist.all_gather(chunks, chunk, group=group)
 
 def rendezvous(rank, world_size):
-    
     dist.init_process_group('nccl', rank=rank, timeout=datetime.timedelta(seconds=10), world_size=world_size, init_method='tcp://{}:60000'.format(os.environ['MASTER_ADDR']))
-    
     return dist.new_group(range(world_size))
 
 def main():
     tensor = torch.ones(8).cuda()
-
     rank = int(os.environ['RANK'])
     group = rendezvous(rank, 2)
-    allreduce(tensor, rank, group)
+    allreduce(tensor, group)
+    print(tensor)
 
 if __name__ == '__main__':
     main()
