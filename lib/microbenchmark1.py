@@ -85,14 +85,18 @@ def main():
     tensor = torch.ones(2**20).cuda()
     rank = int(os.environ['RANK'])
     group = rendezvous(rank, 2)
-    t1 = 
-    with timer('all_reduce'):
+    t1 = Timer()
+    with t1('all_reduce'):
         allreduce(tensor, group)
-    timer.dump()
-    print('exec time: {}'.format(time.time() - start))
-    start = time.time()
-
-    print('exec time: {}'.format(time.time() - start))
+    t1.dump()
+    t2 = Timer()
+    with t2('all_reduce'):
+        allreduce(t2, tensor, group)
+    t2.dump()
+    t3 = Timer()
+    with t3('all_reduce'):
+        allreduce(t3, tensor, group)
+    t3.dump()
     print(tensor)
 
 if __name__ == '__main__':
