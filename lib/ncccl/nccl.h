@@ -736,8 +736,8 @@ struct ncclTransport ncclTransports[NTRANSPORTS] = {
   netTransport,
 };
 */
-#define RECV 0
-#define SEND 1
+//#define RECV 0
+//#define SEND 1
 
 static bool NeedProxy(int type, int pattern, int root, struct ncclRing* ring, int nranks) {
   if (pattern == ncclPatternRing || pattern == ncclPatternRingTwice) return true;
