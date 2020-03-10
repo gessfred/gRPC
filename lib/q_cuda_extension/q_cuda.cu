@@ -30,13 +30,13 @@ __global__ void quantizeGPU(torch::Tensor tensor, torch::Tensor res)
     for (int i = startIndex; i < endIndex; ++i) {
         x = x << bits;
         auto z = tensor_a[i];
-        for (size_t k = 0; k <= 1; k++) {
+        //for (size_t k = 0; k <= 1; k++) {
           if (z < 0){
             x = x | 0;
           } else{
             x = x | 1;
           }
-        }
+        //}
       }
     res_a[threadId] = x;
   }
