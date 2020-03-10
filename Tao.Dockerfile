@@ -1,6 +1,8 @@
 
 FROM nvidia/cuda:10.0-cudnn7-devel-ubuntu16.04
 
+ENV HOME /home
+
 # install some necessary tools.
 RUN echo "deb http://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu1604/x86_64 /" > /etc/apt/sources.list.d/nvidia-ml.list
 RUN apt-get update \
@@ -51,7 +53,6 @@ RUN add-apt-repository ppa:openjdk-r/ppa \
         openjdk-7-jdk \
         openjdk-7-jre-headless
 
-USER $NB_USER
 WORKDIR $HOME
 
 # install openMPI
