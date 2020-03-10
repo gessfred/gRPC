@@ -8,7 +8,7 @@ import uuid
 import os
 from subprocess import Popen, PIPE, check_output
 
-class Timer(object):
+class TimerBase(object):
     def __init__(self, name):
         super().__init__()
         self.clock = time.perf_counter()
@@ -23,16 +23,10 @@ class Timer(object):
 
     @contextmanager
     def __call__(self, label):
-        start = self.record(label+'_start')
-        yield
-        end = self.record(label+'_end')
-        self.events[label] = [start, end]
+        pass
 
     def record(self, label):
-        event = torch.cuda.Event(enable_timing=True)
-        event.record()
-        self.timestamps[label] = time.perf_counter()
-        return event
+        pass
 
     def dump(self):
         if not self.closed:
@@ -76,3 +70,32 @@ class Timer(object):
                 }
                 print(data)
                 client['admin']['microbenchmarks'].insert_one(data)
+
+
+class CUDATimer(TimerBase):
+
+    def record(self, label):
+        event = torch.cuda.Event(enable_timing=True)
+        event.record()
+        self.timestamps[label] = time.perf_counter()
+        return event
+
+    def wait(self, event, handle):
+        pass
+        
+    def track(self, handle):
+        pass
+
+"""class CPUTimer(TimerBase):
+    def record(self, label):
+        event = torch.cuda.Event(enable_timing=True)
+        event.record()
+        self.timestamps[label] = time.perf_counter()
+        return event
+
+    def wait(self, event, handle):
+        pass
+        
+    def track(self, handle):
+        pass
+"""
