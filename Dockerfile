@@ -16,6 +16,7 @@ ADD lib/microbenchmarkcomm.py ${LIB}/lib/microbenchmarkcomm.py
 ADD .git ${LIB}/.git
 ADD lib/timer.py ${LIB}/lib/timer.py
 RUN git clone https://github.com/gessfred/LocalSGD-Code.git
+RUN pip install numpy pyyaml scipy ipython mkl mkl-include soumith magma-cuda100 pytelegraf pymongo influxdb kubernetes jinja2 lmdb tensorboard_logger pyarrow msgpack msgpack_numpy mpi4py pandas
 #ADD /lib/ncccl ${LIB}/lib/ncccl
 #RUN cd ${LIB}/lib/ncccl && python setup.py install
 EXPOSE 29500
