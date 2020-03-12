@@ -27,3 +27,4 @@ RUN pip install \
         setuptools>=39.1.0 \
         scipy>=1.1.0 \
         numpy>=1.15.4 
+ADD . /pyparsa
