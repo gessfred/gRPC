@@ -29,39 +29,12 @@ def add_prefix(filename):
 
 modules = []
 
-modules.extend([
-    CppExtension('density_overflow_cpp', 
-        [
-            add_prefix('density_overflow.cpp')
-            ], 
-        include_dirs=copy.deepcopy(include_dirs), 
-        library_dirs=copy.deepcopy(lib_dirs),
-        libraries=copy.deepcopy(libs),
-        extra_compile_args={
-            'cxx' : [torch_major_version, torch_minor_version, '-fopenmp']
-            })
-    ])
-
 if "${CUDA_FOUND}".upper() == 'TRUE': 
     modules.extend([
-            CUDAExtension('density_overflow_cuda_thread_map', 
+            CUDAExtension('op', 
                 [
-                    add_prefix('density_overflow_cuda_thread_map.cpp'),
-                    add_prefix('density_overflow_cuda_kernel.cu'), 
-                    add_prefix('density_overflow_cuda_thread_map_kernel.cu')
-                    ], 
-                include_dirs=copy.deepcopy(include_dirs), 
-                library_dirs=copy.deepcopy(lib_dirs),
-                libraries=['cusparse', 'culibos'] + libs,
-                extra_compile_args={
-                    'cxx': ['-O2', torch_major_version, torch_minor_version], 
-                    'nvcc': copy.deepcopy(cuda_flags)
-                    }
-                ),
-            CUDAExtension('density_overflow_cuda_by_node', 
-                [
-                    add_prefix('density_overflow_cuda_by_node.cpp'),
-                    add_prefix('density_overflow_cuda_by_node_kernel.cu')
+                    add_prefix('op.cpp'),
+                    add_prefix('op.cu')
                     ], 
                 include_dirs=copy.deepcopy(include_dirs), 
                 library_dirs=copy.deepcopy(lib_dirs),
@@ -72,6 +45,8 @@ if "${CUDA_FOUND}".upper() == 'TRUE':
                     }
                 )
         ])
+else:
+    print('CUDA not found!')
 
 setup(
         name='density_overflow',
