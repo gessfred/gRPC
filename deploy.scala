@@ -35,7 +35,7 @@ object Deploy extends App {
     */
     val tag = "tao"
     def run(rank: Int) = Command("/home/user/LocalSGD-Code/distributed_code", 
-                    "run.py",
+                    "main.py",
                     ("--arch",  "resnet20") ::
                     ("--local_rank", rank.toString) ::
                     ("--optimizer", "local_sgd") ::
@@ -46,14 +46,14 @@ object Deploy extends App {
                     ("--pin_memory", "True") :: // DataLoader: if True, the data loader will copy Tensors into CUDA pinned memory 
                     ("--batch_size", "128") ::
                     ("--base_batch_size", "64") ::
-                    ("--num_workers", "1") ::
+                    ("--num_workers", "2") ::
                     ("--num_epochs", "0") :: // pytorch DataLoader arg. refer to https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader
                     ("--partition_data", "random") ::
                     ("--reshuffle_per_epoch", "True") ::
                     ("--stop_criteria", "epoch") ::
                     ("--n_mpi_process", "2") ::
                     ("--n_sub_process", "1") ::
-                    ("--world", "0,1") ::
+                    ("--world", "0,0") ::
                     ("--on_cuda", "True") ::
                     ("--use_ipc", "False") ::
                     ("--lr", "0.1") ::
@@ -65,7 +65,7 @@ object Deploy extends App {
                     ("--lr_milestones", "150,225") ::
                     ("--local_step", "32") ::
                     ("--turn_on_local_step_from", "150") ::
-                    ("--backend", "mpi") ::
+                    ("--backend", "nccl") ::
                     ("--weight_decay", "1e-4") ::
                     ("--use_nesterov", "True") ::
                     ("--momentum_factor", "0.9") ::
@@ -82,7 +82,11 @@ object Deploy extends App {
 |kind: Pod
 |metadata:
 |    name: ${node.name}
+|    labels:
+|      app: local-sgd-${node.rank+1}
 |spec:
+|    securityContext:
+|      fsGroup: 1000
 |    imagePullSecrets:
 |    - name: regcred
 |    restartPolicy: Never
@@ -112,6 +116,7 @@ ${run(node.rank)}
 |      ports:
 |      - name: rendezvous
 |        containerPort: 60000
+|      - containerPort: 22
 |      volumeMounts:
 |       - name: datasets
 |         mountPath: /mnt/data
