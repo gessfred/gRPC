@@ -5,6 +5,15 @@ from q_par_cpp import quantize_shrink_par, unquantize_shrink_par
 from q_general_cpp import quantize_general, unquantize_general
 
 dataSz = 32
+
+"""
+GPU functions
+"""
+def quantize_vector(tensor, numberOfThreads):
+    #assuming a 1-d
+    s = tensor.shape[0]//32
+    return torch.cumsum(torch.reshape(((torch.sign(tensor)+1)/2) * torch.pow(torch.zeros(s*32)+2, torch.arange(32).repeat(s)), (32, -1)), dim=0)[31,:]
+
 """
 Naive functions
 """
