@@ -9,10 +9,34 @@ dataSz = 32
 """
 GPU functions
 """
-def quantize_vector(tensor, numberOfThreads):
-    #assuming a 1-d
+def quantize_gpu(tensor, device):
+    #assume a 1-d tensor
     s = tensor.shape[0]//32
-    return torch.cumsum(torch.reshape(((torch.sign(tensor)+1)/2) * torch.pow(torch.zeros(s*32)+2, torch.arange(32).repeat(s)), (32, -1)), dim=0)[31,:]
+    cuda = device
+    return  (((torch.sign(tensor).int()+1)/2) \
+            * (torch.zeros(s*32, dtype=torch.int, device=cuda)+2).pow(torch.arange(32, device=cuda).repeat(s)) \
+            ).reshape((-1, 32)).cumsum(dim=1)[:,31]
+
+def quantize_gpu_gen(tensor, device, bits):
+    pack = 32//bits
+    bins = 2**bits
+    max_ = tensor.max()
+    min_ = tensor.min()
+    #assume a 1-d tensor
+    s = tensor.shape[0]//pack
+    cuda = device
+
+    return  ((tensor/(max_-min_)*bins).clamp(-bins+0.1, bin).ceil().int()+((bins//2)+1) \
+            * (torch.zeros(s*32, dtype=torch.int, device=cuda)+2).pow(torch.arange(0, 32, bits, device=cuda).repeat(s)) \
+            ).reshape((-1, 32)).cumsum(dim=1)[:,31]
+
+def unquantize_gpu(tensor, device):
+    #assume a 1-d tensor
+    s = tensor.shape[0]
+    cuda = device
+    res = tensor.repeat_interleave(32)
+    div = (torch.zeros(s*32, dtype=torch.int, device=cuda)+2).pow(torch.arange(32, device=cuda).repeat(s))
+    return res
 
 """
 Naive functions
@@ -89,7 +113,8 @@ def quantizy(version):
         "concept": [quantize_pof, unquantize_pof],
         "ext": [quantize_shrink, unquantize_shrink],
         "ext_par": [quantize_shrink_par, unquantize_shrink_par],
-        "general": [quantize_general, unquantize_general]
+        "general": [quantize_general, unquantize_general],
+        "gpu": [quantize_gpu_gen]
     }
     return versions[version]
 #
