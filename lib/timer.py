@@ -23,9 +23,10 @@ class TimerBase(object):
 
     @contextmanager
     def __call__(self, label, epoch=0):
-        self.record(label+'_start')
+        start = self.record(label+'_start')
         yield
-        self.record(label+'_end')
+        end = self.record(label+'_end')
+        self.events[label] = [start, end]
 
     def record(self, label):
         pass
@@ -39,7 +40,7 @@ class TimerBase(object):
         print('elapsed_time: {}'.format(self.elapsed_time))
         print('------------------------------------------------')
 
-    def summary():
+    def summary(arg):
         return 'no summary'
 
     def wait(self, event, handle):
