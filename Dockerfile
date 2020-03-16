@@ -14,13 +14,13 @@ RUN gunzip -c openmpi-3.0.0.tar.gz | tar xf - \
 ENV PATH $HOME/.openmpi/bin:$PATH
 ENV LD_LIBRARY_PATH $HOME/.openmpi/lib:$LD_LIBRARY_PATH
 # install NCCL
-RUN mkdir /usr/local/cuda/bin
-RUN ln -s /usr/bin/nvcc /usr/local/cuda/bin/nvcc
 RUN mkdir $HOME/.nccl
 RUN git clone https://github.com/NVIDIA/nccl.git ${HOME}/.nccl
 RUN make -C ${HOME}/.nccl -j src.build
 RUN apt install -y devscripts debhelper fakeroot
 RUN make -C ${HOME}/.nccl pkg.debian.build
+RUN apt-get install -y curl
+WORKDIR $HOME
 # install conda
 ENV PYTHON_VERSION=3.6
 RUN curl -o ~/miniconda.sh -O  https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh  && \
@@ -32,15 +32,18 @@ RUN $HOME/conda/bin/conda install --name pytorch-py$PYTHON_VERSION -c soumith ma
 RUN $HOME/conda/bin/conda install --name pytorch-py$PYTHON_VERSION scikit-learn
 RUN $HOME/conda/envs/pytorch-py$PYTHON_VERSION/bin/pip install pytelegraf pymongo influxdb kubernetes jinja2
 ENV PATH $HOME/conda/envs/pytorch-py$PYTHON_VERSION/bin:$PATH
+RUN $HOME/conda/bin/conda install numpy ninja pyyaml mkl mkl-include setuptools cmake cffi typing
+
 # install pytorch, torchvision, torchtext.
 RUN git clone --recursive  https://github.com/pytorch/pytorch
 RUN cd pytorch && \
     git checkout tags/v1.3.0 && \
     git submodule sync && \
-    git submodule update --init && \
+    git submodule update --init --recursive && \
     TORCH_CUDA_ARCH_LIST="3.5 3.7 5.2 6.0 6.1 7.0+PTX" TORCH_NVCC_FLAGS="-Xfatbin -compress-all" \
     CMAKE_PREFIX_PATH="$(dirname $(which $HOME/conda/bin/conda))/../" \
-    pip install -v .
+    python setup.py install 
+#instead of pip install . -v
 RUN git clone https://github.com/pytorch/vision.git && cd vision && git checkout v0.4.0 && python setup.py install
 RUN $HOME/conda/envs/pytorch-py$PYTHON_VERSION/bin/pip install --upgrade git+https://github.com/pytorch/text
 RUN $HOME/conda/envs/pytorch-py$PYTHON_VERSION/bin/pip install spacy
