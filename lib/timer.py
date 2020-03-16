@@ -22,7 +22,7 @@ class TimerBase(object):
         self.start = time.time()
 
     @contextmanager
-    def __call__(self, label):
+    def __call__(self, label, epoch=0):
         self.record(label+'_start')
         yield
         self.record(label+'_end')
@@ -38,6 +38,9 @@ class TimerBase(object):
         print('timeline: {}'.format(self.timestamps))
         print('elapsed_time: {}'.format(self.elapsed_time))
         print('------------------------------------------------')
+
+    def summary():
+        return 'no summary'
 
     def wait(self, event, handle):
         pass
