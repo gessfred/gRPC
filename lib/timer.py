@@ -23,7 +23,9 @@ class TimerBase(object):
 
     @contextmanager
     def __call__(self, label):
-        pass
+        self.record(label+'_start')
+        yield
+        self.record(label+'_end')
 
     def record(self, label):
         pass
@@ -65,12 +67,14 @@ class TimerBase(object):
                     'world_size': dist.get_world_size(),
                     'rank': dist.get_rank(),
                     'backend': dist.get_backend(),
-                    'branch': check_output(['git', '--git-dir', path, 'branch']).decode('utf-8').split(' ')[1].split('\n')[0],
-                    'commit': check_output(['git', '--git-dir', path, 'show', '--summary']).decode("utf-8").split(' ')[1].split('\n')[0],
                 }
                 print(data)
                 client['admin']['microbenchmarks'].insert_one(data)
+"""
 
+                    'branch': check_output(['git', '--git-dir', path, 'branch']).decode('utf-8').split(' ')[1].split('\n')[0],
+                    'commit': check_output(['git', '--git-dir', path, 'show', '--summary']).decode("utf-8").split(' ')[1].split('\n')[0],
+"""
 
 class CUDATimer(TimerBase):
 
@@ -86,10 +90,8 @@ class CUDATimer(TimerBase):
     def track(self, handle):
         pass
 
-"""class CPUTimer(TimerBase):
+class CPUTimer(TimerBase):
     def record(self, label):
-        event = torch.cuda.Event(enable_timing=True)
-        event.record()
         self.timestamps[label] = time.perf_counter()
         return event
 
@@ -98,4 +100,12 @@ class CUDATimer(TimerBase):
         
     def track(self, handle):
         pass
-"""
+
+class Timer(TimerBase):
+    def __init__():
+        super().__init__()
+        self.cpu = CPUTimer()
+        self.cuda = CUDATimer()
+    
+    def record(self, label):
+        return self.cuda.record(label)
