@@ -58,6 +58,7 @@ class TimerBase(object):
     def upload(self, conf):
         path = '/pyparsa/.git'
         self.close()
+        print('uploading...')
         with open(os.environ['MONGO_USR']) as usr:
             with open(os.environ['MONGO_PWD']) as pwd:
                 client = MongoClient('mongodb://iccluster095.iccluster.epfl.ch:32396', username=usr.read(), password=pwd.read())
