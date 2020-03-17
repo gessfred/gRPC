@@ -92,7 +92,7 @@ class CUDATimer(TimerBase):
     def record(self, label):
         event = torch.cuda.Event(enable_timing=True)
         event.record()
-        self.timestamps += {'label': label, 'stamp': time.perf_counter()}
+        self.timestamps += [{'label': label, 'stamp': time.perf_counter()}]
         return event
 
     @contextmanager
@@ -100,7 +100,7 @@ class CUDATimer(TimerBase):
         start = self.record(label+'_start')
         yield
         end = self.record(label+'_end')
-        self.events += {'label': label, 'start': start, 'end': end}
+        self.events += [{'label': label, 'start': start, 'end': end}]
 
     def wait(self, event, handle):
         pass
