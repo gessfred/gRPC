@@ -72,6 +72,12 @@ class TimerBase(object):
                     'world_size': dist.get_world_size(),
                     'rank': dist.get_rank(),
                     'backend': dist.get_backend(),
+                    'arch': conf.arch,
+                    'optimizer': conf.optimizer,
+                    'lr': conf.lr,
+                    'data': conf.data,
+                    'batch_size': conf.batch_size,
+                    'num_epochs': conf.num_epochs,
                 }
                 print(data)
                 client['admin']['eval'].insert_one(data)
