@@ -20,6 +20,7 @@ class TimerBase(object):
         self.elapsed_times = []
         self.events_durations = {}
         self.start = time.time()
+        self.tracking = []
 
     @contextmanager
     def __call__(self, label, epoch=0):
@@ -76,6 +77,7 @@ class TimerBase(object):
                     'batch_size': conf.batch_size,
                     'num_epochs': conf.num_epochs,
                     'aggregator': conf.aggregator,
+                    'tracking': self.tracking,
                 }
                 print(data)
                 client['admin']['eval'].insert_one(data)
