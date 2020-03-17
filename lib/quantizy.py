@@ -9,34 +9,31 @@ dataSz = 32
 """
 GPU functions
 """
-def quantize_gpu(tensor, device):
-    #assume a 1-d tensor
-    s = tensor.shape[0]//32
-    cuda = device
-    return  (((torch.sign(tensor).int()+1)/2) \
-            * (torch.zeros(s*32, dtype=torch.int, device=cuda)+2).pow(torch.arange(32, device=cuda).repeat(s)) \
-            ).reshape((-1, 32)).cumsum(dim=1)[:,31]
-
-def quantize_gpu_gen(tensor, device, bits):
+#assumes 1-d tensor and normalized (range -1,1), otherwise clamping will be performed.
+def quantize_gpu(tensor, bits, cuda):
     pack = 32//bits
     bins = 2**bits
-    max_ = tensor.max()
-    min_ = tensor.min()
-    #assume a 1-d tensor
-    s = tensor.shape[0]//pack
-    cuda = device
+    n = tensor.shape[0]
+    clamped_tensor = tensor.abs().clamp(3/(2*bins), 1)*(tensor.lt(0).logical_not()*2-1)
+    rounded_tensor = (((clamped_tensor)*(bins//2)).clamp(-bins//2, bins//2)).round()
+    return  ((rounded_tensor + rounded_tensor.lt(0)*1 +(bins//2 -1)).to(torch.int32) \
+            * (torch.zeros(n, dtype=torch.int32, device=cuda)+2).pow(torch.arange(0, 32, bits, device=cuda).repeat(n//pack)) \
+            ).reshape((-1, pack)).cumsum(dim=1)[:,pack-1].to(torch.int32)
 
-    return  ((tensor/(max_-min_)*bins).clamp(-bins+0.1, bin).ceil().int()+((bins//2)+1) \
-            * (torch.zeros(s*32, dtype=torch.int, device=cuda)+2).pow(torch.arange(0, 32, bits, device=cuda).repeat(s)) \
-            ).reshape((-1, 32)).cumsum(dim=1)[:,31]
+    # return  ((((tensor+1)*(bins//2)).clamp(0.1, bins-0.1)-1).ceil().to(torch.int32) \
+    #         * (torch.zeros(n, dtype=torch.int32, device=cuda)+2).pow(torch.arange(0, 32, bits, device=cuda).repeat(n//pack)) \
+    #         ).reshape((-1, pack)).cumsum(dim=1)[:,pack-1].to(torch.int32)
 
-def unquantize_gpu(tensor, device):
-    #assume a 1-d tensor
-    s = tensor.shape[0]
-    cuda = device
-    res = tensor.repeat_interleave(32)
-    div = (torch.zeros(s*32, dtype=torch.int, device=cuda)+2).pow(torch.arange(32, device=cuda).repeat(s))
-    return res
+#assumes 1-d tensor and normalized (range -1,1), otherwise clamping will be performed.
+def unquantize_gpu(tensor, bits, cuda):
+    pack = 32//bits
+    bins = 2**bits
+    n = tensor.shape[0] * pack
+    res = tensor.repeat_interleave(pack)
+    b = (torch.zeros(n, dtype=torch.int32, device=cuda)+2).pow(torch.arange(0, 32, bits, device=cuda).repeat(n//pack))
+    tmp = (res & (b*(bins-1)))/b
+    tmp2 = (tmp + tmp.lt(0)*bins).float() - (bins/2)
+    return (tmp2 + (tmp2.lt(0).logical_not()))/(bins/2)
 
 """
 Naive functions
@@ -114,7 +111,7 @@ def quantizy(version):
         "ext": [quantize_shrink, unquantize_shrink],
         "ext_par": [quantize_shrink_par, unquantize_shrink_par],
         "general": [quantize_general, unquantize_general],
-        "gpu": [quantize_gpu_gen]
+        "gpu": [quantize_gpu, unquantize_gpu]
     }
     return versions[version]
 #
