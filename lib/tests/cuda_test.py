@@ -56,7 +56,7 @@ def check_quantize(q, uq, device=None):
 
 def check_speed(q, uq, size=10, iters=1000, device=None):
 
-    tensor = torch.rand(32*2**size)*2-1
+    tensor = torch.rand(32*2**size, device=device)*2-1
 
     for bits in [1,2,4,8]:
         print('bits: {}'.format(bits))
@@ -83,6 +83,7 @@ if __name__ == '__main__':
     q, uq = quantizy('gpu')
     device = check_cuda()
     check_quantize(q, uq, device= device)
-    check_speed(q, uq, size=16, device=device)
     print("Using CPU:")
     check_speed(q, uq, size=16, device=None)
+    print("Using GPU:".format(cuda_device))
+    check_speed(q, uq, size=16, device=device)
