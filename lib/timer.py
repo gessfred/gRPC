@@ -13,7 +13,7 @@ class TimerBase(object):
         super().__init__()
         self.clock = time.perf_counter()
         self.name = name
-        self.timestamps = {} # for timeline synchronisation
+        self.timestamps = [] # for timeline synchronisation
         self.events = {}
         self.elapsed_time = 0
         self.closed = False
@@ -23,10 +23,7 @@ class TimerBase(object):
 
     @contextmanager
     def __call__(self, label, epoch=0):
-        start = self.record(label+'_start')
-        yield
-        end = self.record(label+'_end')
-        self.events[label] = [start, end]
+        pass
 
     def record(self, label):
         pass
@@ -53,7 +50,6 @@ class TimerBase(object):
         torch.cuda.synchronize()
         self.closed = True
         self.elapsed_time = time.time() - self.start
-        self.events_durations = {k: v[0].elapsed_time(v[1]) for k, v in self.events.items()}
 
     def upload(self, conf):
         path = '/pyparsa/.git'
@@ -78,6 +74,7 @@ class TimerBase(object):
                     'data': conf.data,
                     'batch_size': conf.batch_size,
                     'num_epochs': conf.num_epochs,
+                    'aggregator': conf.aggregator,
                 }
                 print(data)
                 client['admin']['eval'].insert_one(data)
@@ -92,8 +89,15 @@ class CUDATimer(TimerBase):
     def record(self, label):
         event = torch.cuda.Event(enable_timing=True)
         event.record()
-        self.timestamps[label] = time.perf_counter()
+        self.timestamps += {'label': label, 'stamp': time.perf_counter()}
         return event
+
+    @contextmanager
+    def __call__(self, label, epoch=0):
+        start = self.record(label+'_start')
+        yield
+        end = self.record(label+'_end')
+        self.events[label] += start.elapsed_time(end)
 
     def wait(self, event, handle):
         pass
@@ -101,22 +105,3 @@ class CUDATimer(TimerBase):
     def track(self, handle):
         pass
 
-class CPUTimer(TimerBase):
-    def record(self, label):
-        self.timestamps[label] = time.perf_counter()
-        return event
-
-    def wait(self, event, handle):
-        pass
-        
-    def track(self, handle):
-        pass
-
-class Timer(TimerBase):
-    def __init__():
-        super().__init__()
-        self.cpu = CPUTimer()
-        self.cuda = CUDATimer()
-    
-    def record(self, label):
-        return self.cuda.record(label)
