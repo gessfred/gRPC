@@ -5,39 +5,66 @@ import torch
 import time
 from quantizy import quantizy
 
-def check_quantize(fn, cuda):
-    print('Checking quantization...')
-    tensor = torch.tensor([
-    -0.3868, -0.3625,  1.4073,  1.3122,  0.2161, -0.0865, -0.6423, -0.4744,
-    -1.5699, -0.0692, -0.3361,  2.4448, -0.1353,  0.2083, -1.4788, -0.7977,
-    -0.5271, -0.9620, -0.4317, -0.0900,  1.3423,  0.5249, -2.0423, -0.0221,
-    -0.6187,  0.8197, -0.3350,  1.0201,  0.7726,  1.2855,  0.1228,  0.4905],
-    device=cuda)
+def check_quantize(q, device):
+    # Bins are not of the same size as PyTorch uses half to even rounding.
 
-    res_1bit = [0b00111000000101000000110001011111]
-    res = [res_1bit]
+    # tensor size is a multiple of 32
+    tensor = torch.cat((torch.arange(-1,1+2/256,2/256, device=device), torch.zeros(31)))
 
+    # zero is mapped to the quantisation below
+    res_1bit = torch.cat(((torch.zeros(128)-1),(torch.zeros(129)+1),(torch.zeros(31)+1)))
 
-    #print(tensor)
-    for bits, expected in zip([1],res):
+    res_2bit = torch.cat(((torch.zeros(33)-1),(torch.zeros(95)-.5),(torch.zeros(96)+.5),(torch.zeros(33)+1),(torch.zeros(31)+.5)))
+
+    res_4bit = torch.cat(((torch.zeros(9)-1),(torch.zeros(15)-.875),(torch.zeros(17)-.75),(torch.zeros(15)-.625)
+                ,(torch.zeros(17)-.5),(torch.zeros(15)-.375),(torch.zeros(17)-0.25),(torch.zeros(23)-.125)
+                ,(torch.zeros(24)+.125),(torch.zeros(17)+.25),(torch.zeros(15)+.375),(torch.zeros(17)+.5)
+                ,(torch.zeros(15)+.625),(torch.zeros(17)+.75),(torch.zeros(15)+.875),(torch.zeros(9)+1),(torch.zeros(31)+.125)))
+
+    res_8bit = tensor.clone()
+    res_8bit[128] = res_8bit[129]
+    for i in range(257,288):
+        res_8bit[i] = res_8bit[129]
+
+    res = [res_1bit,res_2bit,res_4bit,res_8bit]
+
+    for bits, expected in zip([1,2,4,8], res):
         print('bits: {}'.format(bits))
-        actual = fn(tensor, bits, 1)
-        torch.cuda.synchronize()
-        assert( len(expected) == len(actual) )
-        print(' length correct')
-        for val, e in zip(actual.data, expected):
-            a = val.item()
-            print(' expected: {}, actual: {}'.format(e,a), end='')
-            assert(bin(a) == bin(e))
-            print(' --- correct')
-        print()
+        quantized = q(tensor, bits, device)
+        unquantized = uq(quantized, bits, device).cpu()
+        if len(expected) == len(unquantized):
+            print(' length correct')
+        else:
+
+            print('Expected: {}'.format(expected.shape))
+            print('Received: {}'.format(unquantized.shape))
+            return
+
+        if torch.eq(unquantized, expected).all():
+            print(' elements correct')
+            print()
+        else:
+            print('Expected: {}'.format(expected))
+            print('Quantized: {}'.format(quantized))
+            print('Unquantized: {}'.format(unquantized))
+            index = torch.eq(unquantized, expected).logical_not().nonzero()
+            print(index)
+            print(tensor[index])
+            print(expected[index])
+            print(unquantized[index])
+            return
+
 
 def check_cuda():
-    assert torch.cuda.is_available()
-    cuda_device = torch.device("cuda")
+    if torch.cuda.is_available():
+        cuda_device = torch.device("cuda")
+        print("Using CUDA: {}".format(cuda_device))
+    else:
+        cuda_device = None
+        print("Using CPU:")
     return cuda_device
 
 if __name__ == '__main__':
-    q, uq = quantizy('general')
-    cuda = check_cuda()
-    check_quantize(q, cuda)
+    q, uq = quantizy('gpu')
+    device = check_cuda()
+    check_quantize(q, device)
