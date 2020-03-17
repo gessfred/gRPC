@@ -14,7 +14,7 @@ class TimerBase(object):
         self.clock = time.perf_counter()
         self.name = name
         self.timestamps = [] # for timeline synchronisation
-        self.events = {}
+        self.events = []
         self.elapsed_time = 0
         self.closed = False
         self.elapsed_times = []
@@ -97,7 +97,7 @@ class CUDATimer(TimerBase):
         start = self.record(label+'_start')
         yield
         end = self.record(label+'_end')
-        self.events[label] += start.elapsed_time(end)
+        self.events += {'label': label, 'elapsed': start.elapsed_time(end)}
 
     def wait(self, event, handle):
         pass
