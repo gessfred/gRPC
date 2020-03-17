@@ -50,6 +50,7 @@ class TimerBase(object):
         torch.cuda.synchronize()
         self.closed = True
         self.elapsed_time = time.time() - self.start
+        self.events = [{'label': rec['label'], 'elapsed_time': rec['start'].elapsed_time(rec['end'])} for rec in self.events]
 
     def upload(self, conf):
         path = '/pyparsa/.git'
@@ -97,7 +98,7 @@ class CUDATimer(TimerBase):
         start = self.record(label+'_start')
         yield
         end = self.record(label+'_end')
-        self.events += {'label': label, 'elapsed': start.elapsed_time(end)}
+        self.events += {'label': label, 'start': start, 'end': end}
 
     def wait(self, event, handle):
         pass
