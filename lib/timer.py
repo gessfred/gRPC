@@ -51,9 +51,7 @@ class TimerBase(object):
         torch.cuda.synchronize()
         self.closed = True
         self.elapsed_time = time.time() - self.start
-        print('EVENTS')
         self.events = [{'label': rec['label'], 'elapsed_time': rec['start'].elapsed_time(rec['end'])} for rec in self.events]
-        print(self.events)
 
     def upload(self, conf):
         path = '/pyparsa/.git'
