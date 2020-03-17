@@ -36,13 +36,13 @@ object Deploy extends App {
     val tag = "tao"
     def run(rank: Int) = Command("/home/user/LocalSGD-Code/distributed_code", 
                     "main.py",
-                    ("--arch",  "resnet20") ::
+                    ("--arch",  "resnet50") ::
                     ("--local_rank", rank.toString) ::
                     ("--optimizer", "local_sgd") ::
                     ("--avg_model", "True") ::
                     ("--experiment", "demo") ::
                     ("--manual_seed", "6") ::
-                    ("--data", "cifar10") ::
+                    ("--data", "cifar100") ::
                     ("--pin_memory", "True") :: // DataLoader: if True, the data loader will copy Tensors into CUDA pinned memory 
                     ("--batch_size", "128") ::
                     ("--base_batch_size", "64") ::
