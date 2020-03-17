@@ -55,7 +55,7 @@ class TimerBase(object):
         self.elapsed_time = time.time() - self.start
         self.events_durations = {k: v[0].elapsed_time(v[1]) for k, v in self.events.items()}
 
-    def upload(self):
+    def upload(self, conf):
         path = '/pyparsa/.git'
         self.close()
         with open(os.environ['MONGO_USR']) as usr:
@@ -71,9 +71,10 @@ class TimerBase(object):
                     'world_size': dist.get_world_size(),
                     'rank': dist.get_rank(),
                     'backend': dist.get_backend(),
+                    'conf': conf,
                 }
                 print(data)
-                client['admin']['microbenchmarks'].insert_one(data)
+                client['admin']['eval'].insert_one(data)
 """
 
                     'branch': check_output(['git', '--git-dir', path, 'branch']).decode('utf-8').split(' ')[1].split('\n')[0],
