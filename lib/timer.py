@@ -13,16 +13,17 @@ class TimerBase(object):
         super().__init__()
         self.clock = time.perf_counter()
         self.name = name
-        self.timestamps = {} # for timeline synchronisation
-        self.events = {}
+        self.timestamps = [] # for timeline synchronisation
+        self.events = []
         self.elapsed_time = 0
         self.closed = False
         self.elapsed_times = []
         self.events_durations = {}
         self.start = time.time()
+        self.tracking = []
 
     @contextmanager
-    def __call__(self, label):
+    def __call__(self, label, epoch=0):
         pass
 
     def record(self, label):
@@ -37,6 +38,9 @@ class TimerBase(object):
         print('elapsed_time: {}'.format(self.elapsed_time))
         print('------------------------------------------------')
 
+    def summary(arg):
+        return 'no summary'
+
     def wait(self, event, handle):
         pass
         
@@ -47,11 +51,12 @@ class TimerBase(object):
         torch.cuda.synchronize()
         self.closed = True
         self.elapsed_time = time.time() - self.start
-        self.events_durations = {k: v[0].elapsed_time(v[1]) for k, v in self.events.items()}
+        self.events = [{'label': rec['label'], 'elapsed_time': rec['start'].elapsed_time(rec['end'])} for rec in self.events]
 
-    def upload(self):
+    def upload(self, conf):
         path = '/pyparsa/.git'
         self.close()
+        print('uploading...')
         with open(os.environ['MONGO_USR']) as usr:
             with open(os.environ['MONGO_PWD']) as pwd:
                 client = MongoClient('mongodb://iccluster095.iccluster.epfl.ch:32396', username=usr.read(), password=pwd.read())
@@ -65,20 +70,36 @@ class TimerBase(object):
                     'world_size': dist.get_world_size(),
                     'rank': dist.get_rank(),
                     'backend': dist.get_backend(),
+                    'arch': conf.arch,
+                    'optimizer': conf.optimizer,
+                    'lr': conf.lr,
+                    'data': conf.data,
+                    'batch_size': conf.batch_size,
+                    'num_epochs': conf.num_epochs,
+                    'aggregator': conf.aggregator,
+                    'tracking': self.tracking,
+                }
+                client['admin']['eval'].insert_one(data)
+"""
+
                     'branch': check_output(['git', '--git-dir', path, 'branch']).decode('utf-8').split(' ')[1].split('\n')[0],
                     'commit': check_output(['git', '--git-dir', path, 'show', '--summary']).decode("utf-8").split(' ')[1].split('\n')[0],
-                }
-                print(data)
-                client['admin']['microbenchmarks'].insert_one(data)
-
+"""
 
 class CUDATimer(TimerBase):
 
     def record(self, label):
         event = torch.cuda.Event(enable_timing=True)
         event.record()
-        self.timestamps[label] = time.perf_counter()
+        self.timestamps += [{'label': label, 'stamp': time.perf_counter()}]
         return event
+
+    @contextmanager
+    def __call__(self, label, epoch=0):
+        start = self.record(label+'_start')
+        yield
+        end = self.record(label+'_end')
+        self.events += [{'label': label, 'start': start, 'end': end}]
 
     def wait(self, event, handle):
         pass
@@ -86,16 +107,3 @@ class CUDATimer(TimerBase):
     def track(self, handle):
         pass
 
-"""class CPUTimer(TimerBase):
-    def record(self, label):
-        event = torch.cuda.Event(enable_timing=True)
-        event.record()
-        self.timestamps[label] = time.perf_counter()
-        return event
-
-    def wait(self, event, handle):
-        pass
-        
-    def track(self, handle):
-        pass
-"""
