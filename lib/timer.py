@@ -82,7 +82,6 @@ class TimerBase(object):
                     'aggregator': conf.aggregator,
                     'tracking': self.tracking,
                 }
-                print(data)
                 client['admin']['eval'].insert_one(data)
 """
 
