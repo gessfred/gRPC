@@ -31,7 +31,7 @@ class TimerBase(object):
         self.start = time.time()
         self.tracking = []
         self.events = []
-        self.ready_events = []
+        self.ready_events = {}
 
     @contextmanager
     def __call__(self, label, epoch=0):
