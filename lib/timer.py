@@ -8,6 +8,16 @@ import uuid
 import os
 from subprocess import Popen, PIPE, check_output
 
+import torch
+from contextlib import contextmanager
+import torch.distributed as dist
+import datetime
+import time
+from pymongo import MongoClient
+import uuid
+import os
+from subprocess import Popen, PIPE, check_output
+
 class TimerBase(object):
     def __init__(self, name):
         super().__init__()
@@ -53,15 +63,6 @@ class TimerBase(object):
         self.closed = True
         self.elapsed_time = time.time() - self.start
 
-    def epoch(self):
-        torch.cuda.synchronize()
-        for rec in self.events:
-            label = rec['label']
-            if label not in self.ready_events:
-                self.ready_events[label] = 0
-            self.ready_events[label] += rec['start'].elapsed_time(rec['end']
-
-
     def upload(self, conf):
         path = '/pyparsa/.git'
         self.close()
@@ -88,11 +89,18 @@ class TimerBase(object):
                     'tracking': self.tracking,
                 }
                 client['admin']['eval'].insert_one(data)
-"""
+    
+    def epoch(self):
+        torch.cuda.synchronize()
+        for rec in self.events:
+            label = rec['label']
+            if label not in self.ready_events:
+                self.ready_events[label] = 0
+            self.ready_events[label] += rec['start'].elapsed_time(rec['end'])
+        del self.events
+        self.events = []
 
-                    'branch': check_output(['git', '--git-dir', path, 'branch']).decode('utf-8').split(' ')[1].split('\n')[0],
-                    'commit': check_output(['git', '--git-dir', path, 'show', '--summary']).decode("utf-8").split(' ')[1].split('\n')[0],
-"""
+#class 
 
 class CUDATimer(TimerBase):
 
@@ -114,4 +122,3 @@ class CUDATimer(TimerBase):
         
     def track(self, handle):
         pass
-
