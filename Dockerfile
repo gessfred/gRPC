@@ -1,5 +1,5 @@
 FROM nvidia/cuda:10.0-cudnn7-devel-ubuntu16.04
-RUN apt-get update -y
+RUN apt-get update -y 
 RUN apt-get install -y --no-install-recommends python3 python3-virtualenv build-essential python3-dev iproute2 procps git cmake autoconf automake autotools-dev g++ pkg-config libtool git wget nvidia-cuda-toolkit libopenmpi-dev openmpi-bin libhdf5-openmpi-dev
 ENV HOME=/home
 ENV LIB /pyparsa
@@ -42,7 +42,7 @@ RUN cd pytorch && \
     git submodule update --init --recursive && \
     TORCH_CUDA_ARCH_LIST="3.5 3.7 5.2 6.0 6.1 7.0+PTX" TORCH_NVCC_FLAGS="-Xfatbin -compress-all" \
     CMAKE_PREFIX_PATH="$(dirname $(which $HOME/conda/bin/conda))/../" \
-    python setup.py install
+    python setup.py install 
 #instead of pip install . -v
 RUN git clone https://github.com/pytorch/vision.git && cd vision && git checkout v0.4.0 && python setup.py install
 RUN $HOME/conda/envs/pytorch-py$PYTHON_VERSION/bin/pip install --upgrade git+https://github.com/pytorch/text
