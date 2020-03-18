@@ -14,13 +14,13 @@ class TimerBase(object):
         self.clock = time.perf_counter()
         self.name = name
         self.timestamps = [] # for timeline synchronisation
-        self.events = []
         self.elapsed_time = 0
         self.closed = False
         self.elapsed_times = []
         self.events_durations = {}
         self.start = time.time()
         self.tracking = []
+        self.events = []
         self.ready_events = []
 
     @contextmanager
