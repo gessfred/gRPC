@@ -3,6 +3,8 @@
 #include <vector>
 #include <stdexcept>
 
+#define integer_bits 32
+
 /**
 std::vector<float> _1bit = {-0.6745, 0, 0.6745};
 std::vector<float> _2bit = {-1.1503, -0.6745, -0.3186, 0, 0.3186, 0.6745, 1.1503};
@@ -21,6 +23,7 @@ std::vector<float> _4bit_q = {-1.5341, -1.1503, -0.8871, -0.6745, -0.4888, -0.31
 std::vector<float> _4bit_uq = {-1.8627, -1.3180, -1.0100, -0.7764, -0.5791, -0.4023, -0.2372, -0.0784,
                             0.0784,  0.2372, 0.4023,  0.5791, 0.7764, 1.0100, 1.3180, 1.8627};
 
+
 std::map<int, std::vector<float>> quantization_levels = {
   {1, _1bit_q},
   {2, _2bit_q},
@@ -32,7 +35,7 @@ std::map<int, std::vector<float>> unquantization_levels = {
   {4, _4bit_uq}
 };
 
-int integer_bits = 32;
+
 
 
 torch::Tensor quantize_general(torch::Tensor tensor, size_t bits, size_t numberOfThreads){
@@ -46,13 +49,13 @@ torch::Tensor quantize_general(torch::Tensor tensor, size_t bits, size_t numberO
       throw std::invalid_argument( "Tensor must have a multiple of 32 elements." );
     }
 
-    size_t N2 = (N / 32) * bits;
+    size_t N2 = (N / integer_bits) * bits;
     auto res = torch::zeros(N2, torch::kInt32);
     auto res_a = res.accessor<int,1>();
 
     std::vector<float> quantization_limits = quantization_levels[bits];
     size_t length = quantization_limits.size();
-    size_t pack_limit = 32/bits;
+    size_t pack_limit = integer_bits/bits;
 
     #pragma omp parallel for num_threads(numberOfThreads)
     for(size_t i = 0; i < N2; i++){
@@ -81,7 +84,7 @@ torch::Tensor unquantize_general(torch::Tensor tensor, size_t bits, size_t numbe
     auto tensor_a = tensor.accessor<int,1>();
     size_t N2 = torch::size(tensor, 0);
 
-    size_t pack_limit = 32/bits;
+    size_t pack_limit = integer_bits/bits;
     unsigned int mask = (1<<bits)-1;
     std::vector<float> unquantization_values = unquantization_levels[bits];
 

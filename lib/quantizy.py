@@ -5,6 +5,36 @@ from q_par_cpp import quantize_shrink_par, unquantize_shrink_par
 from q_general_cpp import quantize_general, unquantize_general
 
 dataSz = 32
+
+"""
+GPU functions
+"""
+#assumes 1-d tensor and normalized (range -1,1), otherwise clamping will be performed.
+def quantize_gpu(tensor, bits, cuda):
+    pack = 32//bits
+    bins = 2**bits
+    n = tensor.shape[0]
+    clamped_tensor = tensor.abs().clamp(3/(2*bins), 1)*(tensor.lt(0).logical_not()*2-1)
+    rounded_tensor = (((clamped_tensor)*(bins//2)).clamp(-bins//2, bins//2)).round()
+    return  ((rounded_tensor + rounded_tensor.lt(0)*1 +(bins//2 -1)).to(torch.int32) \
+            * (torch.zeros(n, dtype=torch.int32, device=cuda)+2).pow(torch.arange(0, 32, bits, device=cuda).repeat(n//pack)) \
+            ).reshape((-1, pack)).cumsum(dim=1)[:,pack-1].to(torch.int32)
+
+    # return  ((((tensor+1)*(bins//2)).clamp(0.1, bins-0.1)-1).ceil().to(torch.int32) \
+    #         * (torch.zeros(n, dtype=torch.int32, device=cuda)+2).pow(torch.arange(0, 32, bits, device=cuda).repeat(n//pack)) \
+    #         ).reshape((-1, pack)).cumsum(dim=1)[:,pack-1].to(torch.int32)
+
+#assumes 1-d tensor and normalized (range -1,1), otherwise clamping will be performed.
+def unquantize_gpu(tensor, bits, cuda):
+    pack = 32//bits
+    bins = 2**bits
+    n = tensor.shape[0] * pack
+    res = tensor.repeat_interleave(pack)
+    b = (torch.zeros(n, dtype=torch.int32, device=cuda)+2).pow(torch.arange(0, 32, bits, device=cuda).repeat(n//pack))
+    tmp = (res & (b*(bins-1)))/b
+    tmp2 = (tmp + tmp.lt(0)*bins).float() - (bins/2)
+    return (tmp2 + (tmp2.lt(0).logical_not()))/(bins/2)
+
 """
 Naive functions
 """
@@ -80,7 +110,8 @@ def quantizy(version):
         "concept": [quantize_pof, unquantize_pof],
         "ext": [quantize_shrink, unquantize_shrink],
         "ext_par": [quantize_shrink_par, unquantize_shrink_par],
-        "general": [quantize_general, unquantize_general]
+        "general": [quantize_general, unquantize_general],
+        "gpu": [quantize_gpu, unquantize_gpu]
     }
     return versions[version]
 #
