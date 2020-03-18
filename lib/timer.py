@@ -21,6 +21,7 @@ class TimerBase(object):
         self.events_durations = {}
         self.start = time.time()
         self.tracking = []
+        self.ready_events = []
 
     @contextmanager
     def __call__(self, label, epoch=0):
@@ -48,10 +49,18 @@ class TimerBase(object):
         pass
 
     def close(self):
-        torch.cuda.synchronize()
+        self.epoch()
         self.closed = True
         self.elapsed_time = time.time() - self.start
-        self.events = [{'label': rec['label'], 'elapsed_time': rec['start'].elapsed_time(rec['end'])} for rec in self.events]
+
+    def epoch(self):
+        torch.cuda.synchronize()
+        for rec in self.events:
+            label = rec['label']
+            if label not in self.ready_events:
+                self.ready_events[label] = 0
+            self.ready_events[label] += rec['start'].elapsed_time(rec['end']
+            self.events = []
 
     def upload(self, conf):
         path = '/pyparsa/.git'
@@ -64,8 +73,7 @@ class TimerBase(object):
                     '_id': uuid.uuid4().hex,
                     'elapsed_time': self.elapsed_time, 
                     'clock': self.clock,
-                    'time_stamps': self.timestamps,
-                    'events': self.events_durations,
+                    'events': self.ready_events,
                     'name': self.name,
                     'world_size': dist.get_world_size(),
                     'rank': dist.get_rank(),
@@ -91,7 +99,7 @@ class CUDATimer(TimerBase):
     def record(self, label):
         event = torch.cuda.Event(enable_timing=True)
         event.record()
-        self.timestamps += [{'label': label, 'stamp': time.perf_counter()}]
+        #self.timestamps += [{'label': label, 'stamp': time.perf_counter()}]
         return event
 
     @contextmanager
