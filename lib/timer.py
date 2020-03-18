@@ -60,7 +60,8 @@ class TimerBase(object):
             if label not in self.ready_events:
                 self.ready_events[label] = 0
             self.ready_events[label] += rec['start'].elapsed_time(rec['end']
-            self.events = []
+        del self.events
+        self.events = []
 
     def upload(self, conf):
         path = '/pyparsa/.git'
