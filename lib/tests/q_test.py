@@ -56,7 +56,7 @@ def check_unquantize(q,uq):
         print(' elements correct')
         print()
 
-def check_quantize(fn, device):
+def check_quantize(fn):
     print('Checking quantization...')
     tensor = torch.tensor([
     -0.3868, -0.3625,  1.4073,  1.3122,  0.2161, -0.0865, -0.6423, -0.4744,
@@ -78,7 +78,7 @@ def check_quantize(fn, device):
     #print(tensor)
     for bits, expected in zip([1,2,4],res):
         print('bits: {}'.format(bits))
-        actual = fn(tensor, device, bits).cpu()
+        actual = fn(tensor, bits, 1)
         assert( len(expected) == len(actual) )
         print(' length correct')
         for val, e in zip(actual.data, expected):
@@ -108,28 +108,9 @@ def check_parallelisation(q,uq, max_threads = 32, size = 10, iters=100):
             print('threads: {:2}, time: {:6.6} / time: {:6.6}'.format(threads, str(exec_time_q), str(exec_time_uq)))
         print()
 
-def check_quantisation_gpu(q):
-    assert torch.cuda.is_available()
-    cuda_device = torch.device("cuda")
-
-    q_gpu = quantizy('gpu')[0]
-    q_vect = quantizy('general')[0]
-
-    tensor_cpu = torch.rand(32*12)
-    tensor_gpu = tensor_cpu.cuda()
-    res = q_gpu(tensor_gpu, torch.device('cuda:0')
-    res2 = q_vect(tensor_cpu, 1)
-    print(res)
-    print(res2)
-
-
 if __name__ == '__main__':
     q, uq = quantizy('general')
-    q_g = quantizy('gpu')[0]
-    assert torch.cuda.is_available()
-    device = torch.device("cuda")
-    check_quantize(q_g, device)
-    # check_unquantize(q,uq)
-    # check_equality(q,uq)
-    # check_parallelisation(q,uq, 24, 22, 1000)
-    # check_cuda(q,uq)
+    check_quantize(q)
+    check_unquantize(q,uq)
+    check_equality(q,uq)
+    check_parallelisation(q,uq, 32, 18, 5000)
