@@ -32,7 +32,6 @@ class TimerBase(object):
         self.tracking = []
         self.events = []
         self.ready_events = {}
-        self.epoch = 0
 
     @contextmanager
     def __call__(self, label, epoch=0):
@@ -60,7 +59,7 @@ class TimerBase(object):
         pass
 
     def close(self):
-        self.epoch()
+        self.close_epoch()
         self.closed = True
         self.elapsed_time = time.time() - self.start
 
