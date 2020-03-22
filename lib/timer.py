@@ -92,6 +92,7 @@ class TimerBase(object):
                     'aggregator': conf.aggregator,
                     'tracking': self.tracking,
                     'n_sub_process': conf.n_sub_process,
+                    'git': git,
                 }
                 client['admin']['eval'].insert_one(data)
     
