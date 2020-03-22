@@ -9,7 +9,9 @@ def toi1(self):
     return q
 
 def tof32(self):
-    unquantize_gpu(self, self.bits, torch.cuda.current_device())
+    u = unquantize_gpu(self, self.bits, torch.cuda.current_device())
+    u.bits = 32
+    return u
 
 torch.Tensor.toi1 = toi1
 torch.Tensor.toi2 = None
