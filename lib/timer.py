@@ -96,7 +96,7 @@ class TimerBase(object):
                 }
                 client['admin']['eval'].insert_one(data)
     
-    def epoch(self):
+    def close_epoch(self):
         torch.cuda.synchronize()
         for rec in self.events:
             label = rec['label']
