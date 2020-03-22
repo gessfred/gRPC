@@ -1,7 +1,10 @@
+import sys.process._
+import scala.language.postfixOps
+
 object Deploy extends App {
     def tab(x: Int) = 0.until(x).map(x => "  ").reduceLeft(_ + _)
     val env = Map("MASTER_ADDR" -> "192.168.0.4", "MASTER_PORT" -> "\"29500\"", "GLOO_SOCKET_IFNAME" -> "eth0")
-    val nodes = "iccluster088" :: "iccluster095" :: Nil
+    val nodes = "iccluster088" :: "iccluster095" :: "iccluster088" :: "iccluster095" :: Nil
     val cmd = "cat <<EOF | kubectl apply -f -\n"
     val eof = "\nEOF"
     case class Node(domain: String, rank: Int) {
@@ -46,14 +49,14 @@ object Deploy extends App {
                     ("--pin_memory", "True") :: // DataLoader: if True, the data loader will copy Tensors into CUDA pinned memory 
                     ("--batch_size", "128") ::
                     ("--base_batch_size", "64") ::
-                    ("--num_workers", "2") ::
+                    ("--num_workers", "4") ::
                     ("--num_epochs", "300") :: // pytorch DataLoader arg. refer to https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader
                     ("--partition_data", "random") ::
                     ("--reshuffle_per_epoch", "True") ::
                     ("--stop_criteria", "epoch") ::
-                    ("--n_mpi_process", "2") ::
+                    ("--n_mpi_process", "4") ::
                     ("--n_sub_process", "1") ::
-                    ("--world", "0,0") ::
+                    ("--world", "0,0,0,0") ::
                     ("--on_cuda", "True") ::
                     ("--use_ipc", "False") ::
                     ("--lr", "0.1") ::
@@ -146,61 +149,12 @@ ${run(node.rank)}
 |        value: /mnt/data
 |      - name: RANK
 |        value: \"${node.rank}\"""".stripMargin
-    val spec = nodes.zip(0.until(nodes.length)).map{
+    val spec = nodes.zipWithIndex.map{
         case (node, rank) => Node(node, rank)
     }.map(pod).mkString("\n---\n")//pod(nodes.head, 0, "master")
     println((cmd+spec+eof))
+    //val git: String = "git branch" !!
+
+    //println(git.split("\n").filter(_.contains("*"))(0).replaceAll("\\W", ""))
 }
 
-/*
-("--work_dir", ".") :: 
-                    ("--data", "cifar10") ::
-                    ("--arch", "resnet20") ::
-                    ("--data_dir", "./data") ::
-                    ("--lr", "0.01") ::
-                    ("--lr_scheduler", "MultiStepLR") ::
-                    ("--optimizer", "local_sgd") ::
-                    ("-j", "2") ::
-                    ("--world", "0,0") ::
-                    ("--hostfile", "hostfile") ::
-                    ("--local_rank", rank.toString) ::
-                    ("--remote_exec", "False") :: //??
-                    ("--use_lmdb_data", "False") :: //??
-                    ("--pin_memory", "True") ::
-                    ("--train_fast", "False") ::
-                    ("--stop_criteria", "epoch") ::
-                    ("--num_epochs", "90") ::
-                    ("--num_iterations", "32000") ::
-                    ("--avg_model", "False") ::
-                    ("--reshuffle_per_epoch", "False") ::
-                    ("--batch_size", "256") ::
-                    ("--lr_decay", "0.01") ::
-                    ("--lr_patience", "10") ::
-                    ("--lr_scaleup", "False") ::
-                    ("--lr_warmup", "False") ::
-                    ("--lr_warmup_epochs_upper_bound", "150") ::
-                    ("--adam_beta_1", "0.9") ::
-                    ("--adam_beta_2", "0.999") ::
-                    ("--adam_eps", "1e-08") ::
-                    ("--graph_topology", "complete") ::
-                    ("--compress_warmup_values", "0.75,0.9375,0.984375,0.996,0.999") :://??
-                    ("--compress_warmup_epochs", "0") ::
-                    ("--is_biased", "False") ::
-                    ("--majority_vote", "False") ::
-                    ("--consensus_stepsize", "0.9") ::
-                    ("--evaluate_consensus", "False") ::
-                    ("--mask_momentum", "False") ::
-                    ("--clip_grad", "False") ::
-                    ("--local_step", "1") ::
-                    ("--turn_on_local_step_from", "0") ::
-                    ("--momentum_factor", "0.9") ::
-                    ("--use_nesterov", "False") ::
-                    ("--weight_decay", "0.0005") ::
-                    ("--drop_rate", "0.0") ::
-                    ("--densenet_growth_rate", "12") ::
-                    ("--densenet_bc_mode", "False") ::
-                    ("--densenet_compression", "0.5") ::
-                    ("--wideresnet_widen_factor", "4") ::
-                    ("--rnn_n_hidden", "200") ::
-                    ("--rnn_n_layers", "2") ::
-*/

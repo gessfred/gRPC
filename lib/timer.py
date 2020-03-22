@@ -32,6 +32,7 @@ class TimerBase(object):
         self.tracking = []
         self.events = []
         self.ready_events = {}
+        self.epoch = 0
 
     @contextmanager
     def __call__(self, label, epoch=0):
@@ -67,6 +68,10 @@ class TimerBase(object):
         path = '/pyparsa/.git'
         self.close()
         print('uploading...')
+        git = {
+            'branch': os.environ['VCS_BRANCH'],
+            'commit': os.environ['VCS_COMMIT'],
+        }
         with open(os.environ['MONGO_USR']) as usr:
             with open(os.environ['MONGO_PWD']) as pwd:
                 client = MongoClient('mongodb://iccluster095.iccluster.epfl.ch:32396', username=usr.read(), password=pwd.read())
@@ -87,6 +92,8 @@ class TimerBase(object):
                     'num_epochs': conf.num_epochs,
                     'aggregator': conf.aggregator,
                     'tracking': self.tracking,
+                    'git': git,
+                    'n_sub_process': conf.n_sub_process,
                 }
                 client['admin']['eval'].insert_one(data)
     
