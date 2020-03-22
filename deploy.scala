@@ -4,7 +4,7 @@ import scala.language.postfixOps
 object Deploy extends App {
     def tab(x: Int) = 0.until(x).map(x => "  ").reduceLeft(_ + _)
     val env = Map("MASTER_ADDR" -> "192.168.0.4", "MASTER_PORT" -> "\"29500\"", "GLOO_SOCKET_IFNAME" -> "eth0")
-    val nodes = "iccluster088" :: "iccluster095" :: "iccluster088" :: "iccluster095" :: Nil
+    val nodes = "iccluster088" :: "iccluster095" :: Nil
     val cmd = "cat <<EOF | kubectl apply -f -\n"
     val eof = "\nEOF"
     case class Node(domain: String, rank: Int) {
@@ -22,20 +22,14 @@ object Deploy extends App {
             |${tab}args: [ $sep$bin$sep, ${argsStr} ]""".stripMargin
         }
     }
-    /*
---rnn_bptt_len 35  --rnn_clip 0.25  --rnn_use_pretrained_emb True  --rnn_tie_weights True  --rnn_weight_norm False  --manual_seed 6  --evaluate False  --summary_freq 100  --timestamp 1584012887_l2-0.0005_lr-0.01_epochs-90_batchsize-256_basebatchsize-None_num_mpi_process_1_n_sub_process-1_topology-complete_optim-local_sgd_comm_info-  --track_time False  --track_detailed_time False  --display_tracked_time False  --checkpoint ./data/checkpoint  --save_all_models False  --user lin  --project distributed_adam_type_algorithm  --backend mpi  --use_ipc False  --hostfile hostfile  --mpi_path $HOME/.openmpi  --python_path $HOME/conda/envs/pytorch-py3.6/bin/python  --num_workers 2  --n_mpi_process 1  --n_sub_process 1  --world 0,0  --on_cuda True  --comm_device cuda  --local_rank 0  --clean_python False
-      \
-      \
-       \
-        \
-      \
-        \
-       \
-      \
-       \
-        \
-    --python_path $HOME/conda/envs/pytorch-py3.6/bin/python --mpi_path $HOME/.openmpi/
-    */
+    
+    val br: String = "git branch" !!
+
+    val branch = br.split("\n").filter(_.contains("*"))(0).replaceAll("\\W", "")
+    val cm: String = "git log --oneline"!!
+
+    val commit = cm.split("\n").head.split(" ").head
+
     val tag = "tao"
     def run(rank: Int) = Command("/home/user/LocalSGD-Code/distributed_code", 
                     "main.py",
@@ -50,13 +44,13 @@ object Deploy extends App {
                     ("--batch_size", "128") ::
                     ("--base_batch_size", "64") ::
                     ("--num_workers", "4") ::
-                    ("--num_epochs", "300") :: // pytorch DataLoader arg. refer to https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader
+                    ("--num_epochs", "1") :: // pytorch DataLoader arg. refer to https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader
                     ("--partition_data", "random") ::
                     ("--reshuffle_per_epoch", "True") ::
                     ("--stop_criteria", "epoch") ::
-                    ("--n_mpi_process", "4") ::
-                    ("--n_sub_process", "1") ::
-                    ("--world", "0,0,0,0") ::
+                    ("--n_mpi_process", "2") ::
+                    ("--n_sub_process", "2") ::
+                    ("--world", "0,1,0,1") ::
                     ("--on_cuda", "True") ::
                     ("--use_ipc", "False") ::
                     ("--lr", "0.1") ::
@@ -113,9 +107,6 @@ object Deploy extends App {
 |      image: gessfred/pyparsa:${tag}
 |      imagePullPolicy: Always
 ${run(node.rank)}
-|      resources:
-|        limits:
-|          nvidia.com/gpu: 1
 |      ports:
 |      - name: rendezvous
 |        containerPort: 60000
@@ -131,20 +122,18 @@ ${run(node.rank)}
 |        value: /etc/mdb-creds/admin/username
 |      - name: MONGO_PWD
 |        value: /etc/mdb-creds/admin/password
-|      - name: NCCL_DEBUG
-|        value: INFO
 |      - name: MASTER_ADDR
 |        value: 192.168.0.6
 |      - name: MASTER_PORT
 |        value: "29500"
 |      - name: NCCL_SOCKET_IFNAME
 |        value: eth0
-|      - name: NCCL_DEBUG_SUBSYS
-|        value: NET
 |      - name: NCCL_COMM_ID
 |        value: 192.168.0.6:29500
-|      - name: GLOO_SOCKET_IFNAME
-|        value: eth0
+|      - name: VCS_BRANCH
+|        value: $branch
+|      - name: VCS_COMMIT
+|        value: $commit
 |      - name: DATAPATH
 |        value: /mnt/data
 |      - name: RANK
@@ -153,8 +142,6 @@ ${run(node.rank)}
         case (node, rank) => Node(node, rank)
     }.map(pod).mkString("\n---\n")//pod(nodes.head, 0, "master")
     println((cmd+spec+eof))
-    //val git: String = "git branch" !!
 
-    //println(git.split("\n").filter(_.contains("*"))(0).replaceAll("\\W", ""))
 }
 

@@ -92,7 +92,6 @@ class TimerBase(object):
                     'num_epochs': conf.num_epochs,
                     'aggregator': conf.aggregator,
                     'tracking': self.tracking,
-                    'git': git,
                     'n_sub_process': conf.n_sub_process,
                 }
                 client['admin']['eval'].insert_one(data)
