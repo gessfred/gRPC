@@ -6,28 +6,41 @@ from q_general_cpp import quantize_general, unquantize_general
 
 dataSz = 32
 
+class Pack(torch.Tensor):
+    def __init__(self, tensor, padding, true_shape, bits):
+        super().__init__()
+        self.data = tensor.data
+        self.padding = padding
+        self.true_shape = true_shape
+        self.bits = bits
+
+    def tof32(self):
+        u = unquantize_gpu(self.data, self.bits)
+        u[:-self.padding].reshape(true_shape)
+
+
 """
 GPU functions
 """
 #assumes 1-d tensor and normalized (range -1,1), otherwise clamping will be performed.
 def quantize_gpu(tensor, bits):
-    dev = tensor.device
+    tensor_ = tensor.view(-1) #flatten tensor
+    dev = tensor_.device
     pack = 32//bits
     bins = 2**bits
     padding = 0
-    n = tensor.shape[0]
+    n = tensor_.shape[0]
     if not (n % 32) == 0:
-        pad_size = list(tensor.size())[0] % 32
-        tensor = torch.nn.functional.pad(tensor, (0, (32 - pad_size) % 32))
-        n = tensor.shape[0]
+        pad_size = list(tensor_.size())[0] % 32
+        tensor_ = torch.nn.functional.pad(tensor_, (0, (32 - pad_size) % 32))
+        n = tensor_.shape[0]
         padding = (32 - pad_size) % 32
-    clamped_tensor = tensor.abs().clamp(3/(2*bins), 1)*(tensor.lt(0).logical_not()*2-1)
+    clamped_tensor = tensor_.abs().clamp(3/(2*bins), 1)*(tensor_.lt(0).logical_not()*2-1)
     rounded_tensor = (((clamped_tensor)*(bins//2)).clamp(-bins//2, bins//2)).round()
     res = ((rounded_tensor + rounded_tensor.lt(0)*1 +(bins//2 -1)).to(torch.int32) \
             * (torch.zeros(n, dtype=torch.int32, device=dev)+2).pow(torch.arange(0, 32, bits, device=dev).repeat(n//pack)) \
             ).reshape((-1, pack)).cumsum(dim=1)[:,pack-1].to(torch.int32)
-    res.padding = padding
-    return res
+    return Pack(tensor, padding, tensor.shape, bits)
 
     # return  ((((tensor+1)*(bins//2)).clamp(0.1, bins-0.1)-1).ceil().to(torch.int32) \
     #         * (torch.zeros(n, dtype=torch.int32, device=cuda)+2).pow(torch.arange(0, 32, bits, device=cuda).repeat(n//pack)) \
@@ -43,8 +56,7 @@ def unquantize_gpu(tensor, bits):
     b = (torch.zeros(n, dtype=torch.int32, device=dev)+2).pow(torch.arange(0, 32, bits, device=dev).repeat(n//pack))
     tmp = (res & (b*(bins-1)))/b
     tmp2 = (tmp + tmp.lt(0)*bins).float() - (bins/2)
-    t = (tmp2 + (tmp2.lt(0).logical_not()))/(bins/2)
-    return t[:-tensor.padding]
+    return (tmp2 + (tmp2.lt(0).logical_not()))/(bins/2)
 
 """
 Naive functions
