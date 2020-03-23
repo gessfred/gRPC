@@ -33,6 +33,7 @@ class TimerBase(object):
         self.events = []
         self.ready_events = {}
         self.epoch_idx = 0
+        self.ts = {}
 
     @contextmanager
     def __call__(self, label, epoch=0):
@@ -94,6 +95,7 @@ class TimerBase(object):
                     'tracking': self.tracking,
                     'n_sub_process': conf.n_sub_process,
                     'git': git,
+                    'time_stamps': self.ts,
                 }
                 client['admin']['eval'].insert_one(data)
     
@@ -108,7 +110,9 @@ class TimerBase(object):
         self.events = []
         self.epoch_idx += 1
         if self.epoch_idx % 5 == 0:
-            pass
+            self.ts[self.epoch_idx] = self.timestamps
+            del self.timestamps
+            self.timestamps = []
 
 #class 
 
@@ -117,7 +121,7 @@ class CUDATimer(TimerBase):
     def record(self, label):
         event = torch.cuda.Event(enable_timing=True)
         event.record()
-        #self.timestamps += [{'label': label, 'stamp': time.perf_counter()}]
+        self.timestamps += [{'label': label, 'stamp': time.perf_counter()}]
         return event
 
     @contextmanager

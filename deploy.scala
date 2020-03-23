@@ -35,7 +35,7 @@ object Deploy extends App {
                     "main.py",
                     ("--arch",  "resnet50") ::
                     ("--local_rank", rank.toString) ::
-                    ("--optimizer", "local_sgd") ::
+                    ("--optimizer", "local_ef_sgd") ::
                     ("--avg_model", "True") ::
                     ("--experiment", "demo") ::
                     ("--manual_seed", "6") ::
@@ -50,6 +50,7 @@ object Deploy extends App {
                     ("--stop_criteria", "epoch") ::
                     ("--n_mpi_process", "2") ::
                     ("--n_sub_process", "1") ::
+                    ("--compress_width", "1") ::
                     ("--world", "0,1,0,1") ::
                     ("--on_cuda", "True") ::
                     ("--use_ipc", "False") ::

@@ -10,7 +10,8 @@ dataSz = 32
 GPU functions
 """
 #assumes 1-d tensor and normalized (range -1,1), otherwise clamping will be performed.
-def quantize_gpu(tensor, bits, cuda):
+def quantize_gpu(tensor, bits):
+    dev = tensor.device
     pack = 32//bits
     bins = 2**bits
     padding = 0
@@ -23,7 +24,7 @@ def quantize_gpu(tensor, bits, cuda):
     clamped_tensor = tensor.abs().clamp(3/(2*bins), 1)*(tensor.lt(0).logical_not()*2-1)
     rounded_tensor = (((clamped_tensor)*(bins//2)).clamp(-bins//2, bins//2)).round()
     res = ((rounded_tensor + rounded_tensor.lt(0)*1 +(bins//2 -1)).to(torch.int32) \
-            * (torch.zeros(n, dtype=torch.int32, device=cuda)+2).pow(torch.arange(0, 32, bits, device=cuda).repeat(n//pack)) \
+            * (torch.zeros(n, dtype=torch.int32, device=dev)+2).pow(torch.arange(0, 32, bits, device=dev).repeat(n//pack)) \
             ).reshape((-1, pack)).cumsum(dim=1)[:,pack-1].to(torch.int32)
     res.padding = padding
     return res
@@ -33,12 +34,13 @@ def quantize_gpu(tensor, bits, cuda):
     #         ).reshape((-1, pack)).cumsum(dim=1)[:,pack-1].to(torch.int32)
 
 #assumes 1-d tensor and normalized (range -1,1), otherwise clamping will be performed.
-def unquantize_gpu(tensor, bits, cuda):
+def unquantize_gpu(tensor, bits):
+    dev = tensor.device
     pack = 32//bits
     bins = 2**bits
     n = tensor.shape[0] * pack
     res = tensor.repeat_interleave(pack)
-    b = (torch.zeros(n, dtype=torch.int32, device=cuda)+2).pow(torch.arange(0, 32, bits, device=cuda).repeat(n//pack))
+    b = (torch.zeros(n, dtype=torch.int32, device=dev)+2).pow(torch.arange(0, 32, bits, device=dev).repeat(n//pack))
     tmp = (res & (b*(bins-1)))/b
     tmp2 = (tmp + tmp.lt(0)*bins).float() - (bins/2)
     t = (tmp2 + (tmp2.lt(0).logical_not()))/(bins/2)
