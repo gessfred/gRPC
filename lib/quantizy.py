@@ -6,6 +6,11 @@ from q_general_cpp import quantize_general, unquantize_general
 
 dataSz = 32
 
+def pad(tensor):
+    pad_size = list(tensor.size())[0] % 32
+    tensor = torch.nn.functional.pad(tensor, (0, (32 - pad_size) % 32))
+    return tensor
+
 """
 GPU functions
 """
@@ -14,6 +19,10 @@ def quantize_gpu(tensor, bits, cuda):
     pack = 32//bits
     bins = 2**bits
     n = tensor.shape[0]
+    if not (n % 32) == 0:
+        pad_size = list(tensor.size())[0] % 32
+        tensor = torch.nn.functional.pad(tensor, (0, (32 - pad_size) % 32))
+        tensor.padding = (32 - pad_size) % 32
     clamped_tensor = tensor.abs().clamp(3/(2*bins), 1)*(tensor.lt(0).logical_not()*2-1)
     rounded_tensor = (((clamped_tensor)*(bins//2)).clamp(-bins//2, bins//2)).round()
     return  ((rounded_tensor + rounded_tensor.lt(0)*1 +(bins//2 -1)).to(torch.int32) \
@@ -33,7 +42,8 @@ def unquantize_gpu(tensor, bits, cuda):
     b = (torch.zeros(n, dtype=torch.int32, device=cuda)+2).pow(torch.arange(0, 32, bits, device=cuda).repeat(n//pack))
     tmp = (res & (b*(bins-1)))/b
     tmp2 = (tmp + tmp.lt(0)*bins).float() - (bins/2)
-    return (tmp2 + (tmp2.lt(0).logical_not()))/(bins/2)
+    t = (tmp2 + (tmp2.lt(0).logical_not()))/(bins/2)
+    return t[:-tensor.padding]
 
 """
 Naive functions

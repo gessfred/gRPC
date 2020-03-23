@@ -32,6 +32,7 @@ class TimerBase(object):
         self.tracking = []
         self.events = []
         self.ready_events = {}
+        self.epoch_idx = 0
 
     @contextmanager
     def __call__(self, label, epoch=0):
@@ -105,6 +106,9 @@ class TimerBase(object):
             self.ready_events[label] += rec['start'].elapsed_time(rec['end'])
         del self.events
         self.events = []
+        self.epoch_idx += 1
+        if self.epoch_idx % 5 == 0:
+            pass
 
 #class 
 
