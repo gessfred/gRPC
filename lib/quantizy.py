@@ -13,18 +13,20 @@ GPU functions
 def quantize_gpu(tensor, bits, cuda):
     pack = 32//bits
     bins = 2**bits
-
+    padding = 0
     n = tensor.shape[0]
     if not (n % 32) == 0:
         pad_size = list(tensor.size())[0] % 32
         tensor = torch.nn.functional.pad(tensor, (0, (32 - pad_size) % 32))
-        tensor.padding = (32 - pad_size) % 32
         n = tensor.shape[0]
+        padding = (32 - pad_size) % 32
     clamped_tensor = tensor.abs().clamp(3/(2*bins), 1)*(tensor.lt(0).logical_not()*2-1)
     rounded_tensor = (((clamped_tensor)*(bins//2)).clamp(-bins//2, bins//2)).round()
-    return  ((rounded_tensor + rounded_tensor.lt(0)*1 +(bins//2 -1)).to(torch.int32) \
+    res = ((rounded_tensor + rounded_tensor.lt(0)*1 +(bins//2 -1)).to(torch.int32) \
             * (torch.zeros(n, dtype=torch.int32, device=cuda)+2).pow(torch.arange(0, 32, bits, device=cuda).repeat(n//pack)) \
             ).reshape((-1, pack)).cumsum(dim=1)[:,pack-1].to(torch.int32)
+    res.padding = padding
+    return res
 
     # return  ((((tensor+1)*(bins//2)).clamp(0.1, bins-0.1)-1).ceil().to(torch.int32) \
     #         * (torch.zeros(n, dtype=torch.int32, device=cuda)+2).pow(torch.arange(0, 32, bits, device=cuda).repeat(n//pack)) \
