@@ -8,7 +8,9 @@ dataSz = 32
 
 class Pack(torch.Tensor):
     def __init__(self, tensor, padding, true_shape, bits):
-        super().__init__(tensor.data, tensor.device)
+        #super().__init__(tensor.data, tensor.device)
+        self.data = tensor.data
+        self.device = tensor.device
         self.padding = padding
         self.true_shape = true_shape
         self.bits = bits
