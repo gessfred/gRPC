@@ -88,9 +88,10 @@ class CompressedTensorBuffer:
         self.buffer = buf  # copies
         self.padding = pad
         self.bits = bits
+        self._buffer = unquantize_gpu(self.buffer, self.padding, self.bits)
 
     def __getitem__(self, index):
-        return self.buffer[self._start_idx[index] : self._end_idx[index]].view(
+        return self._buffer[self._start_idx[index] : self._end_idx[index]].view(
             self._tensors_sizes[index]
         )
 
