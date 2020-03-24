@@ -6,19 +6,6 @@ from q_general_cpp import quantize_general, unquantize_general
 
 dataSz = 32
 
-class Wrapper:
-    def __init__(self, tensor, padding, true_shape, bits):
-        #super().__init__(tensor.data, tensor.device)
-        self.tensor= tensor
-        self.padding = padding
-        self.true_shape = true_shape
-        self.bits = bits
-
-    def tof32(self):
-        u = unquantize_gpu(self.tensor, self.bits)
-        return u[:-self.padding].reshape(true_shape)
-
-
 """
 GPU functions
 """
@@ -40,14 +27,14 @@ def quantize_gpu(tensor, bits):
     res = ((rounded_tensor + rounded_tensor.lt(0)*1 +(bins//2 -1)).to(torch.int32) \
             * (torch.zeros(n, dtype=torch.int32, device=dev)+2).pow(torch.arange(0, 32, bits, device=dev).repeat(n//pack)) \
             ).reshape((-1, pack)).cumsum(dim=1)[:,pack-1].to(torch.int32)
-    return Wrapper(tensor, padding, tensor.shape, bits)
+    return res, padding
 
     # return  ((((tensor+1)*(bins//2)).clamp(0.1, bins-0.1)-1).ceil().to(torch.int32) \
     #         * (torch.zeros(n, dtype=torch.int32, device=cuda)+2).pow(torch.arange(0, 32, bits, device=cuda).repeat(n//pack)) \
     #         ).reshape((-1, pack)).cumsum(dim=1)[:,pack-1].to(torch.int32)
 
 #assumes 1-d tensor and normalized (range -1,1), otherwise clamping will be performed.
-def unquantize_gpu(tensor, bits):
+def unquantize_gpu(tensor, padding, bits):
     dev = tensor.device
     pack = 32//bits
     bins = 2**bits
@@ -56,7 +43,71 @@ def unquantize_gpu(tensor, bits):
     b = (torch.zeros(n, dtype=torch.int32, device=dev)+2).pow(torch.arange(0, 32, bits, device=dev).repeat(n//pack))
     tmp = (res & (b*(bins-1)))/b
     tmp2 = (tmp + tmp.lt(0)*bins).float() - (bins/2)
-    return (tmp2 + (tmp2.lt(0).logical_not()))/(bins/2)
+    return (tmp2 + (tmp2.lt(0).logical_not()))/(bins/2)[:-padding]
+
+def flatten(tensors, shapes=None, use_cuda=True):
+    # from https://github.com/epfml/LocalSGD-Code
+    # init and recover the shapes vec.
+    pointers = [0]
+    if shapes is not None:
+        for shape in shapes:
+            pointers.append(pointers[-1] + shape[1])
+    else:
+        for tensor in tensors:
+            pointers.append(pointers[-1] + tensor.nelement())
+
+    # flattening.
+    vec = torch.empty(
+        pointers[-1],
+        device=tensors[0].device if tensors[0].is_cuda and use_cuda else "cpu",
+    )
+
+    for tensor, start_idx, end_idx in zip(tensors, pointers[:-1], pointers[1:]):
+        vec[start_idx:end_idx] = tensor.data.view(-1)
+    return vec
+
+class CompressedTensorBuffer:
+    """
+    Packs multiple tensors into one flat buffer for efficient
+    intra-worker communication.
+    """
+
+    def __init__(self, tensors, bits, use_cuda=True):
+        indices = [0]
+        for tensor in tensors:
+            new_end = indices[-1] + tensor.nelement()
+            indices.append(new_end)
+
+        self._start_idx = indices[:-1]
+        self._end_idx = indices[1:]
+        self._tensors_len = len(tensors)
+        self._tensors_sizes = [x.size() for x in tensors]
+        buf, pad = quantize_gpu(flatten(tensors, use_cuda=use_cuda), bits)
+        self.buffer = buf  # copies
+        self.padding = pad
+        self.bits = bits
+
+    def __getitem__(self, index):
+        return self.buffer[self._start_idx[index] : self._end_idx[index]].view(
+            self._tensors_sizes[index]
+        )
+
+    def __len__(self):
+        return self._tensors_len
+
+    def is_cuda(self):
+        return self.buffer.is_cuda
+
+    def nelement(self):
+        return self.buffer.nelement()
+
+    def unpack(self, tensors):
+        self.buffer = self.buffer
+        for tensor, entry in zip(tensors, self):
+            tensor.data[:] = entry
+
+    def decompress(self):
+        self.buffer = unquantize_gpu(self.buffer, self.padding, self.bits)
 
 """
 Naive functions
