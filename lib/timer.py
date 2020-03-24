@@ -109,8 +109,8 @@ class TimerBase(object):
         del self.events
         self.events = []
         self.epoch_idx += 1
-        if self.epoch_idx % 5 == 0:
-            self.ts[self.epoch_idx] = self.timestamps
+        if self.epoch_idx % 10 == 0:
+            self.ts[str(self.epoch_idx)] = self.timestamps
             del self.timestamps
             self.timestamps = []
 
