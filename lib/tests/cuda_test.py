@@ -54,6 +54,21 @@ def check_quantize(q, uq, device=None):
             print(unquantized[index])
             return
 
+    for bits in [1,2,4,8]:
+        for i in range(5000):
+            indices = torch.randperm(tensor.shape[0])
+            t1 = tensor.index_select(0, indices)
+            t2 = res_8bit.index_select(0, indices)
+            quantized = q(t1, bits, device)
+            res = uq(quantized, bits, device).cpu()
+            if len(expected) != len(unquantized) or not torch.eq(unquantized, expected).all():
+                print("Error:")
+                print(t1)
+                print(res)
+                print(t2)
+                return
+    print("Permutation check : Pass")
+
 def check_speed(q, uq, size=10, iters=1000, device=None):
 
     tensor = torch.rand(32*2**size, device=device)*2-1
@@ -83,7 +98,7 @@ if __name__ == '__main__':
     q, uq = quantizy('gpu')
     device = check_cuda()
     check_quantize(q, uq, device= device)
-    print("Using CPU:")
-    check_speed(q, uq, size=16, device=None)
-    print("Using GPU:".format(cuda_device))
-    check_speed(q, uq, size=16, device=device)
+    # print("Using CPU:")
+    # check_speed(q, uq, size=16, device=None)
+    # print("Using GPU:".format(cuda_device))
+    # check_speed(q, uq, size=16, device=device)
