@@ -6,18 +6,17 @@ from q_general_cpp import quantize_general, unquantize_general
 
 dataSz = 32
 
-class Pack(torch.Tensor):
+class Wrapper:
     def __init__(self, tensor, padding, true_shape, bits):
         #super().__init__(tensor.data, tensor.device)
-        self.data = tensor.data
-        self.device = tensor.device
+        self.tensor= tensor
         self.padding = padding
         self.true_shape = true_shape
         self.bits = bits
 
     def tof32(self):
-        u = unquantize_gpu(self.data, self.bits)
-        u[:-self.padding].reshape(true_shape)
+        u = unquantize_gpu(self.tensor, self.bits)
+        return u[:-self.padding].reshape(true_shape)
 
 
 """
@@ -41,7 +40,7 @@ def quantize_gpu(tensor, bits):
     res = ((rounded_tensor + rounded_tensor.lt(0)*1 +(bins//2 -1)).to(torch.int32) \
             * (torch.zeros(n, dtype=torch.int32, device=dev)+2).pow(torch.arange(0, 32, bits, device=dev).repeat(n//pack)) \
             ).reshape((-1, pack)).cumsum(dim=1)[:,pack-1].to(torch.int32)
-    return Pack(tensor, padding, tensor.shape, bits)
+    return Wrapper(tensor, padding, tensor.shape, bits)
 
     # return  ((((tensor+1)*(bins//2)).clamp(0.1, bins-0.1)-1).ceil().to(torch.int32) \
     #         * (torch.zeros(n, dtype=torch.int32, device=cuda)+2).pow(torch.arange(0, 32, bits, device=cuda).repeat(n//pack)) \
