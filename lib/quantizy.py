@@ -43,7 +43,9 @@ def unquantize_gpu(tensor, padding, bits):
     b = (torch.zeros(n, dtype=torch.int32, device=dev)+2).pow(torch.arange(0, 32, bits, device=dev).repeat(n//pack))
     tmp = (res & (b*(bins-1)))/b
     tmp2 = (tmp + tmp.lt(0)*bins).float() - (bins/2)
-    return (tmp2 + (tmp2.lt(0).logical_not()))/(bins/2)[:-padding]
+    res = (tmp2 + (tmp2.lt(0).logical_not()))/(bins/2)
+    print(res)
+    return res[:-padding]
 
 def flatten(tensors, shapes=None, use_cuda=True):
     # from https://github.com/epfml/LocalSGD-Code
