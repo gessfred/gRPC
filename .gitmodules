@@ -1,3 +1,0 @@
-[submodule "lib/nccl"]
-	path = lib/nccl
-	url = https://github.com/gessfred/nccl.git
