@@ -113,7 +113,7 @@ class CompressedTensorBuffer:
 
     def decompress(self):
         print(self.buffer, self.padding, self.bits)
-        self._buffer = unquantize_gpu(self.buffer, padding=int(self.padding), bits=int(self.bits))
+        self._buffer = unquantize_gpu(self.buffer, padding=int(self.padding), bits=float(self.bits))
 
 """
 Naive functions
