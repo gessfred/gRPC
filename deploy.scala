@@ -44,7 +44,7 @@ object Deploy extends App {
                     ("--batch_size", "128") ::
                     ("--base_batch_size", "64") ::
                     ("--num_workers", "2") ::
-                    ("--num_epochs", "13") :: // pytorch DataLoader arg. refer to https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader
+                    ("--num_epochs", "1") :: // pytorch DataLoader arg. refer to https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader
                     ("--partition_data", "random") ::
                     ("--reshuffle_per_epoch", "True") ::
                     ("--stop_criteria", "epoch") ::

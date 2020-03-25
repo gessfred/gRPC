@@ -109,6 +109,7 @@ class CompressedTensorBuffer:
 
     def unpack(self, tensors):
         self.buffer = self.buffer
+        self._buffer = self._buffer
         for tensor, entry in zip(tensors, self):
             tensor.data[:] = entry
 
