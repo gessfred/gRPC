@@ -115,8 +115,8 @@ class CompressedTensorBuffer:
             tensor.data[:] = entry
 
     def decompress(self):
+        torch.cuda.synchronize()
         self.item = unquantize_gpu(self.buffer, self.padding, self.bits)
-        print(self.item)
 
 """
 Naive functions
