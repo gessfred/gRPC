@@ -44,8 +44,10 @@ def unquantize_gpu(tensor, padding, bits):
     tmp = (res & (b*(bins-1)))/b
     tmp2 = (tmp + tmp.lt(0)*bins).float() - (bins/2)
     res = (tmp2 + (tmp2.lt(0).logical_not()))/(bins/2)
-    print(res)
-    return res[:-padding]
+    if padding == 0:
+        return res
+    else:
+        return res[:-padding]
 
 def flatten(tensors, shapes=None, use_cuda=True):
     # from https://github.com/epfml/LocalSGD-Code
