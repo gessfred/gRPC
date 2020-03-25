@@ -112,7 +112,8 @@ class CompressedTensorBuffer:
             tensor.data[:] = entry
 
     def decompress(self):
-        self._buffer = unquantize_gpu(self.buffer, self.padding, self.bits)
+        print(self.buffer, self.padding, self.bits)
+        self._buffer = unquantize_gpu(self.buffer, padding=int(self.padding), bits=int(self.bits))
 
 """
 Naive functions
