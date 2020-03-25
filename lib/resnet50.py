@@ -1,4 +1,4 @@
-import torch
+"""import torch
 import torchvision
 from parser import SGDParser
 from distributed_sgd import DistributedSGD
@@ -58,3 +58,4 @@ if __name__ == '__main__':
     for epoch in range(1, args.epochs + 1):
         train(args, model, device, cifar100_training_loader, optimizer, epoch)
         test(args, model, device, cifar100_testing_loader)
+"""
