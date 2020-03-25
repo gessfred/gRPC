@@ -4,7 +4,7 @@ services:
   - docker
 
 before_install:
-  - docker build . -t parsa/lib .
+  - docker build . -t parsa/lib
 
 srcipt:
   - docker run parsa/lib
