@@ -35,11 +35,12 @@ def quantize_gpu(tensor, bits):
 
 #assumes 1-d tensor and normalized (range -1,1), otherwise clamping will be performed.
 def unquantize_gpu(tensor, padding, bits):
-    dev = tensor.device
+    tensor_ = tensor.int()
+    dev = tensor_.device
     pack = 32//bits
     bins = 2**bits
-    n = tensor.shape[0] * pack
-    res = tensor.repeat_interleave(pack)
+    n = tensor_.shape[0] * pack
+    res = tensor_.repeat_interleave(pack)
     b = (torch.zeros(n, dtype=torch.int32, device=dev)+2).pow(torch.arange(0, 32, bits, device=dev).repeat(n//pack))
     tmp = (res & (b*(bins-1)))/b
     tmp2 = (tmp + tmp.lt(0)*bins).float() - (bins/2)
@@ -112,8 +113,7 @@ class CompressedTensorBuffer:
             tensor.data[:] = entry
 
     def decompress(self):
-        print(self.buffer, self.padding, self.bits)
-        self._buffer = unquantize_gpu(self.buffer, padding=int(self.padding), bits=float(self.bits))
+        self._buffer = unquantize_gpu(self.buffer, self.padding, self.bits)
 
 """
 Naive functions
