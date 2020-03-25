@@ -43,7 +43,7 @@ object Deploy extends App {
                     ("--pin_memory", "True") :: // DataLoader: if True, the data loader will copy Tensors into CUDA pinned memory 
                     ("--batch_size", "128") ::
                     ("--base_batch_size", "64") ::
-                    ("--num_workers", "4") ::
+                    ("--num_workers", "2") ::
                     ("--num_epochs", "300") :: // pytorch DataLoader arg. refer to https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader
                     ("--partition_data", "random") ::
                     ("--reshuffle_per_epoch", "True") ::
@@ -51,7 +51,7 @@ object Deploy extends App {
                     ("--n_mpi_process", "2") ::
                     ("--n_sub_process", "1") ::
                     ("--compress_width", "1") ::
-                    ("--world", "0,1,0,1") ::
+                    ("--world", "0,1") ::
                     ("--on_cuda", "True") ::
                     ("--use_ipc", "False") ::
                     ("--lr", "0.1") ::
