@@ -91,11 +91,10 @@ class CompressedTensorBuffer:
         self.buffer = buf  # copies
         self.padding = pad
         self.bits = bits
-        self._buffer = unquantize_gpu(self.buffer, self.padding, self.bits)
-        self.item = self._buffer
+        self._buffer = None
 
     def __getitem__(self, index):
-        return self.item[self._start_idx[index] : self._end_idx[index]].view(
+        return self._buffer[self._start_idx[index] : self._end_idx[index]].view(
             self._tensors_sizes[index]
         )
 
@@ -116,7 +115,7 @@ class CompressedTensorBuffer:
 
     def decompress(self):
         torch.cuda.synchronize()
-        self.item = unquantize_gpu(self.buffer, self.padding, self.bits)
+        self._buffer = unquantize_gpu(self.buffer, self.padding, self.bits)
 
 """
 Naive functions
