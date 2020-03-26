@@ -1,7 +1,5 @@
 import torch
 import numpy as np
-from q_cpp import quantize_shrink, unquantize_shrink
-from q_par_cpp import quantize_shrink_par, unquantize_shrink_par
 from q_general_cpp import quantize_general, unquantize_general
 
 dataSz = 32
@@ -190,8 +188,6 @@ def quantizy(version):
         "cast": [quantize, unquantize],
         "numpy": [quantize_vector, unquantize_vector],
         "concept": [quantize_pof, unquantize_pof],
-        "ext": [quantize_shrink, unquantize_shrink],
-        "ext_par": [quantize_shrink_par, unquantize_shrink_par],
         "general": [quantize_general, unquantize_general],
         "gpu": [quantize_gpu, unquantize_gpu]
     }

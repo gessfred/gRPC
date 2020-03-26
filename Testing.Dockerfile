@@ -8,4 +8,4 @@ RUN python3 -m virtualenv --python=/usr/bin/python3 $VIRTUAL_ENV
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 RUN pip install numpy torch torchvision
 ADD . ${LIB}
-ENTRYPOINT [ echo, "hello" ]
+CMD [ ls ]
