@@ -1,6 +1,7 @@
 import torch
 import torch.distributed as dist
 import os
+import datetime
 
 if __name__ == '__main__':
     IP = os.environ['MASTER_ADDR']
