@@ -4,8 +4,6 @@ import os
 
 if __name__ == '__main__':
     IP = os.environ['MASTER_ADDR']
-    os.environ['MASTER_PORT'] = os.environ['PYTORCH_PORT']#'29500'
-    os.environ['GLOO_SOCKET_IFNAME'] = os.environ['PYTORCH_SOCKET']
     rank = int(os.environ['RANK'])
     dist.init_process_group('nccl', 
         rank=rank, 
