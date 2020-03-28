@@ -12,7 +12,7 @@ if __name__ == '__main__':
         world_size=int(os.environ['WORLD']), 
         init_method='tcp://{}:60000'.format(IP))
     group = dist.new_group(range(int(os.environ['WORLD'])))
-    tensor = torch.randn(32)
+    tensor = torch.randn(32, device='cuda:{}'.format(rank % 2))
     print(tensor)
     if rank == 0:
         dist.broadcast(tensor, 0, group=dist.new_group([0, 2]))
