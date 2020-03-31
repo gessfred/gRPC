@@ -199,29 +199,29 @@ def init_processes(f, size):
 def main():
 
     max_nodes = 9
-#
-#     l = init_processes(send_recv_correctness,2)
-#     l()
-#     print("Send/Recv correct")
-#
-#     l = init_processes(isend_irecv_correctness,2)
-#     l()
-#     print("ISend/IRecv correct")
-#
-#     for nodes in range(2,max_nodes):
-#         l = init_processes(all_gather_correctness,nodes)
-#         l()
-#         print("All Gather correct: {} nodes".format(nodes))
-#
-#     for nodes in range(2,max_nodes):
-#         l = init_processes(gather_correctness,nodes)
-#         l()
-#         print("Gather correct: {} nodes".format(nodes))
-#
-#     for nodes in range(2,max_nodes):
-#         l = init_processes(all_reduce_centralised_correctness,nodes)
-#         l()
-#         print("All Reduce Centralised correct: {} nodes".format(nodes))
+
+    l = init_processes(send_recv_correctness,2)
+    l()
+    print("Send/Recv correct")
+
+    l = init_processes(isend_irecv_correctness,2)
+    l()
+    print("ISend/IRecv correct")
+
+    for nodes in range(2,max_nodes):
+        l = init_processes(all_gather_correctness,nodes)
+        l()
+        print("All Gather correct: {} nodes".format(nodes))
+
+    for nodes in range(2,max_nodes):
+        l = init_processes(gather_correctness,nodes)
+        l()
+        print("Gather correct: {} nodes".format(nodes))
+
+    for nodes in range(2,max_nodes):
+        l = init_processes(all_reduce_centralised_correctness,nodes)
+        l()
+        print("All Reduce Centralised correct: {} nodes".format(nodes))
 
     for nodes in range(2,max_nodes):
         l = init_processes(reduce_centralised_correctness,nodes)
