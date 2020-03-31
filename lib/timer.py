@@ -46,7 +46,7 @@ class TimerBase(object):
         if not self.closed:
             self.close()
         print('--------------------timeline--------------------')
-        print('events: {}'.format(self.events))
+        print('events: {}'.format(self.ready_events))
         print('timeline: {}'.format(self.timestamps))
         print('elapsed_time: {}'.format(self.elapsed_time))
         print('------------------------------------------------')

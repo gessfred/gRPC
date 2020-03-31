@@ -109,7 +109,7 @@ object Deploy extends App {
 |      imagePullPolicy: Always
 |      workingDir: /home/user/LocalSGD-Code/distributed_code
 |      command: [ "python" ]
-|      args: [ "microbench.py", "--size", "10" ]
+|      args: [ "microbench.py", "--size", "20" ]
 |      ports:
 |      - name: rendezvous
 |        containerPort: 60000
