@@ -94,7 +94,7 @@ def all_gather_quantized(tensor_list, tensor, bits=1, group=group.WORLD):
 	tensor_sizes = [t.view(-1).shape[0] for t in tensor_list]
 	padding_list = [(32 - s) % 32 for s in tensor_sizes]
 	quantized_sizes = [ceil(s/(32/bits)) for s in tensor_sizes]
-	quantized_list = [torch.empty(s, dtype=quantized.dtype) for s in quantized_sizes]
+	quantized_list = [torch.empty(s, dtype=quantized.dtype, device=tensor.device) for s in quantized_sizes]
 	dist.all_gather(quantized_list, quantized, group=group)
 	for t, q, p in zip(tensor_list, quantized_list, padding_list):
 		t.copy_(_unpack(q, p, bits))
@@ -105,7 +105,7 @@ def gather_quantized(tensor, gather_list=None, bits=1, dst=0, group=group.WORLD)
 		tensor_sizes = [t.view(-1).shape[0] for t in gather_list]
 		padding_list = [(32 - s) % 32 for s in tensor_sizes]
 		quantized_sizes = [ceil(s/(32/bits)) for s in tensor_sizes]
-		quantized_list = [torch.empty(s, dtype=quantized.dtype) for s in quantized_sizes]
+		quantized_list = [torch.empty(s, dtype=quantized.dtype, device=tensor.device) for s in quantized_sizes]
 	else:
 		quantized_list = None
 	dist.gather(quantized, gather_list=quantized_list, dst=dst, group=group)
@@ -137,17 +137,16 @@ def all_reduce_quantised_centralised(tensor, master=0, op=ReduceOp.SUM, bits=1, 
 	# broadcasting non quantized tensor
 	dist.broadcast(tensor, master, group=group)
 
-def reduce_quantised_centralised(tensor, dst, op=ReduceOp.SUM, bits=1, master=0, group=group.WORLD):
+def reduce_quantised_centralised(tensor, dst, op=ReduceOp.SUM, bits=1, group=group.WORLD):
 	#gather tensors on master node
 	rank = dist.get_rank()
-	if rank == master:
-		tensor_list = (tensor,) * dist.get_world_size()
+	if rank == dst:
+		tensor_list = [torch.empty(tensor.shape, device=tensor.device) for _ in range(dist.get_world_size())]
 	else:
 		tensor_list = None
-	gather_quantized(tensor, tensor_list=tensor_list, bits=bits, dst=master, group=group)
+	gather_quantized(tensor, gather_list=tensor_list, bits=bits, dst=dst, group=group)
 	#reduce tensors on master node, as gather as synchronous we know the tensor list is ready
-	if rank == master:
-		# assuming addition operation
+	if rank == dst:
 		ops = {ReduceOp.SUM: lambda t_l: torch.sum(t_l, dim=0),
-			   ReduceOp.PRODUCT: lambda t_l: torch.product(t_l, dim=0)}
+			   ReduceOp.PRODUCT: lambda t_l: torch.prod(t_l, dim=0)}
 		tensor.copy_(ops[op](torch.stack(tensor_list)))
