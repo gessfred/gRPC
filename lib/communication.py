@@ -23,7 +23,6 @@ class AsyncHandler:
 		self.t.join()
 
 	def run(self, loop, tensor, quantized, padding, bits, handler):
-		print(quantized)
 		asyncio.set_event_loop(loop)
 		loop.run_until_complete(self.irun(tensor, quantized, padding, bits, handler))
 
@@ -50,8 +49,10 @@ def recv(tensor, src):
 	private = dist.new_group([src, dist.get_rank()])
 	dist.broadcast(tensor, src, group=private)
 
-def recv_quantized(tensor, src, bits, padding):
+def recv_quantized(tensor, src, bits):
 	assert(bits in [1,2,4,8])
+	tensor_size = tensor.view(-1).shape[0]
+	padding = (32 - tensor_size) % 32
 	quantized_size = ceil(tensor.view(-1).shape[0]/(32/bits))
 	quantized = torch.zeros(quantized_size, dtype=torch.int32, device=tensor.device)
 	private = dist.new_group([src, dist.get_rank()])
@@ -88,29 +89,29 @@ def irecv_quantized(tensor, src, bits):
 def all_gather(tensor_list, tensor, group=group.WORLD):
 	dist.all_gather(tensor_list, tensor, group=group)
 
-def all_gather_quantized(tensor_list, tensor, bits=1, , group=group.WORLD):
+def all_gather_quantized(tensor_list, tensor, bits=1, group=group.WORLD):
 	quantized, padding = _pack(tensor, bits)
 	tensor_sizes = [t.view(-1).shape[0] for t in tensor_list]
 	padding_list = [(32 - s) % 32 for s in tensor_sizes]
 	quantized_sizes = [ceil(s/(32/bits)) for s in tensor_sizes]
-	quantized_list = [torch.zeros(s).type(quantized.dtype) for s in quantized_sizes]
+	quantized_list = [torch.empty(s, dtype=quantized.dtype) for s in quantized_sizes]
 	dist.all_gather(quantized_list, quantized, group=group)
-	for t, p in zip(tensor_list, padding_list):
-		t.copy_(_unpack(quantized, p, bits))
+	for t, q, p in zip(tensor_list, quantized_list, padding_list):
+		t.copy_(_unpack(q, p, bits))
 
-def gather_quantized(tensor, tensor_list=None, bits=1, dst=0, group=group.WORLD):
+def gather_quantized(tensor, gather_list=None, bits=1, dst=0, group=group.WORLD):
 	quantized, padding = _pack(tensor, bits)
-	if tensor_list:
-		tensor_sizes = [t.view(-1).shape[0] for t in tensor_list]
+	if dist.get_rank() == dst:
+		tensor_sizes = [t.view(-1).shape[0] for t in gather_list]
 		padding_list = [(32 - s) % 32 for s in tensor_sizes]
 		quantized_sizes = [ceil(s/(32/bits)) for s in tensor_sizes]
-		quantized_list = [torch.zeros(s).type(quantized.dtype) for s in quantized_sizes]
+		quantized_list = [torch.empty(s, dtype=quantized.dtype) for s in quantized_sizes]
 	else:
-		quantized_list=None
+		quantized_list = None
 	dist.gather(quantized, gather_list=quantized_list, dst=dst, group=group)
-	if dist.get_rank == dst:
-		for t, p in zip(tensor_list, padding_list):
-			t.copy_(_unpack(quantized, p, bits))
+	if dist.get_rank() == dst:
+		for t, q, p in zip(gather_list, quantized_list, padding_list):
+			t.copy_(_unpack(q, p, bits))
 
 def all_reduce(tensor, group=group.WORLD):
     rank = dist.get_rank()
@@ -120,21 +121,21 @@ def all_reduce(tensor, group=group.WORLD):
     chunk = chunks[rank]
     dist.all_gather(chunks, chunk, group=group)
 
-def all_reduce_quantised_centralised(tensor, op=ReduceOp.SUM, bits=1, master=0, group=group.WORLD):
+def all_reduce_quantised_centralised(tensor, dst, op=ReduceOp.SUM, bits=1, group=group.WORLD):
 	#gather tensors on master node
 	rank = dist.get_rank()
-	if rank == master:
-		tensor_list = (tensor,) * dist.get_world_size()
+	if rank == dst:
+		tensor_list = [torch.empty(tensor.shape, device=tensor.device) for _ in range(dist.get_world_size())]
 	else:
 		tensor_list = None
-	gather_quantized(tensor, tensor_list=tensor_list, bits=bits, dst=master)
-	#reduce tensors on master node, as gather as synchronous we know the tensor list is ready
-	if rank == master:
-		# assuming addition operation
+	gather_quantized(tensor, gather_list=tensor_list, bits=bits, dst=dst, group=group)
+	# reduce tensors on master node, as gather is synchronous we know the tensor list is ready
+	if rank == dst:
 		ops = {ReduceOp.SUM: lambda t_l: torch.sum(t_l, dim=0),
-			   ReduceOp.PRODUCT: lambda t_l: torch.product(t_l, dim=0)}
+			   ReduceOp.PRODUCT: lambda t_l: torch.prod(t_l, dim=0)}
 		tensor.copy_(ops[op](torch.stack(tensor_list)))
-	dist.broadcast(tensor, master, group=group)
+	# broadcasting non quantized tensor
+	dist.broadcast(tensor, dst, group=group)
 
 def reduce_quantised_centralised(tensor, op=ReduceOp.SUM, bits=1, master=0, group=group.WORLD):
 	#gather tensors on master node
@@ -143,7 +144,7 @@ def reduce_quantised_centralised(tensor, op=ReduceOp.SUM, bits=1, master=0, grou
 		tensor_list = (tensor,) * dist.get_world_size()
 	else:
 		tensor_list = None
-	gather_quantized(tensor, tensor_list=tensor_list, bits=bits, dst=master, group)
+	gather_quantized(tensor, tensor_list=tensor_list, bits=bits, dst=master, group=group)
 	#reduce tensors on master node, as gather as synchronous we know the tensor list is ready
 	if rank == master:
 		# assuming addition operation
