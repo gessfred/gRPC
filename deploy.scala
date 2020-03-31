@@ -35,7 +35,7 @@ object Deploy extends App {
                     "main.py",
                     ("--arch",  "resnet50") ::
                     ("--local_rank", rank.toString) ::
-                    ("--optimizer", "local_ef_sgd") ::
+                    ("--optimizer", "local_ef_sign_sgd") ::
                     ("--avg_model", "True") ::
                     ("--experiment", "demo") ::
                     ("--manual_seed", "6") ::
@@ -43,15 +43,15 @@ object Deploy extends App {
                     ("--pin_memory", "True") :: // DataLoader: if True, the data loader will copy Tensors into CUDA pinned memory 
                     ("--batch_size", "128") ::
                     ("--base_batch_size", "64") ::
-                    ("--num_workers", "4") ::
-                    ("--num_epochs", "1") :: // pytorch DataLoader arg. refer to https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader
+                    ("--num_workers", "2") ::
+                    ("--num_epochs", "300") :: // pytorch DataLoader arg. refer to https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader
                     ("--partition_data", "random") ::
                     ("--reshuffle_per_epoch", "True") ::
                     ("--stop_criteria", "epoch") ::
                     ("--n_mpi_process", "2") ::
-                    ("--n_sub_process", "2") ::
+                    ("--n_sub_process", "1") ::
                     ("--compress_width", "1") ::
-                    ("--world", "0,1,0,1") ::
+                    ("--world", "0,0") ::
                     ("--on_cuda", "True") ::
                     ("--use_ipc", "False") ::
                     ("--lr", "0.1") ::
@@ -107,7 +107,9 @@ object Deploy extends App {
 |    - name: ${node.name}
 |      image: gessfred/pyparsa:${tag}
 |      imagePullPolicy: Always
-${run(node.rank)}
+|      workingDir: /home/user/LocalSGD-Code/distributed_code
+|      command: [ "python" ]
+|      args: [ "microbench.py", "--size", "10" ]
 |      ports:
 |      - name: rendezvous
 |        containerPort: 60000

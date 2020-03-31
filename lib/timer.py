@@ -61,6 +61,7 @@ class TimerBase(object):
         pass
 
     def close(self):
+        self.map_events()
         self.close_epoch()
         self.closed = True
         self.elapsed_time = time.time() - self.start
@@ -98,8 +99,7 @@ class TimerBase(object):
                     'time_stamps': self.ts,
                 }
                 client['admin']['eval'].insert_one(data)
-    
-    def close_epoch(self):
+    def map_events(self):
         torch.cuda.synchronize()
         for rec in self.events:
             label = rec['label']
@@ -108,6 +108,8 @@ class TimerBase(object):
             self.ready_events[label] += rec['start'].elapsed_time(rec['end'])
         del self.events
         self.events = []
+
+    def close_epoch(self):
         self.epoch_idx += 1
         if int(self.epoch_idx) == 10:
             self.ts[str(self.epoch_idx)] = self.timestamps
