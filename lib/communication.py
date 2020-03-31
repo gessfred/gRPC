@@ -121,23 +121,23 @@ def all_reduce(tensor, group=group.WORLD):
     chunk = chunks[rank]
     dist.all_gather(chunks, chunk, group=group)
 
-def all_reduce_quantised_centralised(tensor, dst, op=ReduceOp.SUM, bits=1, group=group.WORLD):
+def all_reduce_quantised_centralised(tensor, master=0, op=ReduceOp.SUM, bits=1, group=group.WORLD):
 	#gather tensors on master node
 	rank = dist.get_rank()
-	if rank == dst:
+	if rank == master:
 		tensor_list = [torch.empty(tensor.shape, device=tensor.device) for _ in range(dist.get_world_size())]
 	else:
 		tensor_list = None
-	gather_quantized(tensor, gather_list=tensor_list, bits=bits, dst=dst, group=group)
+	gather_quantized(tensor, gather_list=tensor_list, bits=bits, dst=master, group=group)
 	# reduce tensors on master node, as gather is synchronous we know the tensor list is ready
-	if rank == dst:
+	if rank == master:
 		ops = {ReduceOp.SUM: lambda t_l: torch.sum(t_l, dim=0),
 			   ReduceOp.PRODUCT: lambda t_l: torch.prod(t_l, dim=0)}
 		tensor.copy_(ops[op](torch.stack(tensor_list)))
 	# broadcasting non quantized tensor
-	dist.broadcast(tensor, dst, group=group)
+	dist.broadcast(tensor, master, group=group)
 
-def reduce_quantised_centralised(tensor, op=ReduceOp.SUM, bits=1, master=0, group=group.WORLD):
+def reduce_quantised_centralised(tensor, dst, op=ReduceOp.SUM, bits=1, master=0, group=group.WORLD):
 	#gather tensors on master node
 	rank = dist.get_rank()
 	if rank == master:
