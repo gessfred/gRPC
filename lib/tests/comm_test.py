@@ -6,7 +6,7 @@ from torch.distributed import ReduceOp
 import os
 import datetime
 import time
-from torch.multiprocessing import Process
+from torch.multiprocessing import Process, spawn
 import cProfile
 import communication as comm
 from quantizy import quantize_gpu, unquantize_gpu
@@ -189,12 +189,7 @@ def init_process(rank, size, fn, device, backend='gloo'):
     fn(device=device)
 
 def init_processes(f, size, device):
-    processes=[]
-    for rank in range(size):
-        p = Process(target=init_process, args=(rank, size, f, device))
-        p.start()
-        processes.append(p)
-    return lambda: [p.join() for p in processes]
+    p = spawn(init_process, args=(size, f, device), nprocs=size, join=True)
 
 def main():
 
@@ -208,31 +203,25 @@ def main():
     max_nodes = 9
 
     l = init_processes(send_recv_correctness,2,device)
-    l()
     print("Send/Recv correct")
 
     l = init_processes(isend_irecv_correctness,2,device)
-    l()
     print("ISend/IRecv correct")
 
     for nodes in range(2,max_nodes):
         l = init_processes(all_gather_correctness,nodes,device)
-        l()
         print("All Gather correct: {} nodes".format(nodes))
 
     for nodes in range(2,max_nodes):
         l = init_processes(gather_correctness,nodes,device)
-        l()
         print("Gather correct: {} nodes".format(nodes))
 
     for nodes in range(2,max_nodes):
         l = init_processes(all_reduce_centralised_correctness,nodes,device)
-        l()
         print("All Reduce Centralised correct: {} nodes".format(nodes))
 
     for nodes in range(2,max_nodes):
         l = init_processes(reduce_centralised_correctness,nodes,device)
-        l()
         print("Reduce Centralised correct: {} nodes".format(nodes))
 
 if __name__ == '__main__':
