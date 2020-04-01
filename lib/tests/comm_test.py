@@ -179,52 +179,59 @@ def reduce_centralised_correctness(runs=100, size=32*2**5, device=None):
                         print(str(rank) + ' t2 '+ str(tensor2))
                         assert(False)
 
-def init_process(rank, size, fn, backend='gloo'):
+def init_process(rank, size, fn, device, backend='gloo'):
     """ Initialize the distributed environment. """
     os.environ['MASTER_ADDR'] = '127.0.0.1'
     os.environ['MASTER_PORT'] = '29500'
     dist.init_process_group(backend, rank=rank, world_size=size)
     torch.random.manual_seed(rank) # Make very process have a different RNG
     # fn(runs=1,size=32)
-    fn()
+    fn(device=device)
 
-def init_processes(f, size):
+def init_processes(f, size, device):
     processes=[]
     for rank in range(size):
-        p = Process(target=init_process, args=(rank, size, f))
+        p = Process(target=init_process, args=(rank, size, f, device))
         p.start()
         processes.append(p)
     return lambda: [p.join() for p in processes]
 
 def main():
 
+    if torch.cuda.is_available():
+        device = torch.device("cuda")
+        print("Using CUDA: {}".format(device))
+    else:
+        device = None
+        print("Using CPU:")
+
     max_nodes = 9
 
-    l = init_processes(send_recv_correctness,2)
+    l = init_processes(send_recv_correctness,2,device)
     l()
     print("Send/Recv correct")
 
-    l = init_processes(isend_irecv_correctness,2)
+    l = init_processes(isend_irecv_correctness,2,device)
     l()
     print("ISend/IRecv correct")
 
     for nodes in range(2,max_nodes):
-        l = init_processes(all_gather_correctness,nodes)
+        l = init_processes(all_gather_correctness,nodes,device)
         l()
         print("All Gather correct: {} nodes".format(nodes))
 
     for nodes in range(2,max_nodes):
-        l = init_processes(gather_correctness,nodes)
+        l = init_processes(gather_correctness,nodes,device)
         l()
         print("Gather correct: {} nodes".format(nodes))
 
     for nodes in range(2,max_nodes):
-        l = init_processes(all_reduce_centralised_correctness,nodes)
+        l = init_processes(all_reduce_centralised_correctness,nodes,device)
         l()
         print("All Reduce Centralised correct: {} nodes".format(nodes))
 
     for nodes in range(2,max_nodes):
-        l = init_processes(reduce_centralised_correctness,nodes)
+        l = init_processes(reduce_centralised_correctness,nodes,device)
         l()
         print("Reduce Centralised correct: {} nodes".format(nodes))
 
