@@ -25,12 +25,12 @@ def send_recv_correctness(runs=100, size=32*2**5, device=None):
             if rank < other:
                 tensor1 = torch.empty(size, device=device).normal_(mean=0,std=1)
                 tensor2 = tensor1.clone()
-                dist.send(tensor1, other)
+                comm.send(tensor1, other)
                 comm.send_quantized(tensor2, other, bits)
             else:
                 tensor1 = torch.zeros(size, device=device)
                 tensor2 = tensor1.clone()
-                dist.recv(tensor1, other)
+                comm.recv(tensor1, other)
                 comm.recv_quantized(tensor2, other, bits)
 
                 q1, p1 = quantize_gpu(tensor1, bits)
@@ -183,19 +183,27 @@ def init_process(rank, size, fn, device, backend='gloo'):
     """ Initialize the distributed environment. """
     os.environ['MASTER_ADDR'] = '127.0.0.1'
     os.environ['MASTER_PORT'] = '29500'
+
     dist.init_process_group(backend, rank=rank, world_size=size)
     torch.random.manual_seed(rank) # Make very process have a different RNG
-    # fn(runs=1,size=32)
+    # fn(runs=1,size=32,device=device)
     fn(device=device)
 
 def init_processes(f, size, device):
-    p = spawn(init_process, args=(size, f, device), nprocs=size, join=True)
+    processes = []
+    for rank in range(size):
+        p = Process(target=init_process, args=(rank,size, f, device))
+        p.start()
+        processes.append(p)
+    [p.join() for p in processes]
 
 def main():
 
+    torch.multiprocessing.set_start_method('spawn')
+
     if torch.cuda.is_available():
         device = torch.device("cuda")
-        print("Using CUDA: {}".format(device))
+        print("Using GPU: {}".format(device))
     else:
         device = None
         print("Using CPU:")
