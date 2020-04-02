@@ -41,10 +41,9 @@ object Deploy extends App {
                     ("--manual_seed", "6") ::
                     ("--data", "cifar100") ::
                     ("--pin_memory", "True") :: // DataLoader: if True, the data loader will copy Tensors into CUDA pinned memory 
-                    ("--batch_size", "128") ::
-                    ("--base_batch_size", "64") ::
+                    ("--batch_size", "32") ::
                     ("--num_workers", "2") ::
-                    ("--num_epochs", "300") :: // pytorch DataLoader arg. refer to https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader
+                    ("--num_epochs", "5") :: // pytorch DataLoader arg. refer to https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader
                     ("--partition_data", "random") ::
                     ("--reshuffle_per_epoch", "True") ::
                     ("--stop_criteria", "epoch") ::
@@ -74,6 +73,10 @@ object Deploy extends App {
                     Nil
                 ).str(3).stripMargin
 
+
+/*|      workingDir: /home/user/LocalSGD-Code/distributed_code
+|      command: [ "python" ]
+|      args: [ "microbench.py", "--size", "16" ]*/
     //"/pyparsa/lib/mnist.py", "--lr", "0.01", "--dtype", "32bit", "--backend", "nccl"
     //192.168.0.4
     def pod(node: Node): String = s"""apiVersion: v1
@@ -107,9 +110,7 @@ object Deploy extends App {
 |    - name: ${node.name}
 |      image: gessfred/pyparsa:${tag}
 |      imagePullPolicy: Always
-|      workingDir: /home/user/LocalSGD-Code/distributed_code
-|      command: [ "python" ]
-|      args: [ "microbench.py", "--size", "16" ]
+${run(node.rank)}
 |      ports:
 |      - name: rendezvous
 |        containerPort: 60000

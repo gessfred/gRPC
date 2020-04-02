@@ -35,6 +35,7 @@ class TimerBase(object):
         self.epoch_idx = 0
         self.ts = {}
         self.stack = []
+        self.ec = {}
 
     @contextmanager
     def __call__(self, label, epoch=0):
@@ -133,9 +134,10 @@ class CUDATimer(TimerBase):
         self.stack.append(label)
         yield
         end = self.record()
-        self.events += [{'label': '/'.join(self.stack), 'start': start, 'end': end}]
+        id = '/'.join(self.stack)
+        self.events += [{'label': id, 'start': start, 'end': end}]
         self.stack.pop()
-
+        #self.ec[id] = self.ec.get(id, 0)
     def wait(self, event, handle):
         pass
         
