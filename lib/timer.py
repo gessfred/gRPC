@@ -34,6 +34,7 @@ class TimerBase(object):
         self.ready_events = {}
         self.epoch_idx = 0
         self.ts = {}
+        self.stack = []
 
     @contextmanager
     def __call__(self, label, epoch=0):
@@ -61,7 +62,7 @@ class TimerBase(object):
         pass
 
     def close(self):
-        self.map_events()
+        self.aggregate()
         self.close_epoch()
         self.closed = True
         self.elapsed_time = time.time() - self.start
@@ -99,7 +100,7 @@ class TimerBase(object):
                     'time_stamps': self.ts,
                 }
                 client['admin']['eval'].insert_one(data)
-    def map_events(self):
+    def aggregate(self):
         torch.cuda.synchronize()
         for rec in self.events:
             label = rec['label']
@@ -110,28 +111,30 @@ class TimerBase(object):
         self.events = []
 
     def close_epoch(self):
-        self.epoch_idx += 1
+        pass
+        """self.epoch_idx += 1
         if int(self.epoch_idx) == 10:
             self.ts[str(self.epoch_idx)] = self.timestamps
             del self.timestamps
-            self.timestamps = []
+            self.timestamps = []"""
 
 #class 
 
 class CUDATimer(TimerBase):
 
-    def record(self, label):
+    def record(self):
         event = torch.cuda.Event(enable_timing=True)
         event.record()
-        self.timestamps += [{'label': label, 'stamp': time.perf_counter()}]
         return event
 
     @contextmanager
     def __call__(self, label, epoch=0):
-        start = self.record(label+'_start')
+        start = self.record()
+        self.stack.append(label)
         yield
-        end = self.record(label+'_end')
-        self.events += [{'label': label, 'start': start, 'end': end}]
+        end = self.record()
+        self.events += [{'label': '/'.join(self.stack), 'start': start, 'end': end}]
+        self.stack.pop()
 
     def wait(self, event, handle):
         pass
