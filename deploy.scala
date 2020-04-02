@@ -35,7 +35,7 @@ object Deploy extends App {
                     "main.py",
                     ("--arch",  "resnet50") ::
                     ("--local_rank", rank.toString) ::
-                    ("--optimizer", "local_ef_sign_sgd") ::
+                    ("--optimizer", "local_ef_sgd") ::
                     ("--avg_model", "True") ::
                     ("--experiment", "demo") ::
                     ("--manual_seed", "6") ::
