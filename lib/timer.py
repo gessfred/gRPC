@@ -75,32 +75,30 @@ class TimerBase(object):
             'branch': os.environ['VCS_BRANCH'],
             'commit': os.environ['VCS_COMMIT'],
         }
-        with open(os.environ['MONGO_USR']) as usr:
-            with open(os.environ['MONGO_PWD']) as pwd:
-                client = MongoClient('mongodb://iccluster095.iccluster.epfl.ch:32396', username=usr.read(), password=pwd.read())
-                data = {
-                    '_id': uuid.uuid4().hex,#unique __record__ id
-                    'uuid': os.environ['UUID'],#unique "deployment id"
-                    'elapsed_time': self.elapsed_time, 
-                    'clock': self.clock,
-                    'events': self.ready_events,
-                    'name': self.name,
-                    'world_size': dist.get_world_size(),
-                    'rank': dist.get_rank(),
-                    'backend': dist.get_backend(),
-                    'arch': conf.arch,
-                    'optimizer': conf.optimizer,
-                    'lr': conf.lr,
-                    'data': conf.data,
-                    'batch_size': conf.batch_size,
-                    'num_epochs': conf.num_epochs,
-                    'aggregator': conf.aggregator,
-                    'tracking': self.tracking,
-                    'n_sub_process': conf.n_sub_process,
-                    'git': git,
-                    'time_stamps': self.ts,
-                }
-                client['admin']['eval'].insert_one(data)
+        client = MongoClient('mongodb://178.128.35.255:27017', username=os.environ['MONGO_USR'], password=os.environ['MONGO_PWD'])
+        data = {
+            '_id': uuid.uuid4().hex,#unique __record__ id
+            'uuid': os.environ['UUID'],#unique "deployment id"
+            'elapsed_time': self.elapsed_time, 
+            'clock': self.clock,
+            'events': self.ready_events,
+            'name': self.name,
+            'world_size': dist.get_world_size(),
+            'rank': dist.get_rank(),
+            'backend': dist.get_backend(),
+            'arch': conf.arch,
+            'optimizer': conf.optimizer,
+            'lr': conf.lr,
+            'data': conf.data,
+            'batch_size': conf.batch_size,
+            'num_epochs': conf.num_epochs,
+            'aggregator': conf.aggregator,
+            'tracking': self.tracking,
+            'n_sub_process': conf.n_sub_process,
+            'git': git,
+            'time_stamps': self.ts,
+        }
+        client['coltrain']['benchmarking'].insert_one(data)
     def aggregate(self):
         torch.cuda.synchronize()
         for rec in self.events:

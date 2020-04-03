@@ -4,7 +4,7 @@ import scala.language.postfixOps
 object Deploy extends App {
     def tab(x: Int) = 0.until(x).map(x => "  ").reduceLeft(_ + _)
     val env = Map("MASTER_ADDR" -> "192.168.0.4", "MASTER_PORT" -> "\"29500\"", "GLOO_SOCKET_IFNAME" -> "eth0")
-    val nodes = "iccluster088" :: "iccluster095" :: Nil
+    val nodes = "iccluster095" :: "iccluster088" :: Nil
     val cmd = "cat <<EOF | kubectl apply -f -\n"
     val eof = "\nEOF"
     case class Node(domain: String, rank: Int) {
@@ -127,13 +127,13 @@ ${run(node.rank)}
 |      - name: MONGO_PWD
 |        value: /etc/mdb-creds/admin/password
 |      - name: MASTER_ADDR
-|        value: 192.168.0.6
+|        value: 192.168.0.195
 |      - name: MASTER_PORT
 |        value: "29500"
 |      - name: NCCL_SOCKET_IFNAME
 |        value: eth0
 |      - name: NCCL_COMM_ID
-|        value: 192.168.0.6:29500
+|        value: 192.168.0.195:29500
 |      - name: VCS_BRANCH
 |        value: $branch
 |      - name: VCS_COMMIT
