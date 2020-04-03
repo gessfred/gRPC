@@ -47,9 +47,8 @@ class TimerBase(object):
     def dump(self):
         if not self.closed:
             self.close()
-        print('--------------------timeline--------------------')
+        print('--------------------timer--------------------')
         print('events: {}'.format(self.ready_events))
-        print('timeline: {}'.format(self.timestamps))
         print('elapsed_time: {}'.format(self.elapsed_time))
         print('------------------------------------------------')
 
@@ -80,7 +79,8 @@ class TimerBase(object):
             with open(os.environ['MONGO_PWD']) as pwd:
                 client = MongoClient('mongodb://iccluster095.iccluster.epfl.ch:32396', username=usr.read(), password=pwd.read())
                 data = {
-                    '_id': uuid.uuid4().hex,
+                    '_id': uuid.uuid4().hex,#unique __record__ id
+                    'uuid': os.environ['UUID'],#unique "deployment id"
                     'elapsed_time': self.elapsed_time, 
                     'clock': self.clock,
                     'events': self.ready_events,

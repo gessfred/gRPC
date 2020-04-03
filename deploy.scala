@@ -29,7 +29,7 @@ object Deploy extends App {
     val cm: String = "git log --oneline"!!
 
     val commit = cm.split("\n").head.split(" ").head
-
+    val uuid = java.util.UUID.randomUUID.toString
     val tag = "tao"
     def run(rank: Int) = Command("/home/user/LocalSGD-Code/distributed_code", 
                     "main.py",
@@ -140,6 +140,8 @@ ${run(node.rank)}
 |        value: $commit
 |      - name: DATAPATH
 |        value: /mnt/data
+|      - name: UUID
+|        value: ${uuid}
 |      - name: RANK
 |        value: \"${node.rank}\"""".stripMargin
     val spec = nodes.zipWithIndex.map{
