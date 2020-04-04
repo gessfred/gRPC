@@ -71,7 +71,7 @@ class TimerBase(object):
     def connect(self):
         self.client = MongoClient('mongodb://{}:{}@178.128.35.255:27017/?authSource=coltrain&readPreference=primary&appname=MongoDB%20Compass&ssl=false'.format(os.environ['MONGO_USR'], os.environ['MONGO_PWD']))
     
-    def upload_raw(self, data):
+    def upload_raw(self, collection, data):
         self.close()
         self.connect()
         git = {
@@ -89,7 +89,7 @@ class TimerBase(object):
             'rank': dist.get_rank(),
             'backend': dist.get_backend(),
         }
-        self.client.insert_one({**metadata, **data})
+        self.client['coltrain'][collection].insert_one({**metadata, **data})
     
     def upload(self, conf):
         path = '/pyparsa/.git'
