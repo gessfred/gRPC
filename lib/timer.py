@@ -36,6 +36,7 @@ class TimerBase(object):
         self.ts = {}
         self.stack = []
         self.ec = {}
+        self.client = None
 
     @contextmanager
     def __call__(self, label, epoch=0):
@@ -66,7 +67,29 @@ class TimerBase(object):
         self.close_epoch()
         self.closed = True
         self.elapsed_time = time.time() - self.start
-
+    
+    def connect(self):
+        self.client = MongoClient('mongodb://{}:{}@178.128.35.255:27017/?authSource=coltrain&readPreference=primary&appname=MongoDB%20Compass&ssl=false'.format(os.environ['MONGO_USR'], os.environ['MONGO_PWD']))
+    
+    def upload_raw(self, data):
+        self.connect()
+        git = {
+            'branch': os.environ['VCS_BRANCH'],
+            'commit': os.environ['VCS_COMMIT'],
+        }
+        metadata = {
+            '_id': uuid.uuid4().hex,#unique __record__ id
+            'uuid': os.environ['UUID'],#unique "deployment id"
+            'elapsed_time': self.elapsed_time, 
+            'events': self.ready_events,
+            'git': git,
+            'name': self.name,
+            'world_size': dist.get_world_size(),
+            'rank': dist.get_rank(),
+            'backend': dist.get_backend(),
+        }
+        self.client.insert_one({**metadata, **data})
+    
     def upload(self, conf):
         path = '/pyparsa/.git'
         self.close()
@@ -75,7 +98,7 @@ class TimerBase(object):
             'branch': os.environ['VCS_BRANCH'],
             'commit': os.environ['VCS_COMMIT'],
         }
-        client = MongoClient('mongodb://{}:{}@178.128.35.255:27017/?authSource=coltrain&readPreference=primary&appname=MongoDB%20Compass&ssl=false'.format(os.environ['MONGO_USR'], os.environ['MONGO_PWD']))
+        self.connect()
         data = {
             '_id': uuid.uuid4().hex,#unique __record__ id
             'uuid': os.environ['UUID'],#unique "deployment id"
@@ -98,7 +121,7 @@ class TimerBase(object):
             'git': git,
             'time_stamps': self.ts,
         }
-        client['coltrain']['benchmarking'].insert_one(data)
+        self.client['coltrain']['benchmarking'].insert_one(data)
     def aggregate(self):
         torch.cuda.synchronize()
         for rec in self.events:
