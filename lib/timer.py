@@ -75,7 +75,7 @@ class TimerBase(object):
             'branch': os.environ['VCS_BRANCH'],
             'commit': os.environ['VCS_COMMIT'],
         }
-        client = MongoClient('mongodb://178.128.35.255:27017', username=os.environ['MONGO_USR'], password=os.environ['MONGO_PWD'])
+        client = MongoClient('mongodb://{}:{}@178.128.35.255:27017/?authSource=coltrain&readPreference=primary&appname=MongoDB%20Compass&ssl=false'.format(os.environ['MONGO_USR'], os.environ['MONGO_PWD']))
         data = {
             '_id': uuid.uuid4().hex,#unique __record__ id
             'uuid': os.environ['UUID'],#unique "deployment id"
