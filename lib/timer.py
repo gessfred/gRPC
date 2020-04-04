@@ -72,6 +72,7 @@ class TimerBase(object):
         self.client = MongoClient('mongodb://{}:{}@178.128.35.255:27017/?authSource=coltrain&readPreference=primary&appname=MongoDB%20Compass&ssl=false'.format(os.environ['MONGO_USR'], os.environ['MONGO_PWD']))
     
     def upload_raw(self, data):
+        self.close()
         self.connect()
         git = {
             'branch': os.environ['VCS_BRANCH'],
