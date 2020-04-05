@@ -96,9 +96,10 @@ void send(int rank, int nRanks, std::array<char, 128> uuid, int dst)  {
   //CUDACHECK(cudaSetDevice(localRank));
   auto err = cudaMalloc(&sendbuff, size * sizeof(float));
   std::cout << err << std::endl;
-  CUDACHECK(err);
-  CUDACHECK(cudaMalloc(&recvbuff, size * sizeof(float)));
-  CUDACHECK(cudaStreamCreate(&s));
+  std::cout << cudaGetErrorString(err) << " " << cudaGetErrorName(err) << std::endl;
+  (err);
+  (cudaMalloc(&recvbuff, size * sizeof(float)));
+  (cudaStreamCreate(&s));
 
   std::cout << "init" << std::endl;
   //initializing NCCL
