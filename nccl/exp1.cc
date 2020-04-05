@@ -92,12 +92,13 @@ void send(int rank, int nRanks, std::array<char, 128> uuid, int dst)  {
 //if (myRank == 0) ncclGetUniqueId(&id);
   //std::cout << std::string(id.internal) << std::endl;
   //picking a GPU based on localRank, allocate device buffers
+  std::cout << "(device) " << localRank << std::endl; 
   CUDACHECK(cudaSetDevice(localRank));
   CUDACHECK(cudaMalloc(&sendbuff, size * sizeof(float)));
   CUDACHECK(cudaMalloc(&recvbuff, size * sizeof(float)));
   CUDACHECK(cudaStreamCreate(&s));
 
-
+  std::cout << "init" << std::endl;
   //initializing NCCL
   NCCLCHECK(ncclCommInitRank(&comm, nRanks, id, myRank));
 
