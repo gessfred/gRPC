@@ -18,7 +18,7 @@ RUN make pkg.debian.build
 RUN apt-get install -y sudo
 RUN sudo apt install /root/.nccl/build/pkg/deb/libnccl2_2.6.4-1+cuda9.1_amd64.deb
 RUN sudo apt install /root/.nccl/build/pkg/deb/libnccl-dev_2.6.4-1+cuda9.1_amd64.deb
-RUN apt-get install -y curl
+RUN apt-get install -y curl libboost-all-dev
 ADD nccl/ experiments
 WORKDIR /root/.nccl/experiments
 RUN make

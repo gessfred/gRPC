@@ -126,4 +126,6 @@ void send(int rank, int nRanks, std::array<char, 128> uuid, int dst)  {
 int main(void) {
   auto id = get_local_id();
   std::cout << "id" << std::endl;
+  int rank = atoi(std::get_env("RANK"));
+  send(rank, 1, id, (rank+1)%2);
 }
