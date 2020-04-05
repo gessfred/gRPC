@@ -10,16 +10,15 @@ RUN pip install numpy torch torchvision
 # install NCCL
 RUN mkdir /usr/local/cuda/bin
 RUN ln -s /usr/bin/nvcc /usr/local/cuda/bin/nvcc
-RUN mkdir $HOME/.nccl
-WORKDIR ${HOME}/.nccl
-RUN git clone https://github.com/NVIDIA/nccl.git ${HOME}/.nccl
+RUN git clone https://github.com/NVIDIA/nccl.git /root/.nccl
+WORKDIR /root/.nccl
 RUN make -j src.build
 RUN apt install -y devscripts debhelper fakeroot
 RUN make pkg.debian.build
 RUN apt-get install -y sudo
-RUN sudo apt install ${HOME}/.nccl/build/pkg/deb/libnccl2_2.6.4-1+cuda9.1_amd64.deb
-RUN sudo apt install ${HOME}/.nccl/build/pkg/deb/libnccl-dev_2.6.4-1+cuda9.1_amd64.deb
+RUN sudo apt install /root/.nccl/build/pkg/deb/libnccl2_2.6.4-1+cuda9.1_amd64.deb
+RUN sudo apt install /root/.nccl/build/pkg/deb/libnccl-dev_2.6.4-1+cuda9.1_amd64.deb
 RUN apt-get install -y curl
 ADD nccl/ experiments
-WORKDIR ${HOME}/.nccl/experiments
+WORKDIR /root/.nccl/experiments
 RUN make

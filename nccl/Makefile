@@ -1,4 +1,4 @@
-all: helloworld
+all: exp1
 
-helloworld: helloworld.cc
-	nvcc -I ../build/include -L ../build/lib  helloworld.cc -o helloworld ../build/lib/libnccl.so
+exp1: exp1.cc
+	nvcc -I ../build/include -L ../build/lib  exp1.cc -o exp1 ../build/lib/libnccl.so
