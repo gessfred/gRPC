@@ -50,7 +50,7 @@ std::array<char, 128> get_local_id() {
   std::array<char, 128> res;
   ncclUniqueId id;
   ncclGetUniqueId(&id);
-  std::copy_n(std::begin(id.internal), 128, res.begin());
+  //std::copy_n(std::begin(id.internal), 128, res.begin());
   return res;
   //return reinterpret_cast<std::array<char, 128>&>(id.internal);
 }
@@ -67,6 +67,6 @@ void init(int nDev) {
 }
 
 
-int main(void) {
+int main(void) {
   init(1);
 }
