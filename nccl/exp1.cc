@@ -94,7 +94,9 @@ void send(int rank, int nRanks, std::array<char, 128> uuid, int dst)  {
   //picking a GPU based on localRank, allocate device buffers
   std::cout << "(device) " << localRank << std::endl; 
   //CUDACHECK(cudaSetDevice(localRank));
-  CUDACHECK(cudaMalloc(&sendbuff, size * sizeof(float)));
+  auto err = cudaMalloc(&sendbuff, size * sizeof(float));
+  std::cout << err << std::endl;
+  CUDACHECK(err);
   CUDACHECK(cudaMalloc(&recvbuff, size * sizeof(float)));
   CUDACHECK(cudaStreamCreate(&s));
 
