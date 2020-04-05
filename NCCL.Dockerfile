@@ -8,6 +8,8 @@ RUN python3 -m virtualenv --python=/usr/bin/python3 $VIRTUAL_ENV
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 RUN pip install numpy torch torchvision
 # install NCCL
+RUN mkdir /usr/local/cuda/bin
+RUN ln -s /usr/bin/nvcc /usr/local/cuda/bin/nvcc
 RUN mkdir $HOME/.nccl
 RUN git clone https://github.com/NVIDIA/nccl.git ${HOME}/.nccl
 RUN make -C ${HOME}/.nccl -j src.build
