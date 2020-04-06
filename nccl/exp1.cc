@@ -133,9 +133,11 @@ void send(int rank, int nRanks, std::array<char, 128> uuid, int dst, int localRa
   printf("[MPI Rank %d] Success \n", myRank);
 }
 
-int main(void) {
+int main(int argc, char** argv) {
   auto id = get_local_id();
   std::cout << "id" << std::endl;
   int rank = atoi(std::getenv("RANK"));
-  send(rank, 2, id, (rank+1)%2, 1);
+  int dev = atoi(argv[2]);
+  std::cout << "device" << dev << std::endl:;
+  send(rank, 2, id, (rank+1)%2, dev);
 }
