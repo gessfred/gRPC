@@ -10,7 +10,7 @@ RUN pip install numpy torch torchvision gprof2dot
 # install NCCL
 RUN git clone https://github.com/NVIDIA/nccl.git /root/.nccl
 WORKDIR /root/.nccl
-RUN make -j src.build CXXFLAGS=-pg
+RUN make -j src.build 
 RUN make pkg.debian.build
 ADD nccl/ experiments
 WORKDIR /root/.nccl/experiments
