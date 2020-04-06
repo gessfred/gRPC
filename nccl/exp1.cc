@@ -59,10 +59,10 @@ std::array<char, 128> get_local_id() {
 
 //ncclGetErrorString
 
-void log(int** array) {
+void log(int** array, int size) {
   int *buff = (int*)calloc(size, sizeof(int));
   CUDACHECK(cudaDeviceSynchronize());
-  CUDACHECK(cudaMemcpy(buff, sendbuff, size, cudaMemcpyDeviceToHost));
+  CUDACHECK(cudaMemcpy(buff, *array, size, cudaMemcpyDeviceToHost));
   for(size_t i = 0; i < size; ++i) std::cout << buff[i] << ",";
   std::cout << std::endl;
   free(buff);
@@ -96,7 +96,7 @@ void send(int rank, int nRanks, std::array<char, 128> uuid, int dst, int localRa
   
   CUDACHECK(cudaMalloc(&sendbuff, size * sizeof(int)));
   CUDACHECK(cudaMemset(sendbuff, rank == 0 ? 0xFF : 0x00, size * sizeof(int)));
-  log(&sendbuff);
+  log(&sendbuff, size);
   CUDACHECK(cudaMalloc(&recvbuff, size * sizeof(int)));
   CUDACHECK(cudaStreamCreate(&s));
 
@@ -108,7 +108,7 @@ void send(int rank, int nRanks, std::array<char, 128> uuid, int dst, int localRa
   //communicating using NCCL
   //NCCLCHECK(ncclSend(dst, (const void*)sendbuff, size, ncclFloat,
   //      comm, s));
-  log(&recvbuff);
+  log(&recvbuff, size);
   //completing NCCL operation by synchronizing on the CUDA stream
   CUDACHECK(cudaStreamSynchronize(s));
 
