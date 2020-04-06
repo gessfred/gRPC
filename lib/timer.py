@@ -8,6 +8,7 @@ import uuid
 import os
 from subprocess import Popen, PIPE, check_output
 
+
 class TimerBase(object):
     def __init__(self, name):
         super().__init__()
@@ -114,7 +115,14 @@ class TimerBase(object):
         }
         self.client['coltrain']['benchmarking'].insert_one(data)
     def aggregate(self):
-        pass
+        torch.cuda.synchronize()
+        for rec in self.events:
+            label = rec['label']
+            if label not in self.ready_events:
+                self.ready_events[label] = 0
+            self.ready_events[label] += rec['start'].elapsed_time(rec['end'])
+        del self.events
+        self.events = []
 
     def close_epoch(self):
         pass
@@ -135,13 +143,12 @@ class CUDATimer(TimerBase):
 
     @contextmanager
     def __call__(self, label, epoch=0):
-        start = time.perf_counter()#self.record()
+        start = self.record()
         self.stack.append(label)
         yield
-        #end = self.record()
+        end = self.record()
         id = '/'.join(self.stack)
-        self.ready_events[id] = self.ready_events.get(id, 0) + (time.perf_counter() - start)
-        #self.events += [{'label': id, 'start': start, 'end': end}]
+        self.events += [{'label': id, 'start': start, 'end': end}]
         self.stack.pop()
         #self.ec[id] = self.ec.get(id, 0)
     def wait(self, event, handle):
