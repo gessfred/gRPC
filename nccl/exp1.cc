@@ -94,12 +94,9 @@ void send(int rank, int nRanks, std::array<char, 128> uuid, int dst)  {
   //picking a GPU based on localRank, allocate device buffers
   std::cout << "(device) " << localRank << std::endl; 
   //CUDACHECK(cudaSetDevice(localRank));
-  auto err = cudaMalloc(&sendbuff, size * sizeof(float));
-  std::cout << err << std::endl;
-  std::cout << cudaGetErrorString(err) << " " << cudaGetErrorName(err) << std::endl;
-  (err);
-  (cudaMalloc(&recvbuff, size * sizeof(float)));
-  (cudaStreamCreate(&s));
+  CUDACHECK(cudaMalloc(&sendbuff, size * sizeof(float)));
+  CUDACHECK(cudaMalloc(&recvbuff, size * sizeof(float)));
+  CUDACHECK(cudaStreamCreate(&s));
 
   std::cout << "init" << std::endl;
   //initializing NCCL
@@ -131,5 +128,5 @@ int main(void) {
   auto id = get_local_id();
   std::cout << "id" << std::endl;
   int rank = atoi(std::getenv("RANK"));
-  send(rank, 1, id, (rank+1)%2);
+  send(rank, 2, id, (rank+1)%2);
 }
