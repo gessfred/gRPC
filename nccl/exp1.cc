@@ -97,7 +97,7 @@ void send(int rank, int nRanks, std::array<char, 128> uuid, int dst)  {
   //CUDACHECK(cudaSetDevice(localRank));
   
   CUDACHECK(cudaMalloc(&sendbuff, size * sizeof(int)));
-  CUDACHECK(cudaMemset(sendbuff, 0xFF, size * sizeof(int)));
+    CUDACHECK(cudaMemset(sendbuff, rank == 0 ? 0xFF : 0x00, size * sizeof(int)));
   CUDACHECK(cudaDeviceSynchronize());
   CUDACHECK(cudaMemcpy(buff, sendbuff, size, cudaMemcpyDeviceToHost));
   for(size_t i = 0; i < size; ++i) std::cout << buff[i] << ",";
