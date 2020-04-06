@@ -68,11 +68,10 @@ void init(int nDev) {
     NCCLCHECK(ncclCommInitAll(comms, nDev, devs));
 }
 
-void send(int rank, int nRanks, std::array<char, 128> uuid, int dst)  {
+void send(int rank, int nRanks, std::array<char, 128> uuid, int dst, int localRank)  {
     int size = 1024;
 
   int myRank = rank;
-  int localRank = 0;
     int argc = 1;
      char** argv;
 
@@ -138,5 +137,5 @@ int main(void) {
   auto id = get_local_id();
   std::cout << "id" << std::endl;
   int rank = atoi(std::getenv("RANK"));
-  send(rank, 2, id, (rank+1)%2);
+  send(rank, 2, id, (rank+1)%2, 1);
 }
