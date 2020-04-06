@@ -114,7 +114,7 @@ void send(int rank, int nRanks, std::array<char, 128> uuid, int dst)  {
   //NCCLCHECK(ncclSend(dst, (const void*)sendbuff, size, ncclFloat,
   //      comm, s));
   CUDACHECK(cudaDeviceSynchronize());
-    CUDACHECK(cudaMemcpy(&buff, &sendbuff, size, cudaMemcpyDeviceToHost));
+    CUDACHECK(cudaMemcpy(buff, sendbuff, size, cudaMemcpyDeviceToHost));
     for(size_t i = 0; i < size; ++i) std::cout << buff[i] << ",";
     std::cout << std::endl;
 
