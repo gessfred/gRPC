@@ -83,7 +83,7 @@ void send(int rank, int nRanks, std::array<char, 128> uuid, int dst)  {
   hostHashs[myRank] = getHostHash(hostname);
   ncclUniqueId id;
   ncclComm_t comm;
-  float *buff = calloc(size, sizeof(float));
+  float *buff = (float*)calloc(size, sizeof(float));
   float *sendbuff, *recvbuff;
   cudaStream_t s;
   std::cout << hostname << std::endl;
@@ -97,7 +97,7 @@ void send(int rank, int nRanks, std::array<char, 128> uuid, int dst)  {
   //CUDACHECK(cudaSetDevice(localRank));
   
   CUDACHECK(cudaMalloc(&sendbuff, size * sizeof(float)));
-  CUDACHECK(cudaMemSet(&sendbuff, 2.3, size * sizeof(float)));
+  CUDACHECK(cudaMemset(&sendbuff, 2.3, size * sizeof(float)));
   CUDACHECK(cudaDeviceSynchronize());
   CUDACHECK(cudaMemcpy(&buff, &sendbuff, size, cudaMemcpyDeviceToHost));
   for(size_t i = 0; i < size; ++i) std::cout << buff[i] << ",";
