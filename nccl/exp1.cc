@@ -69,7 +69,7 @@ void init(int nDev) {
 }
 
 void send(int rank, int nRanks, std::array<char, 128> uuid, int dst)  {
-    int size = 32*1024*1024;
+    int size = 1024;
 
   int myRank = rank;
   int localRank = 0;
