@@ -8,16 +8,6 @@ import uuid
 import os
 from subprocess import Popen, PIPE, check_output
 
-import torch
-from contextlib import contextmanager
-import torch.distributed as dist
-import datetime
-import time
-from pymongo import MongoClient
-import uuid
-import os
-from subprocess import Popen, PIPE, check_output
-
 class TimerBase(object):
     def __init__(self, name):
         super().__init__()
@@ -124,14 +114,7 @@ class TimerBase(object):
         }
         self.client['coltrain']['benchmarking'].insert_one(data)
     def aggregate(self):
-        torch.cuda.synchronize()
-        for rec in self.events:
-            label = rec['label']
-            if label not in self.ready_events:
-                self.ready_events[label] = 0
-            self.ready_events[label] += rec['start'].elapsed_time(rec['end'])
-        del self.events
-        self.events = []
+        pass
 
     def close_epoch(self):
         pass
@@ -152,12 +135,13 @@ class CUDATimer(TimerBase):
 
     @contextmanager
     def __call__(self, label, epoch=0):
-        start = self.record()
+        start = time.perf_counter()#self.record()
         self.stack.append(label)
         yield
-        end = self.record()
+        #end = self.record()
         id = '/'.join(self.stack)
-        self.events += [{'label': id, 'start': start, 'end': end}]
+        self.ready_events[id] = self.ready_events.get(id, 0) + (time.perf_counter() - start)
+        #self.events += [{'label': id, 'start': start, 'end': end}]
         self.stack.pop()
         #self.ec[id] = self.ec.get(id, 0)
     def wait(self, event, handle):
