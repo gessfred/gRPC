@@ -83,8 +83,8 @@ void send(int rank, int nRanks, std::array<char, 128> uuid, int dst)  {
   hostHashs[myRank] = getHostHash(hostname);
   ncclUniqueId id;
   ncclComm_t comm;
-  float *buff = (float*)calloc(size, sizeof(float));
-  float *sendbuff, *recvbuff;
+  int *buff = (int*)calloc(size, sizeof(int));
+  int *sendbuff, *recvbuff;
   cudaStream_t s;
   std::cout << hostname << std::endl;
 
@@ -96,20 +96,20 @@ void send(int rank, int nRanks, std::array<char, 128> uuid, int dst)  {
   std::cout << "(device) " << localRank << std::endl; 
   //CUDACHECK(cudaSetDevice(localRank));
   
-  CUDACHECK(cudaMalloc(&sendbuff, size * sizeof(float)));
-  CUDACHECK(cudaMemset(&sendbuff, 2.3, size * sizeof(float)));
+  CUDACHECK(cudaMalloc(&sendbuff, size * sizeof(int)));
+  CUDACHECK(cudaMemset(&sendbuff, 255, size * sizeof(int)));
   CUDACHECK(cudaDeviceSynchronize());
   CUDACHECK(cudaMemcpy(&buff, &sendbuff, size, cudaMemcpyDeviceToHost));
   for(size_t i = 0; i < size; ++i) std::cout << buff[i] << ",";
   std::cout << std::endl;
-  CUDACHECK(cudaMalloc(&recvbuff, size * sizeof(float)));
+  CUDACHECK(cudaMalloc(&recvbuff, size * sizeof(int)));
   CUDACHECK(cudaStreamCreate(&s));
 
   std::cout << "init" << std::endl;
   //initializing NCCL
   NCCLCHECK(ncclCommInitRank(&comm, nRanks, id, myRank));
   int root = 0;
-  NCCLCHECK(ncclBroadcast(sendbuff, recvbuff, size, ncclFloat32, root, comm, s));
+  NCCLCHECK(ncclBroadcast(sendbuff, recvbuff, size, ncclInt32, root, comm, s));
   //communicating using NCCL
   //NCCLCHECK(ncclSend(dst, (const void*)sendbuff, size, ncclFloat,
   //      comm, s));
