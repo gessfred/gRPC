@@ -138,5 +138,6 @@ int main(int argc, char** argv) {
   std::cout << "id" << std::endl;
   int rank = atoi(std::getenv("RANK"));
   int dev = atoi(std::getenv("LOCAL_RANK"));
-  send(rank, 2, id, (rank+1)%2, dev);
+  int world = atoi(std::getenv("WORLD_SIZE"));
+  send(rank, world, id, (rank+1)%2, dev);
 }
