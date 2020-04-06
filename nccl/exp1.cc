@@ -101,8 +101,8 @@ void send(int rank, int nRanks, std::array<char, 128> uuid, int dst)  {
   std::cout << "init" << std::endl;
   //initializing NCCL
   NCCLCHECK(ncclCommInitRank(&comm, nRanks, id, myRank));
-
-
+  int root = 0;
+  NCCLCHECK(ncclBroadcast(sendbuff, recvbuff, size, ncclFloat32, root, comm, s));
   //communicating using NCCL
   //NCCLCHECK(ncclSend(dst, (const void*)sendbuff, size, ncclFloat,
   //      comm, s));
