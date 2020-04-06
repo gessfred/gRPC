@@ -83,6 +83,7 @@ void send(int rank, int nRanks, std::array<char, 128> uuid, int dst)  {
   hostHashs[myRank] = getHostHash(hostname);
   ncclUniqueId id;
   ncclComm_t comm;
+  float *buff = calloc(size, sizeof(float));
   float *sendbuff, *recvbuff;
   cudaStream_t s;
   std::cout << hostname << std::endl;
@@ -94,7 +95,13 @@ void send(int rank, int nRanks, std::array<char, 128> uuid, int dst)  {
   //picking a GPU based on localRank, allocate device buffers
   std::cout << "(device) " << localRank << std::endl; 
   //CUDACHECK(cudaSetDevice(localRank));
+  
   CUDACHECK(cudaMalloc(&sendbuff, size * sizeof(float)));
+  CUDACHECK(cudaMemSet(&sendbuff, 2.3, size * sizeof(float)));
+  CUDACHECK(cudaDeviceSynchronize());
+  CUDACHECK(cudaMemcpy(&buff, &sendbuff, size, cudaMemcpyDeviceToHost));
+  for(size_t i = 0; i < size; ++i) std::cout << buff[i] << ",";
+  std::cout << std::endl;
   CUDACHECK(cudaMalloc(&recvbuff, size * sizeof(float)));
   CUDACHECK(cudaStreamCreate(&s));
 
@@ -106,7 +113,10 @@ void send(int rank, int nRanks, std::array<char, 128> uuid, int dst)  {
   //communicating using NCCL
   //NCCLCHECK(ncclSend(dst, (const void*)sendbuff, size, ncclFloat,
   //      comm, s));
-
+  CUDACHECK(cudaDeviceSynchronize());
+    CUDACHECK(cudaMemcpy(&buff, &sendbuff, size, cudaMemcpyDeviceToHost));
+    for(size_t i = 0; i < size; ++i) std::cout << buff[i] << ",";
+    std::cout << std::endl;
 
   //completing NCCL operation by synchronizing on the CUDA stream
   CUDACHECK(cudaStreamSynchronize(s));
