@@ -58,14 +58,14 @@ std::array<char, 128> get_local_id() {
 }
 
 //ncclGetErrorString
-void init(int nDev) {
-    ncclComm_t comms[nDev];
-    //int size = 32*1024*1024;
-    int devs[nDev];
-    for(int i = 0; i < nDev; ++i) {
-        devs[i] = i;
-    }
-    NCCLCHECK(ncclCommInitAll(comms, nDev, devs));
+
+void log(int** array) {
+  int *buff = (int*)calloc(size, sizeof(int));
+  CUDACHECK(cudaDeviceSynchronize());
+  CUDACHECK(cudaMemcpy(buff, sendbuff, size, cudaMemcpyDeviceToHost));
+  for(size_t i = 0; i < size; ++i) std::cout << buff[i] << ",";
+  std::cout << std::endl;
+  free(buff);
 }
 
 void send(int rank, int nRanks, std::array<char, 128> uuid, int dst, int localRank)  {
@@ -82,7 +82,6 @@ void send(int rank, int nRanks, std::array<char, 128> uuid, int dst, int localRa
   hostHashs[myRank] = getHostHash(hostname);
   ncclUniqueId id;
   ncclComm_t comm;
-  int *buff = (int*)calloc(size, sizeof(int));
   int *sendbuff, *recvbuff;
   cudaStream_t s;
   std::cout << hostname << std::endl;
@@ -96,11 +95,8 @@ void send(int rank, int nRanks, std::array<char, 128> uuid, int dst, int localRa
   CUDACHECK(cudaSetDevice(localRank));
   
   CUDACHECK(cudaMalloc(&sendbuff, size * sizeof(int)));
-    CUDACHECK(cudaMemset(sendbuff, rank == 0 ? 0xFF : 0x00, size * sizeof(int)));
-  CUDACHECK(cudaDeviceSynchronize());
-  CUDACHECK(cudaMemcpy(buff, sendbuff, size, cudaMemcpyDeviceToHost));
-  for(size_t i = 0; i < size; ++i) std::cout << buff[i] << ",";
-  std::cout << std::endl;
+  CUDACHECK(cudaMemset(sendbuff, rank == 0 ? 0xFF : 0x00, size * sizeof(int)));
+  log(&sendbuff);
   CUDACHECK(cudaMalloc(&recvbuff, size * sizeof(int)));
   CUDACHECK(cudaStreamCreate(&s));
 
@@ -112,11 +108,7 @@ void send(int rank, int nRanks, std::array<char, 128> uuid, int dst, int localRa
   //communicating using NCCL
   //NCCLCHECK(ncclSend(dst, (const void*)sendbuff, size, ncclFloat,
   //      comm, s));
-  CUDACHECK(cudaDeviceSynchronize());
-    CUDACHECK(cudaMemcpy(buff, recvbuff, size, cudaMemcpyDeviceToHost));
-    for(size_t i = 0; i < size; ++i) std::cout << buff[i] << ",";
-    std::cout << std::endl;
-
+  log(&recvbuff);
   //completing NCCL operation by synchronizing on the CUDA stream
   CUDACHECK(cudaStreamSynchronize(s));
 
