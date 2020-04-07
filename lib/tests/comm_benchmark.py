@@ -17,7 +17,7 @@ from timer import CUDATimer
 # Tests the speed of the quantised send/recv primitives.
 # Assumes exactly 2 nodes
 def send_recv_speed(runs=100, size=32*2**5, quantized=False, device=None):
-    tensor1 = torch.empty(size, device=device).normal_(mean=0,std=1)
+    tensor1 = torch.zeros(size, device=device).normal_(mean=0,std=1)
     if not quantized:
         bit_list = [32]
     else:
@@ -44,7 +44,7 @@ def send_recv_speed(runs=100, size=32*2**5, quantized=False, device=None):
 # Tests the speed of the quantised isend/irecv primitives.
 # Assumes exactly 2 nodes
 def isend_irecv_speed(runs=100, size=32*2**5, quantized=False, device=None):
-    tensor1 = torch.empty(size, device=device).normal_(mean=0,std=1)
+    tensor1 = torch.zeros(size, device=device).normal_(mean=0,std=1)
     if not quantized:
         bit_list = [32]
     else:
@@ -70,7 +70,7 @@ def isend_irecv_speed(runs=100, size=32*2**5, quantized=False, device=None):
 
 # Tests the speed of the quantised all_gather collective.
 def all_gather_speed(runs=100, size=32*2**5, quantized=False, device=None):
-    tensor1 = torch.empty(size, device=device).normal_(mean=0,std=1)
+    tensor1 = torch.zeros(size, device=device).normal_(mean=0,std=1)
     if not quantized:
         bit_list = [32]
     else:
@@ -88,7 +88,7 @@ def all_gather_speed(runs=100, size=32*2**5, quantized=False, device=None):
 
 # Tests the speed of the quantised gather collective.
 def gather_speed(runs=100, size=32*2**5, quantized=False, device=None):
-    tensor1 = torch.empty(size, device=device).normal_(mean=0,std=1)
+    tensor1 = torch.zeros(size, device=device).normal_(mean=0,std=1)
     if not quantized:
         bit_list = [32]
     else:
@@ -111,7 +111,7 @@ def gather_speed(runs=100, size=32*2**5, quantized=False, device=None):
 
 # Tests the speed of the quantised all_reduce collective.
 def all_reduce_centralised_speed(runs=100, size=32*2**5, quantized=False, device=None):
-    tensor1 = torch.empty(size, device=device).normal_(mean=0,std=1)
+    tensor1 = torch.zeros(size, device=device).normal_(mean=0,std=1)
     op = ReduceOp.SUM
     if not quantized:
         bit_list = [32]
@@ -127,7 +127,7 @@ def all_reduce_centralised_speed(runs=100, size=32*2**5, quantized=False, device
 
 # Tests the speed of the quantised reduce collective.
 def reduce_centralised_speed(runs=100, size=32*2**5, quantized=False, device=None):
-    tensor1 = torch.empty(size, device=device).normal_(mean=0,std=1)
+    tensor1 = torch.zeros(size, device=device).normal_(mean=0,std=1)
     op = ReduceOp.SUM
     master = 0
     if not quantized:
