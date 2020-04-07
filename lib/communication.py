@@ -99,16 +99,14 @@ def all_gather_quantized(tensor_list, tensor, bits=1, group=group.WORLD):
 	for t, q, p in zip(tensor_list, quantized_list, padding_list):
 		t.copy_(_unpack(q, p, bits))
 
+# Not usuable with NCCL
 def gather_quantized(tensor, gather_list=None, bits=1, dst=0, group=group.WORLD):
 	quantized, padding = _pack(tensor, bits)
-	if dist.get_rank() == dst:
-		tensor_sizes = [t.view(-1).shape[0] for t in gather_list]
-		padding_list = [(32 - s) % 32 for s in tensor_sizes]
-		quantized_sizes = [ceil(s/(32/bits)) for s in tensor_sizes]
-		quantized_list = [torch.empty(s, dtype=quantized.dtype, device=tensor.device) for s in quantized_sizes]
-	else:
-		quantized_list = None
-	dist.gather(quantized, gather_list=quantized_list, dst=dst, group=group)
+	tensor_sizes = [t.view(-1).shape[0] for t in gather_list]
+	padding_list = [(32 - s) % 32 for s in tensor_sizes]
+	quantized_sizes = [ceil(s/(32/bits)) for s in tensor_sizes]
+	quantized_list = [torch.empty(s, dtype=quantized.dtype, device=tensor.device) for s in quantized_sizes]
+	dist.all_gather(quantized_list, quantized, group=group)
 	if dist.get_rank() == dst:
 		for t, q, p in zip(gather_list, quantized_list, padding_list):
 			t.copy_(_unpack(q, p, bits))
