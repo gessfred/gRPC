@@ -41,7 +41,7 @@ def send_recv_speed(runs=100, size=32*2**5, quantized=False, device=None):
             else:
                 if not quantized:
                     comm.recv(tensor1, other)
-                else quantized:
+                else:
                     comm.recv_quantized(tensor1, other, bits)
 
         exec_time = time.time() - start
