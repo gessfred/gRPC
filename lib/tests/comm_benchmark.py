@@ -167,6 +167,7 @@ def main():
 
     dist.init_process_group(backend, rank=rank, timeout=datetime.timedelta(seconds=10), world_size=world_size, init_method='tcp://{}:60000'.format(os.environ['MASTER_ADDR']))
 
+    parser = argparse.ArgumentParser(description='Run gpu quantized communication benchmarks')
     parser.add_argument('function', metavar='fn',
                     help='send, isend, all_gather, all_reduce, reduce')
     args = parser.parse_args()
