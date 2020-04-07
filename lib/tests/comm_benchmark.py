@@ -52,13 +52,13 @@ def isend_irecv_correctness(runs=100, size=32*2**5, device=None):
             if rank < other:
                 tensor1 = torch.empty(size, device=device).normal_(mean=0,std=1)
                 tensor2 = tensor1.clone()
-                dist.send(tensor1, other)
+                comm.send(tensor1, other)
                 h = comm.isend_quantized(tensor2, other, bits)
                 h.wait()
             else:
                 tensor1 = torch.zeros(size, device=device)
                 tensor2 = tensor1.clone()
-                dist.recv(tensor1, other)
+                comm.recv(tensor1, other)
                 h = comm.irecv_quantized(tensor2, other, bits)
 
                 q1, p1 = quantize_gpu(tensor1, bits)
