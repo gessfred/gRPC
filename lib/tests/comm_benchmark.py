@@ -181,7 +181,7 @@ def reduce_centralised_correctness(runs=100, size=32*2**5, device=None):
 
 
 def main():
-    
+
     if torch.cuda.is_available():
         device = torch.device("cuda")
         print("Using GPU: {}".format(device))
@@ -189,7 +189,11 @@ def main():
         device = None
         print("Using CPU:")
 
-    dist.init_process_group('nccl', rank=os.environ['RANK'], world_size=os.environ['WORLD_SIZE'])
+    world_size=int(os.environ['WORLD_SIZE'])
+    rank=int(os.environ['RANK'])
+    backend='nccl'
+
+    dist.init_process_group(backend, rank=rank, timeout=datetime.timedelta(seconds=10), world_size=world_size, init_method='tcp://{}:60000'.format(os.environ['MASTER_ADDR']))
 
     max_nodes = 2
 
