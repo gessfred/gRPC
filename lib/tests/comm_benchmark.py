@@ -206,8 +206,9 @@ def main():
     all_gather_correctness(device=device)
     print("All Gather correct")
 
-    gather_correctness(device=device)
-    print("Gather correct")
+    # NCCL does not implement the gather operation
+    # gather_correctness(device=device)
+    # print("Gather correct")
 
     all_reduce_centralised_correctness(device=device)
     print("All Reduce Centralised correct")
