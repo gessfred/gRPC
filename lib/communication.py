@@ -122,10 +122,7 @@ def all_reduce(tensor, group=group.WORLD):
 def all_reduce_quantised_centralised(tensor, master=0, op=ReduceOp.SUM, bits=1, group=group.WORLD):
 	#gather tensors on master node
 	rank = dist.get_rank()
-	if rank == master:
-		tensor_list = [torch.empty(tensor.shape, device=tensor.device) for _ in range(dist.get_world_size())]
-	else:
-		tensor_list = None
+	tensor_list = [torch.empty(tensor.shape, device=tensor.device) for _ in range(dist.get_world_size())]
 	gather_quantized(tensor, gather_list=tensor_list, bits=bits, dst=master, group=group)
 	# reduce tensors on master node, as gather is synchronous we know the tensor list is ready
 	if rank == master:
@@ -138,10 +135,7 @@ def all_reduce_quantised_centralised(tensor, master=0, op=ReduceOp.SUM, bits=1, 
 def reduce_quantised_centralised(tensor, dst, op=ReduceOp.SUM, bits=1, group=group.WORLD):
 	#gather tensors on master node
 	rank = dist.get_rank()
-	if rank == dst:
-		tensor_list = [torch.empty(tensor.shape, device=tensor.device) for _ in range(dist.get_world_size())]
-	else:
-		tensor_list = None
+	tensor_list = [torch.empty(tensor.shape, device=tensor.device) for _ in range(dist.get_world_size())]
 	gather_quantized(tensor, gather_list=tensor_list, bits=bits, dst=dst, group=group)
 	#reduce tensors on master node, as gather as synchronous we know the tensor list is ready
 	if rank == dst:
