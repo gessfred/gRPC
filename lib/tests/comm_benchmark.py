@@ -123,7 +123,7 @@ def all_reduce_centralised_speed(runs=100, size=32*2**5, quantized=False, device
             if not quantized:
                 dist.all_reduce(tensor1, op=op)
             else:
-                comm.all_reduce_quantised_centralised(tensor2, op=op, bits=bits)
+                comm.all_reduce_quantised_centralised(tensor1, op=op, bits=bits)
 
 # Tests the speed of the quantised reduce collective.
 def reduce_centralised_speed(runs=100, size=32*2**5, quantized=False, device=None):
@@ -140,7 +140,7 @@ def reduce_centralised_speed(runs=100, size=32*2**5, quantized=False, device=Non
             if not quantized:
                 dist.reduce(tensor1, master, op=op)
             else:
-                comm.reduce_quantised_centralised(tensor2, master, op=op, bits=bits)
+                comm.reduce_quantised_centralised(tensor1, master, op=op, bits=bits)
 
 
 def main():
