@@ -52,13 +52,13 @@ def isend_irecv_correctness(runs=100, size=32*2**5, device=None):
             if rank < other:
                 tensor1 = torch.empty(size, device=device).normal_(mean=0,std=1)
                 tensor2 = tensor1.clone()
-                dist.send(tensor1, other)
+                comm.send(tensor1, other)
                 h = comm.isend_quantized(tensor2, other, bits)
                 h.wait()
             else:
                 tensor1 = torch.zeros(size, device=device)
                 tensor2 = tensor1.clone()
-                dist.recv(tensor1, other)
+                comm.recv(tensor1, other)
                 h = comm.irecv_quantized(tensor2, other, bits)
 
                 q1, p1 = quantize_gpu(tensor1, bits)
@@ -179,27 +179,8 @@ def reduce_centralised_correctness(runs=100, size=32*2**5, device=None):
                         print(str(rank) + ' t2 '+ str(tensor2))
                         assert(False)
 
-def init_process(rank, size, fn, device, backend='gloo'):
-    """ Initialize the distributed environment. """
-    os.environ['MASTER_ADDR'] = '127.0.0.1'
-    os.environ['MASTER_PORT'] = '29500'
-
-    dist.init_process_group(backend, rank=rank, world_size=size)
-    torch.random.manual_seed(rank) # Make very process have a different RNG
-    # fn(runs=1,size=32,device=device)
-    fn(device=device)
-
-def init_processes(f, size, device):
-    processes = []
-    for rank in range(size):
-        p = Process(target=init_process, args=(rank,size, f, device))
-        p.start()
-        processes.append(p)
-    [p.join() for p in processes]
 
 def main():
-
-    torch.multiprocessing.set_start_method('spawn')
 
     if torch.cuda.is_available():
         device = torch.device("cuda")
@@ -208,29 +189,32 @@ def main():
         device = None
         print("Using CPU:")
 
-    max_nodes = 9
+    world_size=int(os.environ['WORLD_SIZE'])
+    rank=int(os.environ['RANK'])
+    backend='nccl'
 
-    l = init_processes(send_recv_correctness,2,device)
+    dist.init_process_group(backend, rank=rank, timeout=datetime.timedelta(seconds=10), world_size=world_size, init_method='tcp://{}:60000'.format(os.environ['MASTER_ADDR']))
+
+    max_nodes = 2
+
+    send_recv_correctness(device=device)
     print("Send/Recv correct")
 
-    l = init_processes(isend_irecv_correctness,2,device)
+    isend_irecv_correctness(device=device)
     print("ISend/IRecv correct")
 
-    for nodes in range(2,max_nodes):
-        l = init_processes(all_gather_correctness,nodes,device)
-        print("All Gather correct: {} nodes".format(nodes))
+    all_gather_correctness(device=device)
+    print("All Gather correct")
 
-    for nodes in range(2,max_nodes):
-        l = init_processes(gather_correctness,nodes,device)
-        print("Gather correct: {} nodes".format(nodes))
+    # NCCL does not implement the gather operation
+    # gather_correctness(device=device)
+    # print("Gather correct")
 
-    for nodes in range(2,max_nodes):
-        l = init_processes(all_reduce_centralised_correctness,nodes,device)
-        print("All Reduce Centralised correct: {} nodes".format(nodes))
+    all_reduce_centralised_correctness(device=device)
+    print("All Reduce Centralised correct")
 
-    for nodes in range(2,max_nodes):
-        l = init_processes(reduce_centralised_correctness,nodes,device)
-        print("Reduce Centralised correct: {} nodes".format(nodes))
+    reduce_centralised_correctness(device=device)
+    print("Reduce Centralised correct")
 
 if __name__ == '__main__':
     main()
