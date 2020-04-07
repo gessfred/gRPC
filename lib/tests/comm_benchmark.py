@@ -14,36 +14,43 @@ import numpy as np
 from timer import TimerBase as Timer
 from timer import CUDATimer
 
-# Tests the correctness of the quantised send/recv primitives.
+# Tests the speed of the quantised send/recv primitives.
 # Assumes exactly 2 nodes
-def send_recv_correctness(runs=100, size=32*2**5, device=None):
-    for bits in [1,2,4,8]:
+def send_recv_speed(runs=100, size=32*2**5, quantized=False, device=None):
+
+    tensor1 = torch.empty(size, device=device).normal_(mean=0,std=1)
+
+    if not quantized:
+        bit_list = [32]
+    else:
+        bit_list = [1,2,4,8]
+
+    for bits in bit_list:
+
+        start = time.time()
+
         for _ in range(runs):
             rank = dist.get_rank()
             other = (rank + 1) % 2
         # The smallest rank is the sender
             if rank < other:
-                tensor1 = torch.empty(size, device=device).normal_(mean=0,std=1)
-                tensor2 = tensor1.clone()
-                comm.send(tensor1, other)
-                comm.send_quantized(tensor2, other, bits)
+                if not quantized:
+                    comm.send(tensor1, other)
+                else:
+                    comm.send_quantized(tensor1, other, bits)
             else:
-                tensor1 = torch.zeros(size, device=device)
-                tensor2 = tensor1.clone()
-                comm.recv(tensor1, other)
-                comm.recv_quantized(tensor2, other, bits)
+                if not quantized:
+                    comm.recv(tensor1, other)
+                if not quantized:
+                    comm.recv_quantized(tensor1, other, bits)
 
-                q1, p1 = quantize_gpu(tensor1, bits)
-                tensor1 = unquantize_gpu(q1, p1, bits)
-                if not (tensor1 == tensor2).all():
-                    print('bits '+str(bits))
-                    print(tensor1)
-                    print(tensor2)
-                    assert(False)
+        exec_time = time.time() - start
 
-# Tests the correctness of the quantised isend/irecv primitives.
+        print('Q: {}, T: {:6.6}, B: {}'.format(quantized, str(exec_time), bits))
+
+# Tests the speed of the quantised isend/irecv primitives.
 # Assumes exactly 2 nodes
-def isend_irecv_correctness(runs=100, size=32*2**5, device=None):
+def isend_irecv_speed(runs=100, size=32*2**5, device=None):
     for bits in [1,2,4,8]:
         for _ in range(runs):
             rank = dist.get_rank()
@@ -70,8 +77,8 @@ def isend_irecv_correctness(runs=100, size=32*2**5, device=None):
                     print(tensor2)
                     assert(False)
 
-# Tests the correctness of the quantised all_gather collective.
-def all_gather_correctness(runs=100, size=32*2**5, device=None):
+# Tests the speed of the quantised all_gather collective.
+def all_gather_speed(runs=100, size=32*2**5, device=None):
     for bits in [1,2,4,8]:
         for _ in range(runs):
 
@@ -93,8 +100,8 @@ def all_gather_correctness(runs=100, size=32*2**5, device=None):
                 print(str(rank) + ' t2 '+ str(tensor_list2))
                 assert(False)
 
-# Tests the correctness of the quantised gather collective.
-def gather_correctness(runs=100, size=32*2**5, device=None):
+# Tests the speed of the quantised gather collective.
+def gather_speed(runs=100, size=32*2**5, device=None):
     for bits in [1,2,4,8]:
         for _ in range(runs):
 
@@ -123,8 +130,8 @@ def gather_correctness(runs=100, size=32*2**5, device=None):
                     print(str(rank) + ' t2 '+ str(tensor_list2))
                     assert(False)
 
-# Tests the correctness of the quantised all_reduce collective.
-def all_reduce_centralised_correctness(runs=100, size=32*2**5, device=None):
+# Tests the speed of the quantised all_reduce collective.
+def all_reduce_centralised_speed(runs=100, size=32*2**5, device=None):
 
     epsilon = 0.00005
 
@@ -150,8 +157,8 @@ def all_reduce_centralised_correctness(runs=100, size=32*2**5, device=None):
                     print(str(rank) + ' t2 '+ str(tensor2[index]))
                     assert(False)
 
-# Tests the correctness of the quantised reduce collective.
-def reduce_centralised_correctness(runs=100, size=32*2**5, device=None):
+# Tests the speed of the quantised reduce collective.
+def reduce_centralised_speed(runs=100, size=32*2**5, device=None):
 
     epsilon = 0.00005
 
@@ -197,24 +204,25 @@ def main():
 
     max_nodes = 2
 
-    send_recv_correctness(device=device)
-    print("Send/Recv correct")
+    print("Send/Recv")
+    send_recv_speed(device=device)
 
-    isend_irecv_correctness(device=device)
-    print("ISend/IRecv correct")
-
-    all_gather_correctness(device=device)
-    print("All Gather correct")
-
-    # NCCL does not implement the gather operation
-    # gather_correctness(device=device)
-    # print("Gather correct")
-
-    all_reduce_centralised_correctness(device=device)
-    print("All Reduce Centralised correct")
-
-    reduce_centralised_correctness(device=device)
-    print("Reduce Centralised correct")
+    #
+    # isend_irecv_speed(device=device)
+    # print("ISend/IRecv correct")
+    #
+    # all_gather_speed(device=device)
+    # print("All Gather correct")
+    #
+    # # NCCL does not implement the gather operation
+    # # gather_speed(device=device)
+    # # print("Gather correct")
+    #
+    # all_reduce_centralised_speed(device=device)
+    # print("All Reduce Centralised correct")
+    #
+    # reduce_centralised_speed(device=device)
+    # print("Reduce Centralised correct")
 
 if __name__ == '__main__':
     main()
