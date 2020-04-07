@@ -85,6 +85,8 @@ def all_gather_speed(runs=100, size=32*2**5, quantized=False, device=None):
                 dist.all_gather(tensor_list1, tensor1)
             else:
                 comm.all_gather_quantized(tensor_list1, tensor1, bits)
+        exec_time = time.time() - start
+        print('Q: {}, T: {:6.6}, B: {}'.format(quantized, str(exec_time), bits))
 
 # Tests the speed of the quantised gather collective.
 def gather_speed(runs=100, size=32*2**5, quantized=False, device=None):
@@ -108,6 +110,8 @@ def gather_speed(runs=100, size=32*2**5, quantized=False, device=None):
                 dist.gather(tensor1, gather_list=tensor_list1, dst=master)
             else:
                 comm.gather_quantized(tensor1, gather_list=tensor_list1, bits=bits, dst=master)
+        exec_time = time.time() - start
+        print('Q: {}, T: {:6.6}, B: {}'.format(quantized, str(exec_time), bits))
 
 # Tests the speed of the quantised all_reduce collective.
 def all_reduce_centralised_speed(runs=100, size=32*2**5, quantized=False, device=None):
@@ -124,6 +128,8 @@ def all_reduce_centralised_speed(runs=100, size=32*2**5, quantized=False, device
                 dist.all_reduce(tensor1, op=op)
             else:
                 comm.all_reduce_quantised_centralised(tensor1, op=op, bits=bits)
+        exec_time = time.time() - start
+        print('Q: {}, T: {:6.6}, B: {}'.format(quantized, str(exec_time), bits))
 
 # Tests the speed of the quantised reduce collective.
 def reduce_centralised_speed(runs=100, size=32*2**5, quantized=False, device=None):
@@ -141,6 +147,8 @@ def reduce_centralised_speed(runs=100, size=32*2**5, quantized=False, device=Non
                 dist.reduce(tensor1, master, op=op)
             else:
                 comm.reduce_quantised_centralised(tensor1, master, op=op, bits=bits)
+        exec_time = time.time() - start
+        print('Q: {}, T: {:6.6}, B: {}'.format(quantized, str(exec_time), bits))
 
 
 def main():
@@ -159,7 +167,7 @@ def main():
     dist.init_process_group(backend, rank=rank, timeout=datetime.timedelta(seconds=10), world_size=world_size, init_method='tcp://{}:60000'.format(os.environ['MASTER_ADDR']))
 
     max_nodes = 2
-    sizes = [8,10,12,14]
+    sizes = [16,18,20,22]
     # sizes = [1]
 
     print("Send/Recv")
