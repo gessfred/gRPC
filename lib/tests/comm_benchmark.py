@@ -3,6 +3,7 @@ sys.path.append('..')
 import torch
 import torch.distributed as dist
 from torch.distributed import ReduceOp
+import argparse
 import os
 import datetime
 import time
@@ -166,38 +167,46 @@ def main():
 
     dist.init_process_group(backend, rank=rank, timeout=datetime.timedelta(seconds=10), world_size=world_size, init_method='tcp://{}:60000'.format(os.environ['MASTER_ADDR']))
 
+    parser.add_argument('function', metavar='fn',
+                    help='send, isend, all_gather, all_reduce, reduce')
+    args = parser.parse_args()
+
     max_nodes = 2
     sizes = [16,18,20,22]
     # sizes = [1]
 
-    print("Send/Recv")
-    for s in sizes:
-        send_recv_speed(size=32*2**s, device=device)
-        send_recv_speed(size=32*2**s, quantized=True, device=device)
+    if args.function == 'send':
+        print("Send/Recv")
+        for s in sizes:
+            send_recv_speed(size=32*2**s, device=device)
+            send_recv_speed(size=32*2**s, quantized=True, device=device)
 
-    print("ISend/IRecv")
-    for s in sizes:
-        isend_irecv_speed(size=32*2**s, device=device)
-        isend_irecv_speed(size=32*2**s, quantized=True, device=device)
+    # print("ISend/IRecv")
+    # for s in sizes:
+    #     isend_irecv_speed(size=32*2**s, device=device)
+    #     isend_irecv_speed(size=32*2**s, quantized=True, device=device)
 
-    print("All Gather")
-    for s in sizes:
-        all_gather_speed(size=32*2**s, device=device)
-        all_gather_speed(size=32*2**s, quantized=True, device=device)
+    if args.function == 'all_gather':
+        print("All Gather")
+        for s in sizes:
+            all_gather_speed(size=32*2**s, device=device)
+            all_gather_speed(size=32*2**s, quantized=True, device=device)
 
     # NCCL does not implement the gather operation
     # gather_speed(device=device)
     # print("Gather correct")
 
-    print("All Reduce Centralised")
-    for s in sizes:
-        all_reduce_centralised_speed(size=32*2**s, device=device)
-        all_reduce_centralised_speed(size=32*2**s, quantized=True, device=device)
+    if args.function == 'all_reduce':
+        print("All Reduce Centralised")
+        for s in sizes:
+            all_reduce_centralised_speed(size=32*2**s, device=device)
+            all_reduce_centralised_speed(size=32*2**s, quantized=True, device=device)
 
-    print("Reduce Centralised")
-    for s in sizes:
-        reduce_centralised_speed(size=32*2**s, device=device)
-        reduce_centralised_speed(size=32*2**s, quantized=True, device=device)
+    if args.function == 'reduce':
+        print("All Reduce Centralised")
+        for s in sizes:
+            reduce_centralised_speed(size=32*2**s, device=device)
+            reduce_centralised_speed(size=32*2**s, quantized=True, device=device)
 
 if __name__ == '__main__':
     main()
