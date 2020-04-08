@@ -115,6 +115,24 @@ def gather_speed(runs=100, size=32*2**5, quantized=False, device=None):
         print('Q: {}, T: {:6.6}, B: {}'.format(quantized, str(exec_time), bits))
 
 # Tests the speed of the quantised all_reduce collective.
+def all_reduce_speed(runs=100, size=32*2**5, quantized=False, device=None):
+    tensor1 = torch.zeros(size, device=device).normal_(mean=0,std=1)
+    op = ReduceOp.SUM
+    if not quantized:
+        bit_list = [32]
+    else:
+        bit_list = [1,2,4,8]
+    for bits in bit_list:
+        start = time.time()
+        for _ in range(runs):
+            if not quantized:
+                dist.all_reduce(tensor1, op=op)
+            else:
+                comm.all_reduce_quantised(tensor1, op=op, bits=bits)
+        exec_time = time.time() - start
+        print('Q: {}, T: {:6.6}, B: {}'.format(quantized, str(exec_time), bits))
+
+# Tests the speed of the quantised centralised all_reduce collective.
 def all_reduce_centralised_speed(runs=100, size=32*2**5, quantized=False, device=None):
     tensor1 = torch.zeros(size, device=device).normal_(mean=0,std=1)
     op = ReduceOp.SUM
@@ -132,7 +150,7 @@ def all_reduce_centralised_speed(runs=100, size=32*2**5, quantized=False, device
         exec_time = time.time() - start
         print('Q: {}, T: {:6.6}, B: {}'.format(quantized, str(exec_time), bits))
 
-# Tests the speed of the quantised reduce collective.
+# Tests the speed of the quantised centralised reduce collective.
 def reduce_centralised_speed(runs=100, size=32*2**5, quantized=False, device=None):
     tensor1 = torch.zeros(size, device=device).normal_(mean=0,std=1)
     op = ReduceOp.SUM
@@ -173,7 +191,7 @@ def main():
     args = parser.parse_args()
 
     max_nodes = 2
-    sizes = [16,18,20,22]
+    sizes = [16,18,20]
     # sizes = [1]
 
     if args.function == 'send':
@@ -197,14 +215,20 @@ def main():
     # gather_speed(device=device)
     # print("Gather correct")
 
-    if args.function == 'all_reduce':
+    if args.function == 'all_reduce_c':
+        print("All Reduce Centralised")
+        for s in sizes:
+            all_reduce_speed(size=32*2**s, device=device)
+            all_reduce_speed(size=32*2**s, quantized=True, device=device)
+
+    if args.function == 'all_reduce_c':
         print("All Reduce Centralised")
         for s in sizes:
             all_reduce_centralised_speed(size=32*2**s, device=device)
             all_reduce_centralised_speed(size=32*2**s, quantized=True, device=device)
 
     if args.function == 'reduce':
-        print("All Reduce Centralised")
+        print("Reduce Centralised")
         for s in sizes:
             reduce_centralised_speed(size=32*2**s, device=device)
             reduce_centralised_speed(size=32*2**s, quantized=True, device=device)
