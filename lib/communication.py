@@ -113,16 +113,26 @@ def gather_quantized(tensor, gather_list=None, bits=1, dst=0, group=group.WORLD)
 
 def all_reduce(tensor, group=group.WORLD):
     rank = dist.get_rank()
-    chunks = list(tensor.view(dist.get_world_size(), -1))
+    chunks = list(tensor.view(dist.get_world_size(group), -1))
     for i, chunk in enumerate(chunks):
         dist.reduce(chunk, i, op=dist.ReduceOp.SUM, group=group)
     chunk = chunks[rank]
     dist.all_gather(chunks, chunk, group=group)
 
+def all_reduce_quantised(tensor, op=ReduceOp.SUM, bits=1, group=group.WORLD):
+	#gather tensors on master node
+	rank = dist.get_rank()
+	tensor_list = [torch.empty(tensor.shape, device=tensor.device) for _ in range(dist.get_world_size(group))]
+	all_gather_quantized(tensor_list, tensor, bits=bits, group=group)
+	# reduce tensors on master node, as gather is synchronous we know the tensor list is ready
+	ops = {ReduceOp.SUM: lambda t_l: torch.sum(t_l, dim=0),
+		   ReduceOp.PRODUCT: lambda t_l: torch.prod(t_l, dim=0)}
+	tensor.copy_(ops[op](torch.stack(tensor_list)))
+
 def all_reduce_quantised_centralised(tensor, master=0, op=ReduceOp.SUM, bits=1, group=group.WORLD):
 	#gather tensors on master node
 	rank = dist.get_rank()
-	tensor_list = [torch.empty(tensor.shape, device=tensor.device) for _ in range(dist.get_world_size())]
+	tensor_list = [torch.empty(tensor.shape, device=tensor.device) for _ in range(dist.get_world_size(group))]
 	gather_quantized(tensor, gather_list=tensor_list, bits=bits, dst=master, group=group)
 	# reduce tensors on master node, as gather is synchronous we know the tensor list is ready
 	if rank == master:
@@ -134,10 +144,17 @@ def all_reduce_quantised_centralised(tensor, master=0, op=ReduceOp.SUM, bits=1, 
 
 def reduce_quantised_centralised(tensor, dst, op=ReduceOp.SUM, bits=1, group=group.WORLD):
 	#gather tensors on master node
+	size = dist.get_world_size(group)
 	rank = dist.get_rank()
-	tensor_list = [torch.empty(tensor.shape, device=tensor.device) for _ in range(dist.get_world_size())]
-	gather_quantized(tensor, gather_list=tensor_list, bits=bits, dst=dst, group=group)
-	#reduce tensors on master node, as gather as synchronous we know the tensor list is ready
+	if rank == dst:
+		tensor_list = [torch.empty(tensor.shape, device=tensor.device) for _ in range(dist.get_world_size(group))]
+		for i in range(size):
+			if i != dst:
+				# TODO change to irecv_quantized so receives can be done in parallel
+				comm.recv_quantized(tensor_list[i], i, bits)
+	else:
+		comm.send_quantized(tensor, dst, bits)
+
 	if rank == dst:
 		ops = {ReduceOp.SUM: lambda t_l: torch.sum(t_l, dim=0),
 			   ReduceOp.PRODUCT: lambda t_l: torch.prod(t_l, dim=0)}
