@@ -148,9 +148,11 @@ def reduce_quantised_centralised(tensor, dst, op=ReduceOp.SUM, bits=1, group=gro
 	rank = dist.get_rank()
 	if rank == dst:
 		tensor_list = [torch.empty(tensor.shape, device=tensor.device) for _ in range(dist.get_world_size(group))]
-		tensor_list[dst] = tensor
+		q, p = quantize_gpu(tensor, bits)
+		uq = unquantize_gpu(q, p, bits)
+		tensor_list[rank] = uq
 		for i in range(size):
-			if i != dst:
+			if i != rank:
 				# TODO change to irecv_quantized so receives can be done in parallel
 				recv_quantized(tensor_list[i], i, bits)
 	else:
