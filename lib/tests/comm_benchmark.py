@@ -215,7 +215,7 @@ def main():
     # gather_speed(device=device)
     # print("Gather correct")
 
-    if args.function == 'all_reduce_c':
+    if args.function == 'all_reduce':
         print("All Reduce Centralised")
         for s in sizes:
             all_reduce_speed(size=32*2**s, device=device)
