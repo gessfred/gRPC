@@ -124,6 +124,33 @@ def gather_correctness(runs=100, size=32*2**5, device=None):
                     assert(False)
 
 # Tests the correctness of the quantised all_reduce collective.
+def all_reduce_correctness(runs=100, size=32*2**5, device=None):
+
+    epsilon = 0.00005
+
+    for op in [ReduceOp.SUM, ReduceOp.PRODUCT]:
+        for bits in [1,2,4,8]:
+            for _ in range(runs):
+
+                rank = dist.get_rank()
+
+                tensor1 = torch.empty(size, device=device).normal_(mean=0,std=1)
+                tensor2 = tensor1.clone()
+                q, p = quantize_gpu(tensor1, bits)
+                tensor1 = unquantize_gpu(q, p, bits)
+                dist.all_reduce(tensor1, op=op)
+                comm.all_reduce_quantised(tensor2, op=op, bits=bits)
+
+                if not ((tensor1 - tensor2).abs() < epsilon).all():
+                    print('bits '+str(bits))
+                    print('op '+str(op))
+                    torch.set_printoptions(profile="full")
+                    index = torch.eq(tensor1, tensor2).logical_not().nonzero()
+                    print(str(rank) + ' t1 '+ str(tensor1[index]))
+                    print(str(rank) + ' t2 '+ str(tensor2[index]))
+                    assert(False)
+
+# Tests the correctness of the centralised quantised all_reduce collective.
 def all_reduce_centralised_correctness(runs=100, size=32*2**5, device=None):
 
     epsilon = 0.00005
@@ -150,7 +177,7 @@ def all_reduce_centralised_correctness(runs=100, size=32*2**5, device=None):
                     print(str(rank) + ' t2 '+ str(tensor2[index]))
                     assert(False)
 
-# Tests the correctness of the quantised reduce collective.
+# Tests the correctness of thecentralised quantised reduce collective.
 def reduce_centralised_correctness(runs=100, size=32*2**5, device=None):
 
     epsilon = 0.00005
@@ -209,6 +236,9 @@ def main():
     # NCCL does not implement the gather operation
     # gather_correctness(device=device)
     # print("Gather correct")
+
+    all_reduce_correctness(device=device)
+    print("All Reduce correct")
 
     all_reduce_centralised_correctness(device=device)
     print("All Reduce Centralised correct")
