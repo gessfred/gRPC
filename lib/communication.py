@@ -151,9 +151,9 @@ def reduce_quantised_centralised(tensor, dst, op=ReduceOp.SUM, bits=1, group=gro
 		for i in range(size):
 			if i != dst:
 				# TODO change to irecv_quantized so receives can be done in parallel
-				comm.recv_quantized(tensor_list[i], i, bits)
+				recv_quantized(tensor_list[i], i, bits)
 	else:
-		comm.send_quantized(tensor, dst, bits)
+		send_quantized(tensor, dst, bits)
 
 	if rank == dst:
 		ops = {ReduceOp.SUM: lambda t_l: torch.sum(t_l, dim=0),
