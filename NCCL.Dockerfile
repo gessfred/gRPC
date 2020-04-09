@@ -18,8 +18,11 @@ RUN vtune_amplifier_2019_update6/install.sh -s silent.cfg
 RUN touch /root/.bashrc && echo "source /opt/intel/vtune_amplifier/amplxe-vars.sh" > /root/.bashrc
 ENV AMPLXE_RUNTOOL_OPTIONS="--profiling-signal 32"
 # install NCCL
-RUN git clone https://github.com/NVIDIA/nccl.git /root/.nccl
+ENV BRANCH eval/prof
+ADD https://api.github.com/repos/gessfred/nccl/git/refs/heads/${BRANCH} versiongrpc.json
+RUN git clone https://github.com/gessfred/nccl.git  /root/.nccl
 WORKDIR /root/.nccl
+RUN git checkout ${BRANCH}
 RUN make -j src.build 
 RUN make pkg.debian.build
 ADD nccl/ experiments
