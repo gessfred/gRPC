@@ -9,6 +9,7 @@ ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 RUN pip install numpy torch torchvision gprof2dot
 WORKDIR /root/.vtune 
 #install VTune
+RUN apt-get update -y && apt-get install -y wget
 RUN wget -O vtune.tar.gz http://registrationcenter-download.intel.com/akdlm/irc_nas/tec/15828/vtune_amplifier_2019_update6.tar.gz
 RUN tar -xvf vtune.tar.gz
 RUN rm vtune.tar.gz
