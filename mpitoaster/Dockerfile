@@ -14,6 +14,6 @@ RUN git clone https://github.com/nvidia/nccl.git  /root/.nccl
 WORKDIR /root/.nccl
 RUN git checkout ${BRANCH}
 RUN make -j src.build 
-ADD native/ /.native/
-WORKDIR /.native
+ADD . /.mpitoaster/
+WORKDIR /.mpitoaster
 RUN python setup.py install

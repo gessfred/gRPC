@@ -1,11 +1,12 @@
-import <torch/extension.h>
 #include <nccl.h>
 #include <cstdlib>
 #include <iostream>
 #include <unistd.h>
 #include <string>
 #include <array>
-#include <vector>
+#include <algorithm>
+#include <iterator>
+#define info(str) std::cout << "[\033[0;36mINFO\033[0m]" << " "  << str << std::endl; 
 #define CHECK_CUDA(x) TORCH_CHECK(x.type().is_cuda(), #x " must be a CUDA tensor")
 #define CHECK_CONTIGUOUS(x) TORCH_CHECK(x.is_contiguous(), #x " must be contiguous")
 #define CHECK_INPUT(x) CHECK_CUDA(x); CHECK_CONTIGUOUS(x)
@@ -28,12 +29,25 @@ import <torch/extension.h>
   }                                                 \
 } while(0)
 
-///Globals
-ncclComm_t world_comm;
-ncclUniqueId id;
-cudaStream_t world_stream;
-unsigned int rank_global = 0;
-unsigned int world_size_global = 0;
+static uint64_t getHostHash(const char* string) {
+  // Based on DJB2, result = result * 33 + char
+  uint64_t result = 5381;
+  for (int c = 0; string[c] != '\0'; c++){
+    result = ((result << 5) + result) + string[c];
+  }
+  return result;
+}
+
+
+static void getHostName(char* hostname, int maxlen) {
+  gethostname(hostname, maxlen);
+  for (int i=0; i< maxlen; i++) {
+    if (hostname[i] == '.') {
+        hostname[i] = '\0';
+        return;
+    }
+  }
+}
 
 std::array<char, 128> get_local_id() {
   std::array<char, 128> res;
@@ -42,16 +56,6 @@ std::array<char, 128> get_local_id() {
   std::copy_n(std::begin(id.internal), 128, res.begin());
   return res;
   //return reinterpret_cast<std::array<char, 128>&>(id.internal);
-}
-
-/*Print a CUDA array*/
-void print_array_dev(int** array, int size) {
-  int *buff = (int*)calloc(size, sizeof(int));
-  CUDACHECK(cudaDeviceSynchronize());
-  CUDACHECK(cudaMemcpy(buff, *array, size, cudaMemcpyDeviceToHost));
-  for(size_t i = 0; i < size; ++i) std::cout << buff[i] << ",";
-  std::cout << std::endl;
-  free(buff);
 }
 
 /*From https://github.com/jiaweizzhao/signSGD-with-Majority-Vote/blob/master/main/bit2byte-extension/bit2byte.cpp*/
@@ -104,34 +108,73 @@ torch::Tensor unpacking(torch::Tensor src, torch::Tensor dst) {
     //outside we should -(dst-1)
 }
 
-void init(unsigned int rank, unsigned int device, unsigned int world_size) {
-  auto id = get_local_id();
-  rank_global = rank;
-  world_size_global = world_size;
-  NCCLCHECK(ncclCommInitRank(&world_com, world_size, id, rank));
+
+class dist_t {
+  int rank;
+  int dev;
+  int world_size;
+  ncclDataType_t dtype;
+
+  ncclComm_t comm;
+  cudaStream_t stream;
+
+  public:
+  dist_t();
+  ~dist_t();
+  void init();
+  void gather(float*, size_t, float**, int);
+  void allreduce(float*, size_t);
+};
+
+dist_t::dist_t() {
+  rank = atoi(std::getenv("RANK"));
+  dev = atoi(std::getenv("LOCAL_RANK"));
+  world_size = atoi(std::getenv("WORLD_SIZE"));
+  dtype = ncclFloat32;
+}
+dist_t::~dist_t() {
+  ncclCommDestroy(comm);
 }
 
-void gather(torch::Tensor tensor, torch::Tensor* gather_list, unsigned int dst) {
-  if(dst == rank_global) {
-    for(size_t i = 0; i < world_size_global; ++i) {
+void dist_t::init() {
+  CUDACHECK(cudaSetDevice(dev));
+  CUDACHECK(cudaStreamCreate(&stream));
+  ncclUniqueId id;
+  ncclGetUniqueId(&id);
+  NCCLCHECK(ncclCommInitRank(&comm, world_size, id, rank));
+  info("init");
+} 
+
+/*
+tensor has size |count|
+gather_list has size |world|
+*/
+void dist_t::gather(float* tensor, size_t count, float** gather_list, int dst) {
+  if(rank == dst) {
+    for(size_t i = 0; i < world_size; ++i) {
       if(i != dst) {
-        ncclRecv((float*)gather_list[i], (size_t)gather_list[i].size(), ncclFloat32, i, world_comm, world_stream);
-      } else {
-        gather_list[i] = tensor;
+        ncclRecv(gather_list[i], count, ncclFloat32, i, comm, stream);
       }
     }
+    gather_list[rank] = tensor;
   } else {
-    ncclSend((float*)tensor, (size_t)tensor.size(), ncclFloat32, dst, world_comm, world_stream);
+    ncclSend(tensor, count, ncclFloat32, dst, comm, stream);
   }
 }
 
-/*void allreduce(torch::Tensor tensor) {
-    torch::Tensor compressed = packing(tensor);
-    
-}*/
+void dist_t::allreduce(float* tensor, size_t tensorcount) {
+  size_t chunkcount = tensorcount / world_size;
+  for(size_t i = 0; i < world_size; ++i) {
+    size_t offset = i*chunkcount;
+    NCCLCHECK(ncclReduce(tensor+offset, tensor+offset, chunkcount, ncclFloat32, ncclSum, i, comm, stream));
+  }
+  NCCLCHECK(ncclAllGather(tensor+rank*tensorcount, tensor, tensorcount, ncclFloat32, comm, stream));
+}
 
-PYBIND11_MODULE(native, m) {
-  m.def("init", &init, "init");
-  m.def("gather", &gather, "gather");
+extern dist_t dist; //(extern)
+
+PYBIND11_MODULE(mpitoaster, m) {
+  m.def("init", &mpitoaster.init, "init");
+  m.def("gather", &mpitoaster.gather, "gather");
 }
 
