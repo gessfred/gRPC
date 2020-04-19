@@ -9,6 +9,7 @@
 #include <array>
 #include <algorithm>
 #include <iterator>*/
+#define INFO_TAG "[\033[0;36mINFO\033[0m]"
 #define info(str) std::cout << "[\033[0;36mINFO\033[0m]" << " "  << str << std::endl; 
 //#define CHECK_CUDA(x) TORCH_CHECK(x.type().is_cuda(), #x " must be a CUDA tensor")
 //#define CHECK_CONTIGUOUS(x) TORCH_CHECK(x.is_contiguous(), #x " must be contiguous")
@@ -153,18 +154,23 @@ tensor has size |count|
 gather_list has size |world|
 */
 void dist_t::gather(torch::Tensor tensor, std::vector<torch::Tensor> gather_list, int dst) {
+  std::cout << INFO_TAG << "tensor.size " << tensor.size(0) << std::endl;
+  std::cout << INFO_TAG << "gather_list.size " << gather_list.size() << std::endl;
   size_t count = torch::size(tensor, 0);
   if(rank == dst) {
     for(size_t i = 0; i < world_size; ++i) {
       if(i != dst) {
-        ncclRecv(gather_list[i].data<float>(), tensor.size(0), ncclFloat32, i, comm, stream);
+        float tensor_ = gather_list[i].data<float>();
+        ncclRecv(tensor_, tensor.size(0)-1, ncclFloat32, i, comm, stream);
       }
     }
     gather_list[rank] = tensor;
   } else {
-    ncclSend(tensor.data<float>(), tensor.size(0), ncclFloat32, dst, comm, stream);
+    float* tensor_ = tensor.data<float>();
+    ncclSend(tensor_, tensor.size(0)-1, ncclFloat32, dst, comm, stream);
   }
 }
+
 
 /*void dist_t::allreduce(float* tensor, size_t tensorcount) {
   size_t chunkcount = tensorcount / world_size;
