@@ -119,4 +119,4 @@ if __name__ == '__main__':
                 torch.cuda.synchronize()
         end = time.perf_counter()
         print(end-start)
-        timer.upload_raw('microbenchmarking', {'function', f, 'inputsize': s})
+        timer.upload_raw('microbenchmarking', {'function': f, 'inputsize': s})
