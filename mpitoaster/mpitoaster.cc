@@ -1,7 +1,8 @@
 #include <torch/extension.h>
+#include <cuda_runtime.h>
 #include <iostream>
-/*#include <nccl.h>
-#include <cstdlib>
+#include <nccl.h>
+/*#include <cstdlib>
 #include <unistd.h>
 #include <string>
 #include <array>
@@ -21,14 +22,14 @@
   }                                                 \
 } while(0)
 
-/*#define NCCLCHECK(cmd) do {                         \
+#define NCCLCHECK(cmd) do {                         \
   ncclResult_t r = cmd;                             \
   if (r!= ncclSuccess) {                            \
     printf("Failed, NCCL error %s:%d '%s'\n",             \
         __FILE__,__LINE__,ncclGetErrorString(r));   \
     exit(EXIT_FAILURE);                             \
   }                                                 \
-} while(0)*/
+} while(0)
 
 /*static uint64_t getHostHash(const char* string) {
   // Based on DJB2, result = result * 33 + char
@@ -116,11 +117,11 @@ class dist_t {
   int world_size;
   //ncclDataType_t dtype;
 
-  //ncclComm_t comm;
-  //cudaStream_t stream;
+  ncclComm_t comm;
+  cudaStream_t stream;
 
   public:
-  dist_t(int i);
+  dist_t();
   ~dist_t();
   void init();
   /*void gather(float*, size_t, float**, int);
@@ -128,9 +129,9 @@ class dist_t {
 };
 
 dist_t::dist_t() {
-  rank = 0;//atoi(std::getenv("RANK"));
-  dev = 0;//atoi(std::getenv("LOCAL_RANK"));
-  world_size = 0;//atoi(std::getenv("WORLD_SIZE"));
+  rank = atoi(std::getenv("RANK"));
+  dev = atoi(std::getenv("LOCAL_RANK"));
+  world_size = atoi(std::getenv("WORLD_SIZE"));
   //dtype = ncclFloat32;
 }
 dist_t::~dist_t() {
@@ -140,9 +141,9 @@ dist_t::~dist_t() {
 void dist_t::init() {
   CUDACHECK(cudaSetDevice(dev));
   CUDACHECK(cudaStreamCreate(&stream));
-  /*ncclUniqueId id;
+  ncclUniqueId id;
   ncclGetUniqueId(&id);
-  NCCLCHECK(ncclCommInitRank(&comm, world_size, id, rank));*/
+  NCCLCHECK(ncclCommInitRank(&comm, world_size, id, rank));
   info("init");
 } 
 
@@ -174,6 +175,7 @@ void dist_t::allreduce(float* tensor, size_t tensorcount) {
 
 PYBIND11_MODULE(mpitoaster, m) {
     py::class_<dist_t>(m, "MPIToaster")
-      .def(py::init<>());
+      .def(py::init<>())
+      .def("init", &dist_t::init);
 }
 
