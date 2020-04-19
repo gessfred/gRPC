@@ -7,8 +7,8 @@ if __name__ == '__main__':
   world_size = int(os.environ['WORLD_SIZE'])
   mpi = mpitoaster.MPIToaster()
   mpi.init()
-  tensor = torch.ones(1024).cuda()
-  gather_list = [torch.zeros(1024).cuda() for i in range(world_size)]
+  tensor = torch.ones(1024, device='cuda:0')
+  gather_list = [torch.zeros(1024, device='cuda:0') for i in range(world_size)]
   print('before', tensor, gather_list)
   mpi.gather(tensor, gather_list, 0)
   torch.cuda.synchronize()
