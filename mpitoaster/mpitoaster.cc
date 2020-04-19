@@ -12,7 +12,7 @@
 //#define CHECK_CONTIGUOUS(x) TORCH_CHECK(x.is_contiguous(), #x " must be contiguous")
 //#define CHECK_INPUT(x) CHECK_CUDA(x); CHECK_CONTIGUOUS(x)
 
-/*#define CUDACHECK(cmd) do {                         \
+#define CUDACHECK(cmd) do {                         \
   cudaError_t e = cmd;                              \
   if( e != cudaSuccess ) {                          \
     printf("Failed: Cuda error %s:%d '%s'\n",             \
@@ -21,7 +21,7 @@
   }                                                 \
 } while(0)
 
-#define NCCLCHECK(cmd) do {                         \
+/*#define NCCLCHECK(cmd) do {                         \
   ncclResult_t r = cmd;                             \
   if (r!= ncclSuccess) {                            \
     printf("Failed, NCCL error %s:%d '%s'\n",             \
@@ -122,29 +122,29 @@ class dist_t {
   public:
   dist_t(int i);
   ~dist_t();
-  /*void init();
-  void gather(float*, size_t, float**, int);
+  void init();
+  /*void gather(float*, size_t, float**, int);
   void allreduce(float*, size_t);*/
 };
 
-dist_t::dist_t(int i) {
-  rank = atoi(std::getenv("RANK"));
-  dev = atoi(std::getenv("LOCAL_RANK"));
-  world_size = atoi(std::getenv("WORLD_SIZE"));
+dist_t::dist_t() {
+  rank = 0;//atoi(std::getenv("RANK"));
+  dev = 0;//atoi(std::getenv("LOCAL_RANK"));
+  world_size = 0;//atoi(std::getenv("WORLD_SIZE"));
   //dtype = ncclFloat32;
 }
 dist_t::~dist_t() {
   //ncclCommDestroy(comm);
 }
 
-/*void dist_t::init() {
+void dist_t::init() {
   CUDACHECK(cudaSetDevice(dev));
   CUDACHECK(cudaStreamCreate(&stream));
-  ncclUniqueId id;
+  /*ncclUniqueId id;
   ncclGetUniqueId(&id);
-  NCCLCHECK(ncclCommInitRank(&comm, world_size, id, rank));
+  NCCLCHECK(ncclCommInitRank(&comm, world_size, id, rank));*/
   info("init");
-} */
+} 
 
 /*
 tensor has size |count|
@@ -174,6 +174,6 @@ void dist_t::allreduce(float* tensor, size_t tensorcount) {
 
 PYBIND11_MODULE(mpitoaster, m) {
     py::class_<dist_t>(m, "MPIToaster")
-      .def(py::init<int>());
+      .def(py::init<>());
 }
 
