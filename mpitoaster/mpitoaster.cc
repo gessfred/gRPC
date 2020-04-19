@@ -120,14 +120,14 @@ class dist_t {
   //cudaStream_t stream;
 
   public:
-  dist_t();
+  dist_t(int i);
   ~dist_t();
   /*void init();
   void gather(float*, size_t, float**, int);
   void allreduce(float*, size_t);*/
 };
 
-dist_t::dist_t() {
+dist_t::dist_t(int i) {
   rank = atoi(std::getenv("RANK"));
   dev = atoi(std::getenv("LOCAL_RANK"));
   world_size = atoi(std::getenv("WORLD_SIZE"));
@@ -173,6 +173,7 @@ void dist_t::allreduce(float* tensor, size_t tensorcount) {
 }*/
 
 PYBIND11_MODULE(mpitoaster, m) {
-    py::class_<dist_t>(m, "MPIToaster");
+    py::class_<dist_t>(m, "MPIToaster")
+      .def(py::init<int>());
 }
 
