@@ -1,6 +1,6 @@
 import torch
 import numpy as np
-from q_general_cpp import quantize_general, unquantize_general
+#from q_general_cpp import quantize_general, unquantize_general
 
 dataSz = 32
 

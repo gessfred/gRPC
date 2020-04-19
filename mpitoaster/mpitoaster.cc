@@ -11,9 +11,9 @@
 #include <iterator>*/
 #define INFO_TAG "[\033[0;36mINFO\033[0m]"
 #define info(str) std::cout << "[\033[0;36mINFO\033[0m]" << " "  << str << std::endl; 
-//#define CHECK_CUDA(x) TORCH_CHECK(x.type().is_cuda(), #x " must be a CUDA tensor")
-//#define CHECK_CONTIGUOUS(x) TORCH_CHECK(x.is_contiguous(), #x " must be contiguous")
-//#define CHECK_INPUT(x) CHECK_CUDA(x); CHECK_CONTIGUOUS(x)
+#define CHECK_CUDA(x) TORCH_CHECK(x.type().is_cuda(), #x " must be a CUDA tensor")
+#define CHECK_CONTIGUOUS(x) TORCH_CHECK(x.is_contiguous(), #x " must be contiguous")
+#define CHECK_INPUT(x) CHECK_CUDA(x); CHECK_CONTIGUOUS(x)
 
 #define CUDACHECK(cmd) do {                         \
   cudaError_t e = cmd;                              \
@@ -154,12 +154,15 @@ tensor has size |count|
 gather_list has size |world|
 */
 void dist_t::gather(torch::Tensor tensor, std::vector<torch::Tensor> gather_list, int dst) {
-  std::cout << INFO_TAG << "tensor.size " << tensor.size(0) << std::endl;
-  std::cout << INFO_TAG << "gather_list.size " << gather_list.size() << std::endl;
+  std::cout << INFO_TAG << " tensor.size " << tensor.size(0) << std::endl;
+  std::cout << INFO_TAG << " gather_list.size " << gather_list.size() << std::endl;
   size_t count = torch::size(tensor, 0);
+  CHECK_INPUT(tensor);
   if(rank == dst) {
     for(size_t i = 0; i < world_size; ++i) {
       if(i != dst) {
+        std::cout << " recv-from rank:" << i << std::endl;  
+        CHECK_INPUT(gather_list[i]);
         float* tensor_ = gather_list[i].data<float>();
         ncclRecv(tensor_, tensor.size(0)-1, ncclFloat32, i, comm, stream);
       }
@@ -167,6 +170,7 @@ void dist_t::gather(torch::Tensor tensor, std::vector<torch::Tensor> gather_list
     gather_list[rank] = tensor;
   } else {
     float* tensor_ = tensor.data<float>();
+    std::cout << " send-to " << dst << std::endl;
     ncclSend(tensor_, tensor.size(0)-1, ncclFloat32, dst, comm, stream);
   }
 }
