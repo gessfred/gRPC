@@ -160,7 +160,7 @@ void dist_t::gather(torch::Tensor tensor, std::vector<torch::Tensor> gather_list
   if(rank == dst) {
     for(size_t i = 0; i < world_size; ++i) {
       if(i != dst) {
-        float tensor_ = gather_list[i].data<float>();
+        float* tensor_ = gather_list[i].data<float>();
         ncclRecv(tensor_, tensor.size(0)-1, ncclFloat32, i, comm, stream);
       }
     }
