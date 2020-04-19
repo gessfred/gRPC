@@ -2,6 +2,7 @@
 #include <cuda_runtime.h>
 #include <iostream>
 #include <nccl.h>
+#include <vector>
 /*#include <cstdlib>
 #include <unistd.h>
 #include <string>
@@ -124,8 +125,8 @@ class dist_t {
   dist_t();
   ~dist_t();
   void init();
-  /*void gather(float*, size_t, float**, int);
-  void allreduce(float*, size_t);*/
+  void gather(torch::Tensor, std::vector<torch::Tensor>, int);
+  //void allreduce(float*, size_t);*/
 };
 
 dist_t::dist_t() {
@@ -151,20 +152,21 @@ void dist_t::init() {
 tensor has size |count|
 gather_list has size |world|
 */
-/*void dist_t::gather(float* tensor, size_t count, float** gather_list, int dst) {
+void dist_t::gather(torch::Tensor tensor, std::vector<torch::Tensor> gather_list, int dst) {
+  size_t count = torch::size(tensor, 0);
   if(rank == dst) {
     for(size_t i = 0; i < world_size; ++i) {
       if(i != dst) {
-        ncclRecv(gather_list[i], count, ncclFloat32, i, comm, stream);
+        ncclRecv(gather_list[i].data<float>(), tensor.size(0), ncclFloat32, i, comm, stream);
       }
     }
     gather_list[rank] = tensor;
   } else {
-    ncclSend(tensor, count, ncclFloat32, dst, comm, stream);
+    ncclSend(tensor.data<float>(), tensor.size(0), ncclFloat32, dst, comm, stream);
   }
 }
 
-void dist_t::allreduce(float* tensor, size_t tensorcount) {
+/*void dist_t::allreduce(float* tensor, size_t tensorcount) {
   size_t chunkcount = tensorcount / world_size;
   for(size_t i = 0; i < world_size; ++i) {
     size_t offset = i*chunkcount;
@@ -176,6 +178,7 @@ void dist_t::allreduce(float* tensor, size_t tensorcount) {
 PYBIND11_MODULE(mpitoaster, m) {
     py::class_<dist_t>(m, "MPIToaster")
       .def(py::init<>())
-      .def("init", &dist_t::init);
+      .def("init", &dist_t::init)
+      .def("gather", &dist_t::gather);
 }
 
