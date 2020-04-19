@@ -17,4 +17,3 @@ RUN make -j src.build
 ADD . /.mpitoaster/
 WORKDIR /.mpitoaster
 RUN python setup.py install
-RUN python test_native.py
