@@ -14,6 +14,11 @@ RUN git clone https://github.com/nvidia/nccl.git  /root/.nccl
 WORKDIR /root/.nccl
 RUN git checkout ${BRANCH}
 RUN make -j src.build 
+RUN apt-get update -y && apt-get install -y sudo
+RUN sudo apt install build-essential devscripts debhelper fakeroot
+RUN make pkg.debian.build 
+RUN sudo apt install /root/.nccl/build/pkg/libnccl2_2.7.0p4-1+cuda10.2_amd64.deb
+RUN sudo apt install /root/.nccl/build/pkg/libnccl-dev_2.7.0p4-1+cuda10.2_amd64.deb
 ADD . /.mpitoaster/
 WORKDIR /.mpitoaster
 RUN python setup.py install
