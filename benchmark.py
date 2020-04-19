@@ -114,9 +114,10 @@ if __name__ == '__main__':
         allreduce = lambda tensor: ar(tensor, timer) if f == 'bit2byte' else dist.all_reduce if f == 'dist' else lambda tensor: ar2(tensor, timer)
         start = time.perf_counter()
         tensor = torch.ones(2**s).cuda()
-        for _ in range(100):
+        shots = 100
+        for _ in range(shots):
                 allreduce(tensor)
                 torch.cuda.synchronize()
         end = time.perf_counter()
         print(end-start)
-        timer.upload_raw('microbenchmarking', {'function': f, 'inputsize': s})
+        timer.upload_raw('microbenchmarking', {'function': f, 'inputsize': s, 'shots': shots})
