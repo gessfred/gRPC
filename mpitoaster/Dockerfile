@@ -16,4 +16,4 @@ RUN git checkout ${BRANCH}
 RUN make -j src.build 
 ADD . /.mpitoaster/
 WORKDIR /.mpitoaster
-RUN python setup.py install
+#RUN python setup.py install

@@ -1,8 +1,9 @@
-from setuptools import setup, Extension
-from torch.utils import cpp_extension
+from setuptools import setup
+import torch
+from torch.utils.cpp_extension import load, BuildExtension, CppExtension, CUDAExtension
 
 setup(name='mpitoaster',
-      ext_modules=[cpp_extension.CppExtension('mpitoaster',
+      ext_modules=[CUDAExtension('mpitoaster',
                                              ['mpitoaster.cc'],
-                                             extra_compile_args=["-fopenmp"])],
-      cmdclass={'build_ext': cpp_extension.BuildExtension})
+                                             extra_compile_args=["-fopenmp", "-w"])],
+      cmdclass={'build_ext': BuildExtension})

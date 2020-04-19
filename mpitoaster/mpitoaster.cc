@@ -1,17 +1,18 @@
-#include <nccl.h>
-#include <cstdlib>
+#include <torch/extension.h>
 #include <iostream>
+/*#include <nccl.h>
+#include <cstdlib>
 #include <unistd.h>
 #include <string>
 #include <array>
 #include <algorithm>
-#include <iterator>
+#include <iterator>*/
 #define info(str) std::cout << "[\033[0;36mINFO\033[0m]" << " "  << str << std::endl; 
-#define CHECK_CUDA(x) TORCH_CHECK(x.type().is_cuda(), #x " must be a CUDA tensor")
-#define CHECK_CONTIGUOUS(x) TORCH_CHECK(x.is_contiguous(), #x " must be contiguous")
-#define CHECK_INPUT(x) CHECK_CUDA(x); CHECK_CONTIGUOUS(x)
+//#define CHECK_CUDA(x) TORCH_CHECK(x.type().is_cuda(), #x " must be a CUDA tensor")
+//#define CHECK_CONTIGUOUS(x) TORCH_CHECK(x.is_contiguous(), #x " must be contiguous")
+//#define CHECK_INPUT(x) CHECK_CUDA(x); CHECK_CONTIGUOUS(x)
 
-#define CUDACHECK(cmd) do {                         \
+/*#define CUDACHECK(cmd) do {                         \
   cudaError_t e = cmd;                              \
   if( e != cudaSuccess ) {                          \
     printf("Failed: Cuda error %s:%d '%s'\n",             \
@@ -27,9 +28,9 @@
         __FILE__,__LINE__,ncclGetErrorString(r));   \
     exit(EXIT_FAILURE);                             \
   }                                                 \
-} while(0)
+} while(0)*/
 
-static uint64_t getHostHash(const char* string) {
+/*static uint64_t getHostHash(const char* string) {
   // Based on DJB2, result = result * 33 + char
   uint64_t result = 5381;
   for (int c = 0; string[c] != '\0'; c++){
@@ -56,7 +57,7 @@ std::array<char, 128> get_local_id() {
   std::copy_n(std::begin(id.internal), 128, res.begin());
   return res;
   //return reinterpret_cast<std::array<char, 128>&>(id.internal);
-}
+}*/
 
 /*From https://github.com/jiaweizzhao/signSGD-with-Majority-Vote/blob/master/main/bit2byte-extension/bit2byte.cpp*/
 torch::Tensor packing(torch::Tensor src) {
@@ -113,43 +114,43 @@ class dist_t {
   int rank;
   int dev;
   int world_size;
-  ncclDataType_t dtype;
+  //ncclDataType_t dtype;
 
-  ncclComm_t comm;
-  cudaStream_t stream;
+  //ncclComm_t comm;
+  //cudaStream_t stream;
 
   public:
   dist_t();
   ~dist_t();
-  void init();
+  /*void init();
   void gather(float*, size_t, float**, int);
-  void allreduce(float*, size_t);
+  void allreduce(float*, size_t);*/
 };
 
 dist_t::dist_t() {
   rank = atoi(std::getenv("RANK"));
   dev = atoi(std::getenv("LOCAL_RANK"));
   world_size = atoi(std::getenv("WORLD_SIZE"));
-  dtype = ncclFloat32;
+  //dtype = ncclFloat32;
 }
 dist_t::~dist_t() {
-  ncclCommDestroy(comm);
+  //ncclCommDestroy(comm);
 }
 
-void dist_t::init() {
+/*void dist_t::init() {
   CUDACHECK(cudaSetDevice(dev));
   CUDACHECK(cudaStreamCreate(&stream));
   ncclUniqueId id;
   ncclGetUniqueId(&id);
   NCCLCHECK(ncclCommInitRank(&comm, world_size, id, rank));
   info("init");
-} 
+} */
 
 /*
 tensor has size |count|
 gather_list has size |world|
 */
-void dist_t::gather(float* tensor, size_t count, float** gather_list, int dst) {
+/*void dist_t::gather(float* tensor, size_t count, float** gather_list, int dst) {
   if(rank == dst) {
     for(size_t i = 0; i < world_size; ++i) {
       if(i != dst) {
@@ -169,12 +170,9 @@ void dist_t::allreduce(float* tensor, size_t tensorcount) {
     NCCLCHECK(ncclReduce(tensor+offset, tensor+offset, chunkcount, ncclFloat32, ncclSum, i, comm, stream));
   }
   NCCLCHECK(ncclAllGather(tensor+rank*tensorcount, tensor, tensorcount, ncclFloat32, comm, stream));
-}
-
-extern dist_t dist; //(extern)
+}*/
 
 PYBIND11_MODULE(mpitoaster, m) {
-  m.def("init", &mpitoaster.init, "init");
-  m.def("gather", &mpitoaster.gather, "gather");
+    py::class_<dist_t>(m, "MPIToaster");
 }
 
