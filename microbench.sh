@@ -4,6 +4,9 @@ for f in "bit2byte" "dist" "quantizy"
 do
   for i in {18..25}
   do
-    UUID="$uuidgen" "tensor-size"=$i function=$f python benchmark.py
+    export UUID="$uuidgen" 
+    export "tensor-size"=$i 
+    export function=$f 
+    python benchmark.py
   done
 done
