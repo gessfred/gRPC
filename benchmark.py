@@ -110,7 +110,7 @@ if __name__ == '__main__':
         torch.cuda.synchronize()
         timer = CUDATimer('test-correctness-timing')
         f = os.environ['function']
-        s = int(os.environ['tensor-size'])
+        s = int(os.environ['size'])
         allreduce = lambda tensor: ar(tensor, timer) if f == 'bit2byte' else dist.all_reduce if f == 'dist' else lambda tensor: ar2(tensor, timer)
         start = time.perf_counter()
         tensor = torch.ones(2**s).cuda()

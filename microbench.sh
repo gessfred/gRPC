@@ -5,8 +5,9 @@ do
   for i in {18..25}
   do
     export UUID="$uuidgen" 
-    export "tensor-size"=$i 
+    export "size"=$i 
     export function=$f 
+    echo "$UUID $size $function"
     python benchmark.py
   done
 done
