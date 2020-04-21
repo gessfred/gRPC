@@ -40,7 +40,7 @@ def send_recv_speed(runs=100, size=32*2**5, quantized=False, device=None):
                 else:
                     comm.recv_quantized(tensor1, other, bits)
         exec_time = time.time() - start
-        print('Q: {}, T: {:6.6}, B: {}'.format(quantized, str(exec_time), bits))
+        print('Q: {}, T: {:6.6}, B: {}, runs: {}, size" {}'.format(quantized, str(exec_time), bits, runs, size))
 
 # Tests the speed of the quantised isend/irecv primitives.
 # Assumes exactly 2 nodes
@@ -67,7 +67,7 @@ def isend_irecv_speed(runs=100, size=32*2**5, quantized=False, device=None):
                 else:
                     h = comm.irecv_quantized(tensor1, other, bits)
         exec_time = time.time() - start
-        print('Q: {}, T: {:6.6}, B: {}'.format(quantized, str(exec_time), bits))
+        print('Q: {}, T: {:6.6}, B: {}, runs: {}, size" {}'.format(quantized, str(exec_time), bits, runs, size))
 
 # Tests the speed of the quantised all_gather collective.
 def all_gather_speed(runs=100, size=32*2**5, quantized=False, device=None):
@@ -87,7 +87,7 @@ def all_gather_speed(runs=100, size=32*2**5, quantized=False, device=None):
             else:
                 comm.all_gather_quantized(tensor_list1, tensor1, bits)
         exec_time = time.time() - start
-        print('Q: {}, T: {:6.6}, B: {}'.format(quantized, str(exec_time), bits))
+        print('Q: {}, T: {:6.6}, B: {}, runs: {}, size" {}'.format(quantized, str(exec_time), bits, runs, size))
 
 # Tests the speed of the quantised gather collective.
 def gather_speed(runs=100, size=32*2**5, quantized=False, device=None):
@@ -112,7 +112,7 @@ def gather_speed(runs=100, size=32*2**5, quantized=False, device=None):
             else:
                 comm.gather_quantized(tensor1, gather_list=tensor_list1, bits=bits, dst=master)
         exec_time = time.time() - start
-        print('Q: {}, T: {:6.6}, B: {}'.format(quantized, str(exec_time), bits))
+        print('Q: {}, T: {:6.6}, B: {}, runs: {}, size" {}'.format(quantized, str(exec_time), bits, runs, size))
 
 # Tests the speed of the quantised all_reduce collective.
 def all_reduce_speed(runs=100, size=32*2**5, quantized=False, device=None):
@@ -130,7 +130,7 @@ def all_reduce_speed(runs=100, size=32*2**5, quantized=False, device=None):
             else:
                 comm.all_reduce_quantised(tensor1, op=op, bits=bits)
         exec_time = time.time() - start
-        print('Q: {}, T: {:6.6}, B: {}'.format(quantized, str(exec_time), bits))
+        print('Q: {}, T: {:6.6}, B: {}, runs: {}, size" {}'.format(quantized, str(exec_time), bits, runs, size))
 
 # Tests the speed of the quantised centralised all_reduce collective.
 def all_reduce_centralised_speed(runs=100, size=32*2**5, quantized=False, device=None):
@@ -149,8 +149,7 @@ def all_reduce_centralised_speed(runs=100, size=32*2**5, quantized=False, device
             else:
                 comm.all_reduce_quantised_centralised(tensor1, op=op, bits=bits)
         exec_time = time.time() - start
-        print('Q: {}, T: {:6.6}, B: {}'.format(quantized, str(exec_time), bits))
-        print('Q:{}, t:{}'.format(tensor1))
+        print('Q: {}, T: {:6.6}, B: {}, runs: {}, size" {}'.format(quantized, str(exec_time), bits, runs, size))
 
 # Tests the speed of the quantised centralised reduce collective.
 def reduce_centralised_speed(runs=100, size=32*2**5, quantized=False, device=None):
@@ -169,7 +168,7 @@ def reduce_centralised_speed(runs=100, size=32*2**5, quantized=False, device=Non
             else:
                 comm.reduce_quantised_centralised(tensor1, master, op=op, bits=bits)
         exec_time = time.time() - start
-        print('Q: {}, T: {:6.6}, B: {}'.format(quantized, str(exec_time), bits))
+        print('Q: {}, T: {:6.6}, B: {}, runs: {}, size" {}'.format(quantized, str(exec_time), bits, runs, size))
 
 
 def main():
