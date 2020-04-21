@@ -253,7 +253,7 @@ def main():
     if args.function == 'reduce':
         print("Reduce Centralised")
         for s in sizes:
-            reduce_centralised_speed(runs=1, size=32*2**s, device=device)
+            reduce_centralised_speed(size=32*2**s, device=device)
             reduce_centralised_speed(size=32*2**s, quantized=True, device=device)
 
 if __name__ == '__main__':
