@@ -39,7 +39,7 @@ def send_recv_speed(runs=100, size=32*2**5, quantized=False, device=None):
                     comm.recv(tensor1, other)
                 else:
                     comm.recv_quantized(tensor1, other, bits)
-                dist.barrier()
+            dist.barrier()
         exec_time = time.time() - start
         print('Q: {}, T: {:6.6}, B: {}, runs: {}, size" {}'.format(quantized, str(exec_time), bits, runs, size))
 
