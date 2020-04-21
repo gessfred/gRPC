@@ -214,7 +214,7 @@ def main():
     args = parser.parse_args()
 
     max_nodes = 2
-    sizes = [18,20,22]
+    sizes = [14,16,18]
     # sizes = [1]
 
     if args.function == 'send':
@@ -252,7 +252,7 @@ def main():
 
     if args.function == 'reduce':
         print("Reduce Centralised")
-        for s in [0]:
+        for s in sizes:
             reduce_centralised_speed(runs=1, size=32*2**s, device=device)
             reduce_centralised_speed(size=32*2**s, quantized=True, device=device)
 
