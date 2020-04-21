@@ -39,6 +39,7 @@ def send_recv_speed(runs=100, size=32*2**5, quantized=False, device=None):
                     comm.recv(tensor1, other)
                 else:
                     comm.recv_quantized(tensor1, other, bits)
+                dist.barrier()
         exec_time = time.time() - start
         print('Q: {}, T: {:6.6}, B: {}, runs: {}, size" {}'.format(quantized, str(exec_time), bits, runs, size))
 
@@ -66,6 +67,7 @@ def isend_irecv_speed(runs=100, size=32*2**5, quantized=False, device=None):
                     h = comm.irecv(tensor1, other)
                 else:
                     h = comm.irecv_quantized(tensor1, other, bits)
+                dist.barrier()
         exec_time = time.time() - start
         print('Q: {}, T: {:6.6}, B: {}, runs: {}, size" {}'.format(quantized, str(exec_time), bits, runs, size))
 
@@ -86,6 +88,7 @@ def all_gather_speed(runs=100, size=32*2**5, quantized=False, device=None):
                 dist.all_gather(tensor_list1, tensor1)
             else:
                 comm.all_gather_quantized(tensor_list1, tensor1, bits)
+            dist.barrier()
         exec_time = time.time() - start
         print('Q: {}, T: {:6.6}, B: {}, runs: {}, size" {}'.format(quantized, str(exec_time), bits, runs, size))
 
@@ -111,6 +114,7 @@ def gather_speed(runs=100, size=32*2**5, quantized=False, device=None):
                 dist.gather(tensor1, gather_list=tensor_list1, dst=master)
             else:
                 comm.gather_quantized(tensor1, gather_list=tensor_list1, bits=bits, dst=master)
+            dist.barrier()
         exec_time = time.time() - start
         print('Q: {}, T: {:6.6}, B: {}, runs: {}, size" {}'.format(quantized, str(exec_time), bits, runs, size))
 
