@@ -167,6 +167,7 @@ def reduce_centralised_speed(runs=100, size=32*2**5, quantized=False, device=Non
                 dist.reduce(tensor1, master, op=op)
             else:
                 comm.reduce_quantised_centralised(tensor1, master, op=op, bits=bits)
+            dist.barrier()
         exec_time = time.time() - start
         print('Q: {}, T: {:6.6}, B: {}, runs: {}, size" {}'.format(quantized, str(exec_time), bits, runs, size))
 
@@ -193,7 +194,7 @@ def main():
     args = parser.parse_args()
 
     max_nodes = 2
-    sizes = [14,16,18]
+    sizes = [14,16,18,20,22]
     # sizes = [1]
 
     if args.function == 'send':
