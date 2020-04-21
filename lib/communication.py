@@ -111,6 +111,17 @@ def gather_quantized(tensor, gather_list=None, bits=1, dst=0, group=group.WORLD)
 		for t, q, p in zip(gather_list, quantized_list, padding_list):
 			t.copy_(_unpack(q, p, bits))
 
+def ar(tensor, timer):
+    with timer('packing'):
+        compressed, padding = _pack(tensor)
+    gather_list = [compressed.clone() for i in range(dist.get_world_size())]
+    with timer('gather'):
+        dist.all_gather(gather_list, compressed)
+    with timer('unpack'):
+        gather_list = list(map(lambda recv: _unpack(recv, padding), gather_list))
+    with timer('sum'): 
+        return torch.sum(torch.stack(gather_list), dim=0)
+
 def all_reduce(tensor, group=group.WORLD):
     rank = dist.get_rank()
     chunks = list(tensor.view(dist.get_world_size(group), -1))
