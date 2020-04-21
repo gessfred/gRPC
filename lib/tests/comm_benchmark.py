@@ -129,6 +129,7 @@ def all_reduce_speed(runs=100, size=32*2**5, quantized=False, device=None):
                 dist.all_reduce(tensor1, op=op)
             else:
                 comm.all_reduce_quantised(tensor1, op=op, bits=bits)
+            dist.barrier()
         exec_time = time.time() - start
         print('Q: {}, T: {:6.6}, B: {}, runs: {}, size" {}'.format(quantized, str(exec_time), bits, runs, size))
 
@@ -148,6 +149,7 @@ def all_reduce_centralised_speed(runs=100, size=32*2**5, quantized=False, device
                 dist.all_reduce(tensor1, op=op)
             else:
                 comm.all_reduce_quantised_centralised(tensor1, op=op, bits=bits)
+            dist.barrier()
         exec_time = time.time() - start
         print('Q: {}, T: {:6.6}, B: {}, runs: {}, size" {}'.format(quantized, str(exec_time), bits, runs, size))
 
@@ -219,7 +221,7 @@ def main():
     # print("Gather correct")
 
     if args.function == 'all_reduce':
-        print("All Reduce Centralised")
+        print("All Reduce")
         for s in sizes:
             all_reduce_speed(size=32*2**s, device=device)
             all_reduce_speed(size=32*2**s, quantized=True, device=device)
