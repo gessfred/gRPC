@@ -13,10 +13,9 @@ class mpitoaster_t {
   mpitoaster_t(int, int, int);
   ~mpitoaster_t();
   void init();
-  void allreduce(float*, size_t);
-  void allgather(float*, size_t);
-  void sendrecv(float*, size_t);
-  void sendrecvgroup(float*, size_t);
+  void bcast_org(float*, size_t);
+  void bcast(float*, size_t);
+  void bcast_grouped(float*, size_t);
 };
 
 mpitoaster_t::mpitoaster_t(int d, int r, int w) {
@@ -37,13 +36,36 @@ void mpitoaster_t::init(  ) {
   ncclCommInitRank(&comm, world_size, id, rank);
   std::cout << "init" << std::endl;
 }
+/*
 
-void mpitoaster_t::allreduce(float* tensor, size_t count) {
-  ncclAllReduce(tensor, tensor, count, ncclFloat, ncclSum, comm, stream);
+ncclResult_t  ncclSend(const void* sendbuff, size_t count, ncclDataType_t datatype, int peer, ncclComm_t comm, cudaStream_t stream);
+ncclResult_t  ncclRecv(void* recvbuff, size_t count, ncclDataType_t datatype, int peer, ncclComm_t comm, cudaStream_t stream);
+ncclResult_t ncclBroadcast(const void* sendbuff, void* recvbuff, size_t count, ncclDataType_t datatype, int root, ncclComm_t comm, cudaStream_t stream)
+*/
+void mpitoaster_t::bcast_org(float* tensor, size_t count) {
+  ncclBroadcast(tensor, tensor, count, ncclFloat32, 0, comm, stream);
 }
 
-void mpitoaster_t::allgather(float* tensor, size_t count) {
-  float* gather_list;
+void mpitoaster_t::bcast(float* tensor, size_t count) {
+  if(rank == 0) {
+    for(size_t i = 1; i < world_size; ++i) {
+      ncclSend(tensor, count, ncclFloat32, i, comm, stream);
+    }
+  } else {
+    ncclRecv(tensor, count, ncclFloat32, i, comm, stream);
+  }
+}
+
+void mpitoaster_t::bcast_grouped(float* tensor, size_t count) {
+  ncclGroupStart();
+  if(rank == 0) {
+    for(size_t i = 1; i < world_size; ++i) {
+      ncclSend(tensor, count, ncclFloat32, i, comm, stream);
+    }
+  } else {
+    ncclRecv(tensor, count, ncclFloat32, i, comm, stream);
+  }
+  ncclGroupEnd();
 }
 
 void print_tensor(float** tensor, size_t count) {
@@ -78,6 +100,7 @@ int main( void ){
   cudaMalloc(&recvbuff, count * sizeof(float));
   cudaMemcpy(sendbuff, input, count * sizeof(float), cudaMemcpyHostToDevice);//cudaMemset(sendbuff, 1.0, count * sizeof(float));
   print_tensor(&sendbuff, 1024);
+  mpi.bcast_org(tensor, count);
   //mpi.allreduce(sendbuff, count); 
   print_tensor(&sendbuff, 1024); 
   
