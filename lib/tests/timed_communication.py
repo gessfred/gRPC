@@ -68,4 +68,4 @@ def reduce_quantised_centralised(timer, tensor, dst, op=ReduceOp.SUM, bits=1, gr
 		with timer('postprocess'):
 			ops = {ReduceOp.SUM: lambda t_l: torch.sum(t_l, dim=0),
 			   	   ReduceOp.PRODUCT: lambda t_l: torch.prod(t_l, dim=0)}
-				tensor.copy_(ops[op](torch.stack(tensor_list)))
+			tensor.copy_(ops[op](torch.stack(tensor_list)))
