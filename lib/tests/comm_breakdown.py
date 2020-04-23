@@ -17,7 +17,7 @@ from timer import CUDATimer
 
 # Tests the speed of the quantised send/recv primitives.
 # Assumes exactly 2 nodes
-def send_recv_speed(runs=100, size=32*2**5, device=None):
+def send_recv_speed(runs=1, size=32*2**5, device=None):
     timer = CUDATimer('send_recv')
     tensor1 = torch.zeros(size, device=device).normal_(mean=0,std=1)
     bit_list = [1,2,4,8]
@@ -37,7 +37,7 @@ def send_recv_speed(runs=100, size=32*2**5, device=None):
         print('T: {:6.6}, B: {}, runs: {}, size" {}'.format(str(exec_time), bits, runs, size))
 
 # Tests the speed of the quantised all_gather collective.
-def all_gather_speed(runs=100, size=32*2**5, device=None):
+def all_gather_speed(runs=1, size=32*2**5, device=None):
     tensor1 = torch.zeros(size, device=device).normal_(mean=0,std=1)
     timer = CUDATimer('all_gather')
     bit_list = [1,2,4,8]
@@ -54,7 +54,7 @@ def all_gather_speed(runs=100, size=32*2**5, device=None):
         print('T: {:6.6}, B: {}, runs: {}, size" {}'.format(str(exec_time), bits, runs, size))
 
 # Tests the speed of the quantised all_reduce collective.
-def all_reduce_speed(runs=100, size=32*2**5, device=None):
+def all_reduce_speed(runs=1, size=32*2**5, device=None):
     tensor1 = torch.zeros(size, device=device).normal_(mean=0,std=1)
     timer = CUDATimer('all_reduce')
     op = ReduceOp.SUM
@@ -69,7 +69,7 @@ def all_reduce_speed(runs=100, size=32*2**5, device=None):
         print('T: {:6.6}, B: {}, runs: {}, size" {}'.format(str(exec_time), bits, runs, size))
 
 # Tests the speed of the quantised centralised reduce collective.
-def reduce_centralised_speed(runs=100, size=32*2**5, device=None):
+def reduce_centralised_speed(runs=1, size=32*2**5, device=None):
     tensor1 = torch.zeros(size, device=device).normal_(mean=0,std=1)
     timer = CUDATimer('reduce')
     op = ReduceOp.SUM
