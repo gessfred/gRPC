@@ -18,10 +18,10 @@ from timer import CUDATimer
 # Tests the speed of the quantised send/recv primitives.
 # Assumes exactly 2 nodes
 def send_recv_speed(runs=1, size=32*2**5, device=None):
-    timer = CUDATimer('send_recv')
     tensor1 = torch.zeros(size, device=device).normal_(mean=0,std=1)
     bit_list = [1,2,4,8]
     for bits in bit_list:
+        timer = CUDATimer('send_recv')
         start = time.time()
         for _ in range(runs):
             rank = dist.get_rank()
@@ -39,9 +39,9 @@ def send_recv_speed(runs=1, size=32*2**5, device=None):
 # Tests the speed of the quantised all_gather collective.
 def all_gather_speed(runs=1, size=32*2**5, device=None):
     tensor1 = torch.zeros(size, device=device).normal_(mean=0,std=1)
-    timer = CUDATimer('all_gather')
     bit_list = [1,2,4,8]
     for bits in bit_list:
+        timer = CUDATimer('all_gather')
         start = time.time()
         for _ in range(runs):
             rank = dist.get_rank()
@@ -56,10 +56,10 @@ def all_gather_speed(runs=1, size=32*2**5, device=None):
 # Tests the speed of the quantised all_reduce collective.
 def all_reduce_speed(runs=1, size=32*2**5, device=None):
     tensor1 = torch.zeros(size, device=device).normal_(mean=0,std=1)
-    timer = CUDATimer('all_reduce')
     op = ReduceOp.SUM
     bit_list = [1,2,4,8]
     for bits in bit_list:
+        timer = CUDATimer('all_reduce')
         start = time.time()
         for _ in range(runs):
             comm.all_reduce_quantised(timer, tensor1, op=op, bits=bits)
@@ -71,11 +71,11 @@ def all_reduce_speed(runs=1, size=32*2**5, device=None):
 # Tests the speed of the quantised centralised reduce collective.
 def reduce_centralised_speed(runs=1, size=32*2**5, device=None):
     tensor1 = torch.zeros(size, device=device).normal_(mean=0,std=1)
-    timer = CUDATimer('reduce')
     op = ReduceOp.SUM
     master = 0
     bit_list = [1,2,4,8]
     for bits in bit_list:
+        timer = CUDATimer('reduce')
         start = time.time()
         for _ in range(runs):
             comm.reduce_quantised_centralised(timer, tensor1, master, op=op, bits=bits)
