@@ -119,7 +119,7 @@ def ar(tensor, timer):
         dist.all_gather(gather_list, compressed)
     with timer('unpack'):
         gather_list = list(map(lambda recv: _unpack(recv, padding), gather_list))
-    with timer('sum'): 
+    with timer('sum'):
         return torch.sum(torch.stack(gather_list), dim=0)
 
 def all_reduce(tensor, group=group.WORLD):
@@ -155,21 +155,11 @@ def all_reduce_quantised_centralised(tensor, master=0, op=ReduceOp.SUM, bits=1, 
 
 def reduce_quantised_centralised(tensor, dst, op=ReduceOp.SUM, bits=1, group=group.WORLD):
 	#gather tensors on master node
-	size = dist.get_world_size(group)
 	rank = dist.get_rank()
-	if rank == dst:
-		tensor_list = [torch.empty(tensor.shape, device=tensor.device) for _ in range(dist.get_world_size(group))]
-		q, p = _pack(tensor, bits)
-		uq = _unpack(q, p, bits)
-		tensor_list[rank] = uq
-		for i in range(size):
-			if i != rank:
-				# TODO change to irecv_quantized so receives can be done in parallel
-				recv_quantized(tensor_list[i], i, bits)
-	else:
-		send_quantized(tensor, dst, bits)
-
+	tensor_list = [torch.empty(tensor.shape, device=tensor.device) for _ in range(dist.get_world_size(group))]
+	all_gather_quantized(tensor_list, tensor, bits=bits, group=group)
+	# reduce tensors on master node, as gather is synchronous we know the tensor list is ready
 	if rank == dst:
 		ops = {ReduceOp.SUM: lambda t_l: torch.sum(t_l, dim=0),
-			   ReduceOp.PRODUCT: lambda t_l: torch.prod(t_l, dim=0)}
+		   	   ReduceOp.PRODUCT: lambda t_l: torch.prod(t_l, dim=0)}
 		tensor.copy_(ops[op](torch.stack(tensor_list)))
