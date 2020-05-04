@@ -7,3 +7,4 @@ setup(name='mpitoaster',
                                              ['mpitoaster.cc'],
                                              extra_compile_args=["-fopenmp", "-w"])],
       cmdclass={'build_ext': BuildExtension})
+      #nvcc -o toast -I/root/.nccl/build/include -L/root/.nccl/build/lib toast.cc  /root/.nccl/build/lib/libnccl.so

@@ -15,6 +15,7 @@ WORKDIR /root/.nccl
 RUN git checkout ${BRANCH}
 RUN make -j src.build
 RUN apt-get update -y && apt-get install -y sudo
+RUN apt-get update -y && apt-get install -y iperf3 iputils-ping nload
 RUN sudo apt install build-essential devscripts debhelper fakeroot
 RUN make pkg.debian.build
 RUN dpkg -i build/pkg/deb/libnccl2_2.7.0p4-1+cuda10.2_amd64.deb
