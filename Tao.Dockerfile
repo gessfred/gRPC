@@ -105,3 +105,5 @@ RUN $HOME/conda/bin/conda install --name pytorch-py$PYTHON_VERSION -y -c conda-f
 RUN $HOME/conda/envs/pytorch-py$PYTHON_VERSION/bin/pip install lmdb tensorboard_logger pyarrow msgpack msgpack_numpy mpi4py
 RUN $HOME/conda/bin/conda install --name pytorch-py$PYTHON_VERSION -c conda-forge python-blosc
 RUN $HOME/conda/bin/conda clean -ya
+
+ADD /
