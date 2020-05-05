@@ -30,8 +30,8 @@ def check_quantize(q, uq, device=None):
 
     for bits, expected in zip([1,2,4,8], res):
         print('bits: {}'.format(bits))
-        quantized = q(tensor, bits, device)
-        unquantized = uq(quantized, bits, device).cpu()
+        quantized, padding = q(tensor, bits)
+        unquantized = uq(quantized, padding, bits).cpu()
         if len(expected) == len(unquantized):
             print(' length correct')
         else:
@@ -62,11 +62,11 @@ def check_speed(q, uq, size=10, iters=1000, device=None):
         print('bits: {}'.format(bits))
         start = time.time()
         for _ in range(iters):
-            quantized = q(tensor, bits, device)
+            quantized, padding = q(tensor, bits)
         exec_time_q = time.time() - start
         start = time.time()
         for _ in range(iters):
-            unquantized = uq(quantized, bits, device)
+            unquantized = uq(quantized, padding, bits)
         exec_time_uq = time.time() - start
         print(' Quantisation: {:6.6} / Unquantisation: {:6.6}'.format(str(exec_time_q), str(exec_time_uq)))
 
@@ -82,7 +82,7 @@ def check_cuda():
 if __name__ == '__main__':
     q, uq = quantizy('gpu')
     device = check_cuda()
-    check_quantize(q, uq, device= device)
+    check_quantize(q, uq, device=device)
     print("Using CPU:")
     check_speed(q, uq, size=16, device=None)
     print("Using GPU:".format(cuda_device))
