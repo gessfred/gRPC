@@ -23,6 +23,8 @@ RUN dpkg -i build/pkg/deb/libnccl-dev_2.7.0p4-1+cuda10.2_amd64.deb
 ADD . /.mpitoaster/
 WORKDIR /.mpitoaster
 RUN python setup.py install
+RUN apt-get update -y && apt-get install -y iperf3 net-tools
 EXPOSE 29500
 EXPOSE 29501
 EXPOSE 60000
+EXPOSE 5201
