@@ -1,4 +1,4 @@
-FROM nvidia/cuda:10.2-cudnn7-devel
+FROM nvidia/cuda:10.0-cudnn7-devel
 ENV LIB /parsa
 RUN apt-get upgrade -y
 RUN apt-get update -y
