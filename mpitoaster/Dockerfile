@@ -1,4 +1,4 @@
-FROM nvidia/cuda:10.0-cudnn7-devel
+FROM nvidia/cuda:10.1-cudnn7-devel
 ENV LIB /parsa
 RUN apt-get upgrade -y
 RUN apt-get update -y
@@ -6,7 +6,8 @@ RUN apt-get install -y --no-install-recommends python3 python3-virtualenv build-
 ENV VIRTUAL_ENV=/opt/venv
 RUN python3 -m virtualenv --python=/usr/bin/python3 $VIRTUAL_ENV
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
-RUN pip install numpy torch torchvision gprof2dot
+RUN pip install numpy gprof2dot
+RUN pip install torch==1.5.0+cu101 torchvision==0.6.0+cu101 -f https://download.pytorch.org/whl/torch_stable.html
 # install NCCL
 ENV BRANCH p2p
 ADD https://api.github.com/repos/nvidia/nccl/git/refs/heads/${BRANCH} versiongrpc.json
@@ -18,8 +19,8 @@ RUN apt-get update -y && apt-get install -y sudo
 RUN apt-get update -y && apt-get install -y iperf3 iputils-ping nload
 RUN sudo apt install build-essential devscripts debhelper fakeroot
 RUN make pkg.debian.build
-RUN dpkg -i build/pkg/deb/libnccl2_2.7.0p4-1+cuda10.0_amd64.deb
-RUN dpkg -i build/pkg/deb/libnccl-dev_2.7.0p4-1+cuda10.0_amd64.deb
+RUN dpkg -i build/pkg/deb/libnccl2_2.7.0p4-1+cuda10.1_amd64.deb
+RUN dpkg -i build/pkg/deb/libnccl-dev_2.7.0p4-1+cuda10.1_amd64.deb
 ADD . /.mpitoaster/
 WORKDIR /.mpitoaster
 RUN python setup.py install
