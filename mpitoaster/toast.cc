@@ -257,14 +257,14 @@ float run(int rank, mpitoaster_t& mpi, std::function<void(float*, size_t)> f, si
 
 int main( void ){
   int rank = atoi(std::getenv("RANK"));
-  int device = atoi(std::getenv("LOCAL_RANK"));
+  int device = 0;//atoi(std::getenv("LOCAL_RANK"));
   int world = atoi(std::getenv("WORLD_SIZE"));
 
   std::stringstream csv_path;
   csv_path << "data_chunk_" << rank << ".csv";
   std::ofstream csv;
-  csv.open(csv_path.str());
-  csv << "version,tensor,world_size,rank,elapsed_time\n";
+  csv.open(csv_path.str(), std::ios_base::app);
+  //csv << "version,tensor,world_size,rank,elapsed_time\n";
   mpitoaster_t mpi(device, rank, world);
   mpi.init();
   for(size_t chunks = 2; chunks <= 64; chunks *= 2) {
