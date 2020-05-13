@@ -1,5 +1,6 @@
 FROM nvidia/cuda:10.1-cudnn7-devel
 # install openMPI
+RUN apt-get update -y && apt-get install -y wget
 RUN mkdir $HOME/.openmpi/
 RUN wget https://www.open-mpi.org/software/ompi/v3.0/downloads/openmpi-3.0.0.tar.gz
 RUN gunzip -c openmpi-3.0.0.tar.gz | tar xf - \
