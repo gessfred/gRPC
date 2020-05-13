@@ -43,3 +43,18 @@ EXPOSE 5201
 ENV MASTER_ADD=10.90.40.14
 ENV MASTER_PORT=29500
 ENV WORLD_SIZE=4
+
+RUN apt-get update && apt-get install -y openssh-server
+RUN mkdir /var/run/sshd
+RUN echo 'root:THEPASSWORDYOUCREATED' | chpasswd
+RUN sed -i 's/PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config
+
+# SSH login fix. Otherwise user is kicked off after login
+RUN sed 's@session\s*required\s*pam_loginuid.so@session optional pam_loginuid.so@g' -i /etc/pam.d/sshd
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+ENV NOTVISIBLE "in users profile"
+RUN echo "export VISIBLE=now" >> /etc/profile
+
+EXPOSE 22
