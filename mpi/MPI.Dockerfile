@@ -1,5 +1,6 @@
 FROM pytorch/pytorch:1.0-cuda10.0-cudnn7-devel
 WORKDIR /.mpi
+RUN apt-get update -y && apt-get install -y wget
 # install openMPI
 RUN wget https://www.open-mpi.org/software/ompi/v3.0/downloads/openmpi-3.0.0.tar.gz
 RUN gunzip -c openmpi-3.0.0.tar.gz | tar xf - \
