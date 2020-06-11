@@ -29,3 +29,7 @@ EXPOSE 5201
 #CMD ["/usr/sbin/sshd", "-D"]
 
 RUN /usr/sbin/sshd 
+
+WORKDIR /home/mpi
+
+ADD mpi.c .
