@@ -267,7 +267,7 @@ int main( void ){
   //csv << "version,tensor,world_size,rank,elapsed_time\n";
   mpitoaster_t mpi(device, rank, world);
   mpi.init();
-  for(size_t chunks = 2; chunks <= 64; chunks *= 2) {
+  /*for(size_t chunks = 2; chunks <= 64; chunks *= 2) {
     size_t size0 = 256000;
     for(size_t i = 0; i < 5; ++i) {
       float res = run(rank, mpi, [&mpi, chunks](float* tensor, size_t count) {
@@ -279,7 +279,7 @@ int main( void ){
       csv << v.str() << "," << size0 << "," << world << "," << rank << "," << res << "\n";
       size0 *= 2;
     }
-  }
+  }*/
   csv.close();
 
 
