@@ -59,3 +59,6 @@ ENV NOTVISIBLE "in users profile"
 RUN echo "export VISIBLE=now" >> /etc/profile
 
 EXPOSE 22
+
+
+RUN nvcc -I/root/.nccl/build/include/ -L/root/.nccl/build/lib -I/usr/include/mpi/ -o toast toast.cc /root/.nccl/build/lib/libnccl.so

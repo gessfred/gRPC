@@ -26,7 +26,7 @@ class mpitoaster_t {
   public:
   mpitoaster_t(int, int, int);
   ~mpitoaster_t();
-  void init();
+  void init( int argc, char** argv );
   void bcast_org(float*, size_t);
   void bcast(float*, size_t);
   void bcast_grouped(float*, size_t);
@@ -49,7 +49,7 @@ mpitoaster_t::~mpitoaster_t() {
   ncclCommDestroy(comm);  
 }
 
-void mpitoaster_t::init(  ) {
+void mpitoaster_t::init( int argc, char** argv ) {
 
   cudaSetDevice(device);
   cudaStreamCreate(&stream);
@@ -71,7 +71,7 @@ void mpitoaster_t::init(  ) {
 
   ncclUniqueId id;
   //get NCCL unique ID at rank 0 and broadcast it to all others
-  if (myRank == 0) ncclGetUniqueId(&id);
+  if (rank == 0) ncclGetUniqueId(&id);
   MPI_Bcast((void *)&id, sizeof(id), MPI_BYTE, 0, MPI_COMM_WORLD);
 
   ncclCommInitRank(&comm, world_size, id, rank);
@@ -276,7 +276,7 @@ float run(int rank, mpitoaster_t& mpi, std::function<void(float*, size_t)> f, si
   return mpi.elapsed_time(); 
 }
 
-int main( void ){
+int main( int argc, char** argv ){
   int rank = atoi(std::getenv("RANK"));
   int device = 0;//atoi(std::getenv("LOCAL_RANK"));
   int world = atoi(std::getenv("WORLD_SIZE"));
