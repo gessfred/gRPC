@@ -14,6 +14,26 @@
 using namespace std::chrono;
 using namespace std;
 
+static uint64_t getHostHash(const char* string) {
+  // Based on DJB2, result = result * 33 + char
+  uint64_t result = 5381;
+  for (int c = 0; string[c] != '\0'; c++){
+    result = ((result << 5) + result) + string[c];
+  }
+  return result;
+}
+
+
+static void getHostName(char* hostname, int maxlen) {
+  gethostname(hostname, maxlen);
+  for (int i=0; i< maxlen; i++) {
+    if (hostname[i] == '.') {
+        hostname[i] = '\0';
+        return;
+    }
+  }
+}
+
 class mpitoaster_t {
   int device;
   int rank;
