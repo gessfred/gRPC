@@ -11,6 +11,8 @@
 #include <sstream>
 #include <functional>
 #include <mpi.h>
+#include <unistd.h>
+
 using namespace std::chrono;
 using namespace std;
 
@@ -307,7 +309,7 @@ int main( int argc, char** argv ){
   csv.open(csv_path.str(), std::ios_base::app);
   //csv << "version,tensor,world_size,rank,elapsed_time\n";
   mpitoaster_t mpi(device, rank, world);
-  mpi.init();
+  mpi.init(argc, argv);
   /*for(size_t chunks = 2; chunks <= 64; chunks *= 2) {
     size_t size0 = 256000;
     for(size_t i = 0; i < 5; ++i) {
