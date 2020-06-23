@@ -10,6 +10,7 @@
 #include <string>
 #include <sstream>
 #include <functional>
+#include <mpi.h
 using namespace std::chrono;
 using namespace std;
 
@@ -49,10 +50,30 @@ mpitoaster_t::~mpitoaster_t() {
 }
 
 void mpitoaster_t::init(  ) {
+
   cudaSetDevice(device);
   cudaStreamCreate(&stream);
+
+  //initializing MPI
+  MPI_Init(&argc, &argv);
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+  //calculating localRank based on hostname which is used in selecting a GPU
+  uint64_t hostHashs[world_size];
+  char hostname[1024];
+  getHostName(hostname, 1024);
+  hostHashs[rank] = getHostHash(hostname);
+  MPI_Allgather(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL, hostHashs, sizeof(uint64_t), MPI_BYTE, MPI_COMM_WORLD);
+  for (int p=0; p<world_size; p++) {
+     if (p == rank) break;
+     if (hostHashs[p] == hostHashs[rank]) rank++;
+  }
+
   ncclUniqueId id;
-  ncclGetUniqueId(&id);
+  //get NCCL unique ID at rank 0 and broadcast it to all others
+  if (myRank == 0) ncclGetUniqueId(&id);
+  MPI_Bcast((void *)&id, sizeof(id), MPI_BYTE, 0, MPI_COMM_WORLD);
+
   ncclCommInitRank(&comm, world_size, id, rank);
   std::cout << "init" << std::endl;
 }
