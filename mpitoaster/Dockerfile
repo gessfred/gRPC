@@ -31,10 +31,9 @@ RUN sudo apt install build-essential devscripts debhelper fakeroot
 RUN make pkg.debian.build
 RUN dpkg -i build/pkg/deb/libnccl2_2.7.0p4-1+cuda10.1_amd64.deb
 RUN dpkg -i build/pkg/deb/libnccl-dev_2.7.0p4-1+cuda10.1_amd64.deb
+RUN apt-get update -y && apt-get install -y iperf3 net-tools openmpi-bin libopenmpi-dev sudo openssh-server
 ADD . /.mpitoaster/
 WORKDIR /.mpitoaster
-RUN python setup.py install
-RUN apt-get update -y && apt-get install -y iperf3 net-tools openmpi-bin libopenmpi-dev sudo
 EXPOSE 29500
 EXPOSE 29501
 EXPOSE 60000
@@ -43,7 +42,6 @@ ENV MASTER_ADD=10.90.40.14
 ENV MASTER_PORT=29500
 ENV WORLD_SIZE=4
 
-RUN apt-get update && apt-get install -y openssh-server
 RUN mkdir /var/run/sshd
 RUN echo 'root:THEPASSWORDYOUCREATED' | chpasswd
 RUN sed -i 's/PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config
@@ -59,4 +57,4 @@ RUN echo "export VISIBLE=now" >> /etc/profile
 EXPOSE 22
 
 
-RUN nvcc -I/root/.nccl/build/include/ -L/root/.nccl/build/lib -I/usr/include/mpi/ -o toast toast.cc /root/.nccl/build/lib/libnccl.so
+RUN nvcc -I/root/.nccl/build/include/ -L/root/.nccl/build/lib -I/usr/lib/x86_64-linux-gnu/openmpi/include/openmpi -I/usr/lib/x86_64-linux-gnu/openmpi/include/openmpi/opal/mca/event/libevent2022/libevent -I/usr/lib/x86_64-linux-gnu/openmpi/include/openmpi/opal/mca/event/libevent2022/libevent/include -I/usr/lib/x86_64-linux-gnu/openmpi/include -pthread -L/usr//lib -L/usr/lib/x86_64-linux-gnu/openmpi/lib -lmpi -o toast toast.cc /root/.nccl/build/lib/libnccl.so
