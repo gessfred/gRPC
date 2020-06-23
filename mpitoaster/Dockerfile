@@ -36,7 +36,7 @@ RUN dpkg -i build/pkg/deb/libnccl-dev_2.7.0p4-1+cuda10.1_amd64.deb
 ADD . /.mpitoaster/
 WORKDIR /.mpitoaster
 RUN python setup.py install
-RUN apt-get update -y && apt-get install -y iperf3 net-tools
+RUN apt-get update -y && apt-get install -y iperf3 net-tools openmpi-bin libopenmpi-dev sudo
 EXPOSE 29500
 EXPOSE 29501
 EXPOSE 60000

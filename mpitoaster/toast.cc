@@ -10,7 +10,7 @@
 #include <string>
 #include <sstream>
 #include <functional>
-#include <mpi.h
+#include <mpi.h>
 using namespace std::chrono;
 using namespace std;
 
