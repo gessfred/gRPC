@@ -97,7 +97,7 @@ void mpitoaster_t::init( int argc, char** argv ) {
   MPI_Bcast((void *)&id, sizeof(id), MPI_BYTE, 0, MPI_COMM_WORLD);
 
   ncclCommInitRank(&comm, world_size, id, rank);
-  std::cout << "init" << std::endl;
+  std::cout << "init[" << rank << "]" << std::endl;
 }
 /*
 
@@ -310,6 +310,11 @@ int main( int argc, char** argv ){
   //csv << "version,tensor,world_size,rank,elapsed_time\n";
   mpitoaster_t mpi(device, rank, world);
   mpi.init(argc, argv);
+  size_t chunks = 2;
+  size_t size0 = 256000;
+  float res = run(rank, mpi, [&mpi, chunks](float* tensor, size_t count) {
+        mpi.bcast_org(tensor, count);  
+      }, size0);
   /*for(size_t chunks = 2; chunks <= 64; chunks *= 2) {
     size_t size0 = 256000;
     for(size_t i = 0; i < 5; ++i) {
