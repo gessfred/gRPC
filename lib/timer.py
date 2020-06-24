@@ -114,6 +114,7 @@ class TimerBase(object):
             'n_sub_process': conf.n_sub_process,
             'git': git,
             'time_stamps': self.ts,
+            'losses': conf.losses,
         }
         self.client['coltrain']['benchmarking'].insert_one(data)
     def aggregate(self):
