@@ -117,7 +117,7 @@ class TimerBase(object):
             'time_stamps': self.ts,
         }
         self.client['coltrain']['benchmarking'].insert_one(data)
-        
+
     def aggregate(self):
         torch.cuda.synchronize()
         for rec in self.events:
@@ -160,6 +160,8 @@ class CUDATimer(TimerBase):
                 for start, end in self.batches:
                     epoch_time += start.elapsed_time(end)
                 self.epochs.append(epoch_time)
+                del self.batches
+                self.batches = []
         else:
             id = '/'.join(self.stack)
             self.events += [{'label': id, 'start': start, 'end': end}]
