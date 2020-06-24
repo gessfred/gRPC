@@ -117,6 +117,7 @@ class TimerBase(object):
             'time_stamps': self.ts,
         }
         self.client['coltrain']['benchmarking'].insert_one(data)
+        
     def aggregate(self):
         torch.cuda.synchronize()
         for rec in self.events:
