@@ -29,6 +29,7 @@ class TimerBase(object):
         self.ec = {}
         self.client = None
         self.epochs = []
+        self.batches = []
 
     @contextmanager
     def __call__(self, label, record_epoch=False, epoch=0):
@@ -145,15 +146,20 @@ class CUDATimer(TimerBase):
         return event
 
     @contextmanager
-    def __call__(self, label, record_epoch=False, epoch=0):
+    def __call__(self, label, record_epoch=False, epoch_done=False, epoch=0):
         start = self.record()
         if not record_epoch:
             self.stack.append(label)
         yield
         end = self.record()
         if record_epoch:
-            torch.cuda.synchronize()
-            self.epochs.append(start.elapsed_time(end))
+            self.batches.append([start, end])
+            if epoch_done:
+                torch.cuda.synchronize()
+                epoch_time = 0
+                for start, end in self.batches:
+                    epoch_time += start.elapsed_time(end)
+                self.epochs.append(epoch_time)
         else:
             id = '/'.join(self.stack)
             self.events += [{'label': id, 'start': start, 'end': end}]
