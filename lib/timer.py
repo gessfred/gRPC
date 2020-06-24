@@ -28,9 +28,10 @@ class TimerBase(object):
         self.stack = []
         self.ec = {}
         self.client = None
+        self.epochs = []
 
     @contextmanager
-    def __call__(self, label, epoch=0):
+    def __call__(self, label, record_epoch=False, epoch=0):
         pass
 
     def record(self, label):
@@ -96,6 +97,7 @@ class TimerBase(object):
             'uuid': os.environ['UUID'],#unique "deployment id"
             'elapsed_time': self.elapsed_time, 
             'clock': self.clock,
+            'epochs': self.epochs,
             'events': self.ready_events,
             'name': self.name,
             'world_size': dist.get_world_size(),
@@ -142,14 +144,20 @@ class CUDATimer(TimerBase):
         return event
 
     @contextmanager
-    def __call__(self, label, epoch=0):
+    def __call__(self, label, record_epoch=False, epoch=0):
         start = self.record()
-        self.stack.append(label)
+        if not record_epoch:
+            self.stack.append(label)
         yield
         end = self.record()
-        id = '/'.join(self.stack)
-        self.events += [{'label': id, 'start': start, 'end': end}]
-        self.stack.pop()
+        if record_epoch:
+            torch.cuda.synchronize()
+            self.epochs.append(start.elapsed_time(end))
+        else:
+            id = '/'.join(self.stack)
+            self.events += [{'label': id, 'start': start, 'end': end}]
+            self.stack.pop()
+            
         #self.ec[id] = self.ec.get(id, 0)
     def wait(self, event, handle):
         pass
