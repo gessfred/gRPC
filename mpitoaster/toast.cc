@@ -265,6 +265,7 @@ float mpitoaster_t::elapsed_time() {
   float tmp = 0;
   float elapsed = 0;
   for(auto event: events) {
+    cudaEvent_t start, end;
     std::tie(start, end) = event;
     cudaEventElapsedTime(&tmp, start, end);
     elapsed += tmp;
@@ -316,7 +317,8 @@ int main( int argc, char** argv ){
   float res = run(rank, mpi, [&mpi, chunks](float* tensor, size_t count) {
     mpi.bcast_org(tensor, count);  
   }, size0);
-  /*for(size_t chunks = 2; chunks <= 64; chunks *= 2) {
+std::cout << size0 << "," << world << "," << rank << "," << "," << res << std::endl;  
+/*for(size_t chunks = 2; chunks <= 64; chunks *= 2) {
     size_t size0 = 256000;
     for(size_t i = 0; i < 5; ++i) {
       float res = run(rank, mpi, [&mpi, chunks](float* tensor, size_t count) {
