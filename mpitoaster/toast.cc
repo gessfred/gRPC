@@ -48,7 +48,7 @@ class mpitoaster_t {
   public:
   mpitoaster_t(int, int, int);
   ~mpitoaster_t();
-  void init( int argc, char** argv );
+  void init(  );
   void bcast_org(float*, size_t);
   void bcast(float*, size_t);
   void bcast_grouped(float*, size_t);
@@ -71,7 +71,7 @@ mpitoaster_t::~mpitoaster_t() {
   ncclCommDestroy(comm);  
 }
 
-void mpitoaster_t::init( int argc, char** argv ) {
+void mpitoaster_t::init( ) {
 
   cudaSetDevice(device);
   cudaStreamCreate(&stream);
@@ -80,16 +80,7 @@ void mpitoaster_t::init( int argc, char** argv ) {
   MPI_Init(&argc, &argv);
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Comm_size(MPI_COMM_WORLD, &world_size);
-  //calculating localRank based on hostname which is used in selecting a GPU
-  uint64_t hostHashs[world_size];
-  char hostname[1024];
-  getHostName(hostname, 1024);
-  hostHashs[rank] = getHostHash(hostname);
-  MPI_Allgather(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL, hostHashs, sizeof(uint64_t), MPI_BYTE, MPI_COMM_WORLD);
-  for (int p=0; p<world_size; p++) {
-     if (p == rank) break;
-     if (hostHashs[p] == hostHashs[rank]) rank++;
-  }
+  std::cout << "ok1" << std::endl; fflush(stdout);
 
   ncclUniqueId id;
   //get NCCL unique ID at rank 0 and broadcast it to all others
@@ -311,7 +302,7 @@ int main( int argc, char** argv ){
   csv.open(csv_path.str(), std::ios_base::app);
   //csv << "version,tensor,world_size,rank,elapsed_time\n";
   mpitoaster_t mpi(device, rank, world);
-  mpi.init(argc, argv);
+  mpi.init( );
   size_t chunks = 2;
   size_t size0 = 256000;
   float res = run(rank, mpi, [&mpi, chunks](float* tensor, size_t count) {
