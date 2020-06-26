@@ -77,7 +77,8 @@ void mpitoaster_t::init( ) {
   cudaStreamCreate(&stream);
 
   //initializing MPI
-  MPI_Init(&argc, &argv);
+std::cout << "ok0" << std::endl; fflush(stdout);
+std::cout << "ok0.5" << std::endl; fflush(stdout);
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Comm_size(MPI_COMM_WORLD, &world_size);
   std::cout << "ok1" << std::endl; fflush(stdout);
@@ -302,6 +303,7 @@ int main( int argc, char** argv ){
   csv.open(csv_path.str(), std::ios_base::app);
   //csv << "version,tensor,world_size,rank,elapsed_time\n";
   mpitoaster_t mpi(device, rank, world);
+  MPI_Init(NULL, NULL);
   mpi.init( );
   size_t chunks = 2;
   size_t size0 = 256000;
